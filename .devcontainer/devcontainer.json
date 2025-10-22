@@ -1,0 +1,126 @@
+{
+  "name": "airnub-labs",
+  "dockerComposeFile": [
+    "./docker-compose.yml"
+  ],
+  "service": "devcontainer",
+  "workspaceFolder": "/airnub-labs",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "installPnpm": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installJupyterlab": true
+    }
+  },
+  "containerEnv": {
+    "PNPM_HOME": "/home/vscode/.local/share/pnpm",
+    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store"
+  },
+  "mounts": [
+    "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
+  ],
+  "updateContentCommand": "bash -lc 'set -e; for dir in */.devcontainer; do if [ -x \"$dir/scripts/update-content.sh\" ]; then \"$dir/scripts/update-content.sh\"; exit $?; fi; done; echo \"[update-content][warn] No update-content script found; skipping.\"'",
+  "postCreateCommand": ".devcontainer/scripts/post-create.sh",
+  "postStartCommand": ".devcontainer/scripts/post-start.sh",
+  "forwardPorts": [
+    6379,
+    54321,
+    54322,
+    54323,
+    54324,
+    54327
+  ],
+  "portsAttributes": {
+    "6379": {
+      "label": "Redis"
+    },
+    "54321": {
+      "label": "Supabase API"
+    },
+    "54322": {
+      "label": "Supabase Postgres"
+    },
+    "54323": {
+      "label": "Supabase Studio"
+    },
+    "54324": {
+      "label": "Supabase Inbucket"
+    },
+    "54327": {
+      "label": "Supabase Logflare"
+    }
+  },
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "airnub-labs/million-dollar-maps": {
+          "permissions": {
+            "contents": "write",
+            "pull_requests": "write"
+          }
+        }
+      }
+    },
+    "vscode": {
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "editor.formatOnSave": true,
+        "deno.enablePaths": [
+          "supabase/functions"
+        ],
+        "deno.lint": true,
+        "deno.unstable": [
+          "bare-node-builtins",
+          "byonm",
+          "sloppy-imports",
+          "unsafe-proto",
+          "webgpu",
+          "broadcast-channel",
+          "worker-options",
+          "cron",
+          "kv",
+          "ffi",
+          "fs",
+          "http",
+          "net"
+        ],
+        "[typescript]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+        },
+        "workbench.activityBar.location": "top",
+        "workbench.colorTheme": "Default Dark Modern",
+        "workbench.startupEditor": "readme",
+        "workbench.views.defaultViewContainerLocations": {
+          "workbench.view.extension.codexViewContainer": "secondarySideBar",
+          "workbench.view.extension.geminiChat": "secondarySideBar",
+          "workbench.view.extension.claudeCode": "secondarySideBar"
+        }
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "ms-playwright.playwright",
+        "denoland.vscode-deno",
+        "Supabase.vscode-supabase-extension",
+        "Redis.redis-for-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "deque-systems.vscode-axe-linter",
+        "DavidAnson.vscode-markdownlint",
+        "bradlc.vscode-tailwindcss",
+        "github.vscode-github-actions",
+        "GitHub.vscode-pull-request-github",
+        "GitHub.copilot-chat",
+        "openai.chatgpt",
+        "google.geminicodeassist",
+        "google.gemini-cli-vscode-ide-companion",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}
