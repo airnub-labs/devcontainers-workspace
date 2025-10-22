@@ -16,7 +16,14 @@
       "pnpmVersion": "10.17.1"
     }
   },
-  "updateContentCommand": "pnpm install",
+  "containerEnv": {
+    "PNPM_HOME": "/home/vscode/.local/share/pnpm",
+    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store"
+  },
+  "mounts": [
+    "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
+  ],  
+  "updateContentCommand": "pnpm install --store-dir=$PNPM_STORE_PATH",
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
