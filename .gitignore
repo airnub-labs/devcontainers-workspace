@@ -1,0 +1,25 @@
+# Ignore everything at the repo root (files & folders)
+ /*
+# Also ignore all dotfiles at root
+ /.*
+
+# Allow-list just these:
+!.gitignore
+!.gitattributes
+!airnub-labs.code-workspace
+
+# Allow the shared devcontainer config (and everything in it)
+!.devcontainer/
+!.devcontainer/**
+
+# (Optional) keep these if you use them:
+!README.md
+!.github/
+!.github/**
+!scripts/
+!scripts/**
+
+# Ignore pnpm store
+.pnpm-store/
+
+*.DS_Store
