@@ -1,0 +1,24 @@
+# Ignore everything at the repo root (files & folders)
+ /*
+# Also ignore all dotfiles at root
+ /.*
+
+# Allow-list just these:
+!.gitignore
+!.gitattributes
+!*.code-workspace
+
+# Allow the shared devcontainer config (and everything in it)
+!.devcontainer/
+!.devcontainer/**
+!supabase/
+!supabase/**
+
+# (Optional) keep these if you use them:
+!README.md
+!.github/
+!.github/**
+!scripts/
+!scripts/**
+
+*.DS_Store
