@@ -57,9 +57,34 @@ ensure_pnpm() {
 log "Ensuring pnpm is available and configured..."
 ensure_pnpm
 
+# -----------------------------
+# NEW: Safe PNPM store configuration (works in Dev Containers & Codespaces)
+# -----------------------------
+# Use a container-local store (default: $HOME/.pnpm-store) or respect PNPM_STORE_PATH if provided.
+STORE="${PNPM_STORE_PATH:-"$HOME/.pnpm-store"}"
+log "Configuring pnpm store at: $STORE"
+
+# Create and ensure ownership (covers named volumes that default to root-owned)
+mkdir -p "$STORE"
+if command -v sudo >/dev/null 2>&1; then
+  sudo chown -R "$(id -u)":"$(id -g)" "$STORE" || true
+fi
+
+# Persist the store path so future pnpm runs use it by default
+pnpm config set store-dir "$STORE" >/dev/null 2>&1 || true
+
+# Best-effort cleanup if a legacy store exists on the bind mount
+if [[ -d "/workspaces/.pnpm-store" ]]; then
+  log "Removing legacy /workspaces/.pnpm-store to avoid mount-related copy/link issues..."
+  rm -rf /workspaces/.pnpm-store || true
+fi
+
+# -----------------------------
+# Install workspace deps (uses safe store)
+# -----------------------------
 if [[ -f "$ROOT/package.json" ]]; then
-  log "Installing workspace dependencies with pnpm..."
-  (cd "$ROOT" && pnpm install)
+  log "Installing workspace dependencies with pnpm (using store: $STORE)..."
+  (cd "$ROOT" && pnpm install --store-dir="$STORE")
 else
   log "No package.json found; skipping pnpm install."
 fi
@@ -67,15 +92,13 @@ fi
 # -----------------------------
 # Supabase CLI install (unchanged)
 # -----------------------------
-
 log "Installing Supabase CLI..."
 "$HERE/install-supabase-cli.sh"
 
 # -----------------------------
-# NEW: Clone additional repos declared in devcontainer.json
-#      (intersect with workspace folders). Non-fatal if missing.
+# Clone additional repos declared in devcontainer.json
+# (intersect with workspace folders). Non-fatal if missing.
 # -----------------------------
-
 if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
   # Ensure jq for JSON parsing if available via apt-get
   if ! command -v jq >/dev/null 2>&1; then
