@@ -7,7 +7,7 @@
   // default folder opened in the container window
   // workspaceFolder must point to a real folder inside the container; 
   // using /workspaces/million-dollar-maps ensures pnpm install runs in the right place.
-  "workspaceFolder": "/workspaces/million-dollar-maps",
+  "workspaceFolder": "/workspaces",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/node:1": {
@@ -22,7 +22,7 @@
   },
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
-  ],  
+  ],
   "updateContentCommand": "pnpm install --store-dir=$PNPM_STORE_PATH",
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",

@@ -7,7 +7,7 @@ services:
     init: true
     # mount the WHOLE parent folder (the folder that contains ALL repos)
     volumes:
-      - ..:/workspaces:cached      
+      - ..:/workspaces:cached     
     depends_on:
       redis:
         condition: service_healthy
