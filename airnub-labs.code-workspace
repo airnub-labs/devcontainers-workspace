@@ -1,8 +1,8 @@
 {
   "folders": [
-    { "path": ".devcontainer" },
-    { "path": "million-dollar-maps", },
-    // { "path": "."}
+ //   { "path": ".devcontainer" },
+ //   { "path": "million-dollar-maps", },
+    { "path": "."}
   ],
   "settings": {}
 }
