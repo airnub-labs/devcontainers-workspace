@@ -100,12 +100,138 @@ log "Installing Supabase CLI..."
 # -----------------------------
 # Deno CLI install
 # -----------------------------
-if ! command -v deno >/dev/null 2>&1; then
-  log "Installing Deno CLI..."
-  curl -fsSL https://deno.land/install.sh | sh
-else
-  log "Deno CLI already installed; skipping."
+ensure_in_path() {
+  local dir="$1"
+  case ":$PATH:" in
+    *":$dir:"*) ;;
+    *) PATH="$dir:$PATH" ;;
+  esac
+  export PATH
+}
+
+ensure_profile_path_snippet() {
+  local profile_snippet="/etc/profile.d/deno.sh"
+  if [[ -w "$profile_snippet" || (! -e "$profile_snippet" && -w "/etc/profile.d") ]]; then
+    cat <<'EOF' >"$profile_snippet"
+if [ -d "$HOME/.deno/bin" ] && [[ ":$PATH:" != *":$HOME/.deno/bin:"* ]]; then
+  export PATH="$HOME/.deno/bin:$PATH"
 fi
+EOF
+  else
+    local profile_file
+    local snippet_id="Added by post-create Deno installer"
+    for profile_file in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+      if [[ -e "$profile_file" && ! -w "$profile_file" ]]; then
+        continue
+      fi
+      if [[ ! -e "$profile_file" ]]; then
+        touch "$profile_file" 2>/dev/null || continue
+      fi
+      if ! grep -Fq "$snippet_id" "$profile_file" 2>/dev/null; then
+        cat <<'EOF' >>"$profile_file"
+
+# Added by post-create Deno installer
+if [[ ":$PATH:" != *":$HOME/.deno/bin:"* ]]; then
+  export PATH="$HOME/.deno/bin:$PATH"
+fi
+EOF
+      fi
+      break
+    done
+  fi
+}
+
+install_deno() {
+  local os arch triple url tmpdir archive target_dir binary_path
+
+  if command -v deno >/dev/null 2>&1; then
+    log "Deno CLI already installed; skipping."
+    ensure_in_path "$HOME/.deno/bin"
+    return 0
+  fi
+
+  os="$(uname -s)"
+  arch="$(uname -m)"
+  case "$os" in
+    Linux)
+      case "$arch" in
+        x86_64|amd64) triple="x86_64-unknown-linux-gnu" ;;
+        aarch64|arm64) triple="aarch64-unknown-linux-gnu" ;;
+        *)
+          log "Unsupported architecture for Deno: $arch"
+          return 0
+          ;;
+      esac
+      ;;
+    Darwin)
+      case "$arch" in
+        x86_64|amd64) triple="x86_64-apple-darwin" ;;
+        arm64) triple="aarch64-apple-darwin" ;;
+        *)
+          log "Unsupported architecture for Deno: $arch"
+          return 0
+          ;;
+      esac
+      ;;
+    *)
+      log "Unsupported operating system for Deno: $os"
+      return 0
+      ;;
+  esac
+
+  target_dir="$HOME/.deno/bin"
+  mkdir -p "$target_dir"
+
+  tmpdir="$(mktemp -d)"
+  archive="$tmpdir/deno.zip"
+
+  if [[ -n "${DENO_VERSION:-}" ]]; then
+    url="https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-${triple}.zip"
+  else
+    url="https://github.com/denoland/deno/releases/latest/download/deno-${triple}.zip"
+  fi
+
+  log "Installing Deno CLI from ${url}..."
+
+  if ! curl -fsSL "$url" -o "$archive"; then
+    log "Failed to download Deno archive from ${url}; skipping automatic Deno installation."
+    rm -rf "$tmpdir"
+    return 0
+  fi
+
+  if ! command -v unzip >/dev/null 2>&1; then
+    if command -v apt-get >/dev/null 2>&1; then
+      log "unzip not found; installing via apt-get..."
+      apt-get update -y && apt-get install -y unzip || log "Failed to install unzip; Deno installation may fail."
+    else
+      log "unzip not found and apt-get unavailable; cannot extract Deno archive."
+      rm -rf "$tmpdir"
+      return 0
+    fi
+  fi
+
+  if ! unzip -oq "$archive" -d "$tmpdir"; then
+    log "Failed to extract Deno archive; skipping installation."
+    rm -rf "$tmpdir"
+    return 0
+  fi
+
+  binary_path="$tmpdir/deno"
+  if [[ ! -f "$binary_path" ]]; then
+    log "Deno binary not found in archive; skipping installation."
+    rm -rf "$tmpdir"
+    return 0
+  fi
+
+  install -m 0755 "$binary_path" "$target_dir/deno"
+  rm -rf "$tmpdir"
+
+  ensure_in_path "$target_dir"
+  ensure_profile_path_snippet
+  log "Deno CLI installed to $target_dir/deno."
+}
+
+install_deno
 
 # -----------------------------
 # Clone additional repos declared in devcontainer.json.
