@@ -62,6 +62,8 @@ supabase_env_run_command() {
   tmp_env="$(mktemp)"
   tmp_err="$(mktemp)"
 
+  local rc=1
+
   if (cd "$SUPABASE_PROJECT_DIR" && supabase "$command" -o env >"$tmp_env" 2>"$tmp_err"); then
     if [[ -s "$tmp_env" ]]; then
       mv "$tmp_env" "$destination"
@@ -69,9 +71,8 @@ supabase_env_run_command() {
       chmod 600 "$destination" 2>/dev/null || true
       return 0
     fi
+    rc=0
   fi
-
-  local rc=$?
 
   if [[ -s "$tmp_env" ]]; then
     SUPABASE_ENV_LAST_STDOUT="$(<"$tmp_env")"
@@ -79,6 +80,8 @@ supabase_env_run_command() {
 
   if [[ -s "$tmp_err" ]]; then
     SUPABASE_ENV_LAST_STDERR="$(<"$tmp_err")"
+  elif [[ "$rc" -eq 0 ]]; then
+    SUPABASE_ENV_LAST_STDERR="supabase $command -o env did not produce any output."
   fi
 
   rm -f "$tmp_env" "$tmp_err"
