@@ -19,19 +19,37 @@ DEVCONTAINER_FILE="${DEVCONTAINER_FILE:-$ROOT_DIR/.devcontainer/devcontainer.jso
 ALLOW_WILDCARD="${ALLOW_WILDCARD:-0}"
 FILTER_BY_WORKSPACE="${FILTER_BY_WORKSPACE:-1}"
 
+PYTHON_JSON_AVAILABLE=0
+if command -v python3 >/dev/null 2>&1; then
+  if python3 -c 'import json' >/dev/null 2>&1; then
+    PYTHON_JSON_AVAILABLE=1
+  fi
+fi
+
+jq_repo_keys() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  jq -r '(.customizations.codespaces.repositories // {}) | keys[]?' "$file" 2>/dev/null || true
+}
+
 path_within() {
-  python3 - "$1" "$2" <<'PY'
-import os, sys
-child = os.path.realpath(os.path.abspath(sys.argv[1]))
-parent = os.path.realpath(os.path.abspath(sys.argv[2]))
-if child == parent:
-    sys.exit(0)
-if parent == os.sep:
-    sys.exit(1)
-if child.startswith(parent.rstrip(os.sep) + os.sep):
-    sys.exit(0)
-sys.exit(1)
-PY
+  local child parent
+  if ! command -v realpath >/dev/null 2>&1; then
+    return 1
+  fi
+
+  child="$(realpath -m "$1" 2>/dev/null)" || return 1
+  parent="$(realpath -m "$2" 2>/dev/null)" || return 1
+
+  if [[ "$child" == "$parent" ]]; then
+    return 0
+  fi
+
+  case "$child" in
+    "$parent"/*) return 0 ;;
+  esac
+
+  return 1
 }
 
 if path_within "$WORKSPACE_ROOT" "$ROOT_DIR"; then
@@ -72,14 +90,15 @@ pick_mode() {
 }
 
 collect_repo_specs() {
-  python3 - "$DEVCONTAINER_FILE" <<'PY'
+  if (( PYTHON_JSON_AVAILABLE )); then
+    python3 - "$DEVCONTAINER_FILE" <<'PY'
 import json, sys
 path = sys.argv[1]
 try:
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
 except FileNotFoundError:
-    sys.exit(1)
+    sys.exit(0)
 repos = (
     data.get("customizations", {})
         .get("codespaces", {})
@@ -88,6 +107,15 @@ repos = (
 for key in repos.keys():
     print(key)
 PY
+    return 0
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    jq_repo_keys "$DEVCONTAINER_FILE"
+    return 0
+  fi
+
+  warn "Unable to read repository declarations; install python3 with the json module or jq."
 }
 
 expand_wildcard() {
@@ -113,7 +141,8 @@ filter_specs_by_workspace() {
   local specs_json
   specs_json="$1"
   shift
-  python3 - "$WORKSPACE_FILE" "$specs_json" <<'PY'
+  if (( PYTHON_JSON_AVAILABLE )); then
+    python3 - "$WORKSPACE_FILE" "$specs_json" <<'PY'
 import json, os, sys
 ws_path, specs_blob = sys.argv[1], sys.argv[2]
 try:
@@ -139,6 +168,39 @@ for spec in specs:
     if repo_name in names:
         print(spec)
 PY
+    return 0
+  fi
+
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "Cannot filter repositories by workspace; jq is unavailable and python3 lacks the json module."
+    return 0
+  fi
+
+  declare -A __workspace_names=()
+  while IFS= read -r __folder_path; do
+    [[ -z "$__folder_path" ]] && continue
+    local __leaf
+    if command -v realpath >/dev/null 2>&1; then
+      local __norm
+      __norm="$(realpath -m "$ROOT_DIR/$__folder_path" 2>/dev/null)" || continue
+      __leaf="$(basename "$__norm")"
+    else
+      __leaf="$(basename "$__folder_path")"
+    fi
+    [[ "$__leaf" == "." || "$__leaf" == ".." || "$__leaf" == ".devcontainer" ]] && continue
+    __workspace_names["$__leaf"]=1
+  done < <(jq -r '(.folders // [])[] | (.path? // empty)' "$WORKSPACE_FILE" 2>/dev/null || true)
+
+  [[ ${#__workspace_names[@]} -eq 0 ]] && return 0
+
+  mapfile -t __spec_list < <(jq -r '.[]?' <<<"$specs_json" 2>/dev/null || true)
+  for __spec in "${__spec_list[@]}"; do
+    [[ -z "$__spec" ]] && continue
+    local __repo_name="${__spec#*/}"
+    if [[ -n "${__workspace_names[$__repo_name]:-}" ]]; then
+      printf '%s\n' "$__spec"
+    fi
+  done
 }
 
 clone_or_update() {
@@ -240,8 +302,19 @@ main() {
 
   if [[ "$FILTER_BY_WORKSPACE" == "1" && -n "${WORKSPACE_FILE:-}" && -f "$WORKSPACE_FILE" ]]; then
     local json_blob
-    json_blob="$(printf '%s\n' "${deduped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
-    mapfile -t filtered < <(filter_specs_by_workspace "$json_blob")
+    if (( PYTHON_JSON_AVAILABLE )); then
+      json_blob="$(printf '%s\n' "${deduped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    elif command -v jq >/dev/null 2>&1; then
+      json_blob="$(printf '%s\n' "${deduped[@]}" | jq -R -s 'split("\n") | map(select(length > 0))')"
+    else
+      warn "Skipping workspace filtering; neither python3 with json nor jq is available."
+      mapfile -t filtered < <(printf '%s\n' "${deduped[@]}")
+      json_blob=""
+    fi
+
+    if [[ -n "$json_blob" ]]; then
+      mapfile -t filtered < <(filter_specs_by_workspace "$json_blob")
+    fi
   else
     mapfile -t filtered < <(printf '%s\n' "${deduped[@]}")
   fi
