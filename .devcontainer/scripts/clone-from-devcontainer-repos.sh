@@ -167,6 +167,10 @@ for folder in ws.get("folders", []):
         continue
     names.add(leaf)
 specs = json.loads(specs_blob)
+if not names:
+    for spec in specs:
+        print(spec)
+    sys.exit(0)
 for spec in specs:
     repo_name = spec.split("/", 1)[-1]
     if repo_name in names:
@@ -179,6 +183,8 @@ PY
     warn "Cannot filter repositories by workspace; jq is unavailable and python3 lacks the json module."
     return 0
   fi
+
+  mapfile -t __spec_list < <(jq -r '.[]?' <<<"$specs_json" 2>/dev/null || true)
 
   declare -A __workspace_names=()
   while IFS= read -r __folder_path; do
@@ -195,9 +201,10 @@ PY
     __workspace_names["$__leaf"]=1
   done < <(jq -r '(.folders // [])[] | (.path? // empty)' "$WORKSPACE_FILE" 2>/dev/null || true)
 
-  [[ ${#__workspace_names[@]} -eq 0 ]] && return 0
-
-  mapfile -t __spec_list < <(jq -r '.[]?' <<<"$specs_json" 2>/dev/null || true)
+  if [[ ${#__workspace_names[@]} -eq 0 ]]; then
+    printf '%s\n' "${__spec_list[@]}"
+    return 0
+  fi
   for __spec in "${__spec_list[@]}"; do
     [[ -z "$__spec" ]] && continue
     local __repo_name="${__spec#*/}"
