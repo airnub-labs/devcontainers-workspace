@@ -17,7 +17,6 @@ fi
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$DEFAULT_WORKSPACE_ROOT}"
 DEVCONTAINER_FILE="${DEVCONTAINER_FILE:-$ROOT_DIR/.devcontainer/devcontainer.json}"
 ALLOW_WILDCARD="${ALLOW_WILDCARD:-0}"
-FILTER_BY_WORKSPACE="${FILTER_BY_WORKSPACE:-1}"
 
 PYTHON_JSON_AVAILABLE=0
 if command -v python3 >/dev/null 2>&1; then
@@ -59,14 +58,6 @@ if path_within "$WORKSPACE_ROOT" "$ROOT_DIR"; then
   else
     log "WORKSPACE_ROOT points at the meta workspace root; assuming Git ignore rules will keep nested clones untracked."
   fi
-fi
-
-if [[ -z "${WORKSPACE_FILE:-}" ]]; then
-  mapfile -t __ws_candidates < <(find "$ROOT_DIR" -maxdepth 1 -name "*.code-workspace" -print 2>/dev/null)
-  if (( ${#__ws_candidates[@]} > 0 )); then
-    WORKSPACE_FILE="${__ws_candidates[0]}"
-  fi
-  unset __ws_candidates
 fi
 
 pick_mode() {
@@ -139,79 +130,6 @@ expand_wildcard() {
 
   log "Expanding wildcard '$pattern' via gh repo list"
   gh repo list "$owner" --limit 200 --json nameWithOwner --jq '.[].nameWithOwner' 2>/dev/null || true
-}
-
-filter_specs_by_workspace() {
-  local specs_json
-  specs_json="$1"
-  shift
-  if (( PYTHON_JSON_AVAILABLE )); then
-    python3 - "$WORKSPACE_FILE" "$specs_json" <<'PY'
-import json, os, sys
-ws_path, specs_blob = sys.argv[1], sys.argv[2]
-try:
-    with open(ws_path, encoding="utf-8") as fh:
-        ws = json.load(fh)
-except FileNotFoundError:
-    sys.exit(0)
-names = set()
-for folder in ws.get("folders", []):
-    path = folder.get("path")
-    if not path:
-        continue
-    norm = os.path.normpath(path)
-    if norm in (".", "./", "../"):
-        continue
-    leaf = os.path.basename(norm)
-    if leaf == ".devcontainer":
-        continue
-    names.add(leaf)
-specs = json.loads(specs_blob)
-if not names:
-    for spec in specs:
-        print(spec)
-    sys.exit(0)
-for spec in specs:
-    repo_name = spec.split("/", 1)[-1]
-    if repo_name in names:
-        print(spec)
-PY
-    return 0
-  fi
-
-  if ! command -v jq >/dev/null 2>&1; then
-    warn "Cannot filter repositories by workspace; jq is unavailable and python3 lacks the json module."
-    return 0
-  fi
-
-  mapfile -t __spec_list < <(jq -r '.[]?' <<<"$specs_json" 2>/dev/null || true)
-
-  declare -A __workspace_names=()
-  while IFS= read -r __folder_path; do
-    [[ -z "$__folder_path" ]] && continue
-    local __leaf
-    if command -v realpath >/dev/null 2>&1; then
-      local __norm
-      __norm="$(realpath -m "$ROOT_DIR/$__folder_path" 2>/dev/null)" || continue
-      __leaf="$(basename "$__norm")"
-    else
-      __leaf="$(basename "$__folder_path")"
-    fi
-    [[ "$__leaf" == "." || "$__leaf" == ".." || "$__leaf" == ".devcontainer" ]] && continue
-    __workspace_names["$__leaf"]=1
-  done < <(jq -r '(.folders // [])[] | (.path? // empty)' "$WORKSPACE_FILE" 2>/dev/null || true)
-
-  if [[ ${#__workspace_names[@]} -eq 0 ]]; then
-    printf '%s\n' "${__spec_list[@]}"
-    return 0
-  fi
-  for __spec in "${__spec_list[@]}"; do
-    [[ -z "$__spec" ]] && continue
-    local __repo_name="${__spec#*/}"
-    if [[ -n "${__workspace_names[$__repo_name]:-}" ]]; then
-      printf '%s\n' "$__spec"
-    fi
-  done
 }
 
 clone_or_update() {
@@ -315,27 +233,10 @@ main() {
     fi
   done
 
-  if [[ "$FILTER_BY_WORKSPACE" == "1" && -n "${WORKSPACE_FILE:-}" && -f "$WORKSPACE_FILE" ]]; then
-    local json_blob
-    if (( PYTHON_JSON_AVAILABLE )); then
-      json_blob="$(printf '%s\n' "${deduped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
-    elif command -v jq >/dev/null 2>&1; then
-      json_blob="$(printf '%s\n' "${deduped[@]}" | jq -R -s 'split("\n") | map(select(length > 0))')"
-    else
-      warn "Skipping workspace filtering; neither python3 with json nor jq is available."
-      mapfile -t filtered < <(printf '%s\n' "${deduped[@]}")
-      json_blob=""
-    fi
-
-    if [[ -n "$json_blob" ]]; then
-      mapfile -t filtered < <(filter_specs_by_workspace "$json_blob")
-    fi
-  else
-    mapfile -t filtered < <(printf '%s\n' "${deduped[@]}")
-  fi
+  mapfile -t filtered < <(printf '%s\n' "${deduped[@]}")
 
   if (( ${#filtered[@]} == 0 )); then
-    warn "Nothing to clone after applying workspace filters"
+    warn "Nothing to clone after processing repository declarations"
     exit 0
   fi
 

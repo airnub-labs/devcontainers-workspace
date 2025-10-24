@@ -52,10 +52,9 @@ This document explains **how the meta workspace clones project repos** in a sing
 1. **Post-create runs** inside the container and calls `scripts/clone-from-devcontainer-repos.sh`.
 2. The script reads **`devcontainer.json → customizations.codespaces.repositories`** and collects keys:
 
-   * Concrete entries `owner/repo` → always candidates.
+   * Concrete entries `owner/repo` → always cloned.
    * Wildcards `owner/*` → *ignored by default* (you can enable expansion; see below).
-3. If **`FILTER_BY_WORKSPACE=1`** (default in our wiring), the script reads the `*.code-workspace` file and keeps only repos whose **repo name** appears as a folder path in the workspace file.
-4. For each repo to clone (using `$WORKSPACE_ROOT`, which defaults to `/workspaces` but is set to `/Project-Airnub-Labs` in this meta workspace):
+3. For each repo to clone (using `$WORKSPACE_ROOT`, which defaults to `/workspaces` but is set to `/Project-Airnub-Labs` in this meta workspace):
 
    * If `$WORKSPACE_ROOT/<repo_name>/.git` already exists → **fetch/prune** (no merge) and continue.
    * Else clone to `$WORKSPACE_ROOT/<repo_name>` using the best available auth mode (see next section).
@@ -87,11 +86,10 @@ You can force a mode via `CLONE_WITH=gh|ssh|https|https-pat`.
 | --------------------- | --------------------------------- | ------------------------------------------------------- |
 | `WORKSPACE_ROOT`      | `/workspaces` *(overridden to `/Project-Airnub-Labs` in this workspace)* | Target directory for all clones                         |
 | `DEVCONTAINER_FILE`   | `.devcontainer/devcontainer.json` | Where we read the permissions block                     |
-| `WORKSPACE_FILE`      | *(auto‑discover)*                 | Path to `*.code-workspace` for folder intersection      |
+| `WORKSPACE_FILE`      | *(auto‑discover)*                 | Path to `*.code-workspace` (used for hints only)        |
 | `CLONE_WITH`          | `auto`                            | `gh`, `ssh`, `https`, or `https-pat`                    |
 | `GH_MULTI_REPO_PAT`   | *(unset)*                         | Token for `https-pat` mode                              |
 | `ALLOW_WILDCARD`      | `0`                               | If `1`, expand `owner/*` with `gh repo list`            |
-| `FILTER_BY_WORKSPACE` | `1` (our wiring)                  | If `1`, intersect candidates with workspace folders     |
 | `CLONE_ON_START`      | `false`                           | If `true`, `post-start.sh` will re-run the clone helper |
 
 ---
@@ -128,7 +126,7 @@ Add or edit this block in `.devcontainer/devcontainer.json` of the **meta worksp
 
 ## Using the workspace file as a human‑readable list
 
-Your `*.code-workspace` defines what folders you want to see in VS Code. When `FILTER_BY_WORKSPACE=1`, it also acts as a **second filter** for cloning:
+Your `*.code-workspace` defines what folders you want to see in VS Code. It no longer filters clones, but we still reference it for developer hints:
 
 ```json
 {
@@ -154,8 +152,8 @@ We call the clone helper **from `post-create.sh`** so your existing workflow sta
 ```bash
 # In .devcontainer/scripts/post-create.sh
 if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
-  FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 \
-  WORKSPACE_FILE="$ROOT/airnub-labs.code-workspace" \
+  ALLOW_WILDCARD=0 \
+  WORKSPACE_ROOT="$ROOT" \
   bash "$HERE/clone-from-devcontainer-repos.sh" || log "Clone step skipped or failed (non-fatal)"
 fi
 ```
@@ -189,8 +187,7 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 * **Add a new repo to auto‑clone:**
 
   1. Add it explicitly under `customizations.codespaces.repositories` (permissions).
-  2. Add its folder name to the `*.code-workspace` file (if using intersection mode).
-  3. Recreate the Codespace (for new permissions) or re-run the clone helper.
+  2. Recreate the Codespace (for new permissions) or re-run the clone helper.
 
 * **Use wildcards for convenience, not for cloning.** Keep `owner/*` as a permission superset; leave `ALLOW_WILDCARD=0` unless you intentionally want to clone the entire org.
 
@@ -205,9 +202,8 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 ## Manual commands (handy)
 
 ```bash
-# Re-run clone step (intersection with workspace)
-FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 \
-WORKSPACE_FILE="/Project-Airnub-Labs/airnub-labs.code-workspace" \
+# Re-run clone step (explicit list)
+ALLOW_WILDCARD=0 \
 bash .devcontainer/scripts/clone-from-devcontainer-repos.sh
 
 # Force a specific auth mode
