@@ -8,6 +8,8 @@ cd "${REPO_ROOT}"
 
 SUPABASE_PROJECT_DIR="${SUPABASE_PROJECT_DIR:-$REPO_ROOT/supabase}"
 SUPABASE_CONFIG_PATH="${SUPABASE_CONFIG_PATH:-$SUPABASE_PROJECT_DIR/config.toml}"
+DEVCONTAINER_COMPOSE_FILE="${DEVCONTAINER_COMPOSE_FILE:-$REPO_ROOT/.devcontainer/docker-compose.yml}"
+DEVCONTAINER_PROJECT_NAME="${DEVCONTAINER_PROJECT_NAME:-airnub-labs}"
 
 log() { echo "[post-start] $*"; }
 
@@ -34,11 +36,17 @@ docker_cli_present=false
 docker_ready=false
 supabase_cli_present=false
 supabase_project_available=false
+docker_compose_available=false
 
 if command -v docker >/dev/null 2>&1; then
   docker_cli_present=true
   if wait_for_docker_daemon 40 2; then
     docker_ready=true
+    if docker compose version >/dev/null 2>&1; then
+      docker_compose_available=true
+    else
+      log "Docker Compose plugin not available; Redis startup will be skipped."
+    fi
   else
     log "Docker daemon did not become ready; Docker-dependent services will be skipped."
   fi
@@ -122,6 +130,7 @@ start_supabase_services() {
 }
 
 supabase_stack_ready=false
+redis_service_ready=false
 
 if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   log "Checking Supabase local stack status..."
@@ -149,10 +158,49 @@ elif [[ "$docker_ready" != "true" ]]; then
   log "Skipping Supabase startup because Docker is unavailable."
 fi
 
-if [[ "$docker_ready" == "true" ]]; then
-  log "Redis sidecar is managed by the devcontainer Docker Compose configuration."
-else
-  log "Docker unavailable; unable to verify Redis sidecar status."
+ensure_redis_service() {
+  if [[ "$docker_compose_available" != "true" ]]; then
+    return 1
+  fi
+
+  if [[ ! -f "$DEVCONTAINER_COMPOSE_FILE" ]]; then
+    log "Devcontainer Docker Compose file not found at $DEVCONTAINER_COMPOSE_FILE; skipping Redis startup."
+    return 1
+  fi
+
+  local compose_cmd
+  compose_cmd=(docker compose --project-name "$DEVCONTAINER_PROJECT_NAME" -f "$DEVCONTAINER_COMPOSE_FILE")
+
+  local running_services
+  if running_services="$(${compose_cmd[@]} ps --services --filter status=running 2>/dev/null)"; then
+    if grep -qx 'redis' <<<"$running_services"; then
+      log "Redis service already running under project '$DEVCONTAINER_PROJECT_NAME'."
+      return 0
+    fi
+  fi
+
+  log "Starting Redis service under project '$DEVCONTAINER_PROJECT_NAME' via Docker Compose..."
+  if ${compose_cmd[@]} up -d redis; then
+    log "Redis service started."
+    return 0
+  fi
+
+  log "Failed to start Redis service via Docker Compose."
+  return 1
+}
+
+if [[ "$docker_ready" == "true" && "$docker_compose_available" == "true" ]]; then
+  if ensure_redis_service; then
+    redis_service_ready=true
+  fi
+elif [[ "$docker_ready" != "true" ]]; then
+  log "Docker unavailable; unable to manage Redis service."
+fi
+
+if [[ "$redis_service_ready" != "true" ]]; then
+  if [[ "$docker_ready" == "true" && "$docker_compose_available" != "true" ]]; then
+    log "Redis service was not started because the Docker Compose plugin is unavailable."
+  fi
 fi
 
 if [[ "$supabase_stack_ready" != "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
