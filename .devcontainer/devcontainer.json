@@ -108,7 +108,8 @@
         "openai.chatgpt",
         "Supabase.vscode-supabase-extension",
         "github.vscode-github-actions",
-        "GitHub.vscode-pull-request-github"
+        "GitHub.vscode-pull-request-github",
+        "GitHub.copilot-chat"
       ]
     }
   }
