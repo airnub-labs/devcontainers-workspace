@@ -102,7 +102,16 @@ log "Installing Supabase CLI..."
 # -----------------------------
 if ! command -v deno >/dev/null 2>&1; then
   log "Installing Deno CLI..."
-  curl -fsSL https://deno.land/install.sh | sh
+  deno_installer="$(mktemp)"
+  if curl -fsSL https://deno.land/install.sh -o "$deno_installer"; then
+    chmod +x "$deno_installer" || true
+    if ! (printf 'y\n' | sh "$deno_installer"); then
+      log "Deno install script failed; continuing without ensuring Deno is available."
+    fi
+  else
+    log "Failed to download Deno install script; skipping automatic Deno installation."
+  fi
+  rm -f "$deno_installer"
 else
   log "Deno CLI already installed; skipping."
 fi
