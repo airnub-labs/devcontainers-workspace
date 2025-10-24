@@ -6,7 +6,7 @@
 # Allow-list just these:
 !.gitignore
 !.gitattributes
-!airnub-labs.code-workspace
+!*.code-workspace
 
 # Allow the shared devcontainer config (and everything in it)
 !.devcontainer/
@@ -18,8 +18,5 @@
 !.github/**
 !scripts/
 !scripts/**
-
-# Ignore pnpm store
-.pnpm-store/
 
 *.DS_Store
