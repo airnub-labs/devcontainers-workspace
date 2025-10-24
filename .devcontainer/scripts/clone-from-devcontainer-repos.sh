@@ -52,7 +52,7 @@ pick_mode() {
 }
 
 collect_repo_specs() {
-  python3 <<'PY' "$DEVCONTAINER_FILE"
+  python3 - "$DEVCONTAINER_FILE" <<'PY'
 import json, sys
 path = sys.argv[1]
 try:
@@ -93,7 +93,7 @@ filter_specs_by_workspace() {
   local specs_json
   specs_json="$1"
   shift
-  python3 <<'PY' "$WORKSPACE_FILE" "$specs_json"
+  python3 - "$WORKSPACE_FILE" "$specs_json" <<'PY'
 import json, os, sys
 ws_path, specs_blob = sys.argv[1], sys.argv[2]
 try:
