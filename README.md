@@ -28,7 +28,7 @@ That doc explains how repository permissions are declared, how the clone helper 
 
 Running a full Supabase stack per project (each with different ports) was cumbersome. This workspace provides:
 
-* **One** Dev Container with Node, pnpm, Docker‑in‑Docker, etc., plus a Redis sidecar.
+* **One** Dev Container with Docker‑in‑Docker, Node (with pnpm), and Python tooling, plus a Redis sidecar.
 * **One** local Supabase stack (via the Supabase CLI) used by whichever project you’re actively developing; you simply run that project’s migrations (and only that project’s) when switching.
 
 > Supabase’s local stack includes Postgres, Auth, Storage, and Studio. Common local defaults: **API 54321**, **DB 54322**, **Studio 54323**, **Inbucket 54324**, **Storage 54326** (configurable in `supabase/config.toml`).
@@ -61,7 +61,7 @@ Running a full Supabase stack per project (each with different ports) was cumber
 
 * **`.devcontainer/`**
 
-  * `devcontainer.json` uses Dev Container **Features** (Node, pnpm, Docker‑in‑Docker) to standardize tooling.
+  * `devcontainer.json` uses Dev Container **Features** (Docker‑in‑Docker, Node, pnpm, Python) to standardize tooling.
   * `docker-compose.yml` mounts the **parent** directory at `/workspaces` so all sibling repos appear inside the container.
   * `scripts/` includes post‑create/start hooks and the clone helper.
 * **`airnub-labs.code-workspace`**

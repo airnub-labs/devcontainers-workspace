@@ -74,27 +74,11 @@ if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supaba
   supabase_env_helper="$SUPABASE_PROJECT_DIR/scripts/db-env-local.sh"
   if [[ -x "$supabase_env_helper" ]]; then
     log "Ensuring Supabase stack is running and syncing env vars..."
-    if command -v pnpm >/dev/null 2>&1; then
-      if SUPABASE_ENV_LOG_PREFIX="[post-start]" pnpm db:env:local; then
-        supabase_stack_ready=true
-        supabase_env_synced=true
-      else
-        log "pnpm db:env:local failed; attempting direct invocation."
-        if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --ensure-start; then
-          supabase_stack_ready=true
-          supabase_env_synced=true
-        else
-          log "Direct Supabase env sync failed; Supabase env vars may be stale."
-        fi
-      fi
+    if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --ensure-start; then
+      supabase_stack_ready=true
+      supabase_env_synced=true
     else
-      log "pnpm not available; invoking $supabase_env_helper directly."
-      if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --ensure-start; then
-        supabase_stack_ready=true
-        supabase_env_synced=true
-      else
-        log "Supabase env helper failed; Supabase stack may not be ready."
-      fi
+      log "Supabase env helper failed; Supabase stack may not be ready."
     fi
   else
     log "Supabase env helper not found at $supabase_env_helper; skipping automatic env sync."
@@ -157,7 +141,7 @@ if [[ "$supabase_stack_ready" != "true" && "$supabase_cli_present" == "true" && 
 fi
 
 if [[ "$supabase_env_synced" != "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
-  log "Supabase environment variables were not synced automatically; run 'pnpm db:env:local' once the stack is ready."
+  log "Supabase environment variables were not synced automatically; run './supabase/scripts/db-env-local.sh --ensure-start' once the stack is ready."
 fi
 
 # ---------------------------------------------------------------------------
