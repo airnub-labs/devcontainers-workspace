@@ -102,15 +102,39 @@ log "Installing Supabase CLI..."
 # -----------------------------
 if ! command -v deno >/dev/null 2>&1; then
   log "Installing Deno CLI..."
+  deno_install_root="${DENO_INSTALL_ROOT:-$HOME/.deno}"
   deno_installer="$(mktemp)"
   if curl -fsSL https://deno.land/install.sh -o "$deno_installer"; then
     chmod +x "$deno_installer" || true
-    if ! (printf 'y\n' | sh "$deno_installer"); then
+    if ! (DENO_INSTALL="$deno_install_root" \
+          DENO_INSTALL_SKIP_PATH=1 \
+          sh "$deno_installer" >/tmp/deno-install.log 2>&1); then
       log "Deno install script failed; continuing without ensuring Deno is available."
+      log "Details: $(tail -n 20 /tmp/deno-install.log 2>/dev/null || echo 'see installer output')"
+    else
+      rm -f /tmp/deno-install.log
+      # Ensure the current environment can see the freshly installed binary.
+      case ":$PATH:" in
+        *":$deno_install_root/bin:"*) ;;
+        *) export PATH="$deno_install_root/bin:$PATH" ;;
+      esac
+      # Persist PATH updates for future shells when possible.
+      shell_profile="$HOME/.profile"
+      if [[ ! -e "$shell_profile" ]]; then
+        touch "$shell_profile" 2>/dev/null || true
+      fi
+      if [[ -w "$shell_profile" ]] && ! grep -Fq "$deno_install_root/bin" "$shell_profile" 2>/dev/null; then
+        {
+          echo ""
+          echo "# Added by devcontainer post-create to expose Deno"
+          echo "export PATH=\"$deno_install_root/bin:\$PATH\""
+        } >> "$shell_profile"
+      fi
     fi
   else
     log "Failed to download Deno install script; skipping automatic Deno installation."
   fi
+  rm -f /tmp/deno-install.log
   rm -f "$deno_installer"
 else
   log "Deno CLI already installed; skipping."
