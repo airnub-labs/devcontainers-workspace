@@ -98,6 +98,16 @@ log "Installing Supabase CLI..."
 "$HERE/install-supabase-cli.sh"
 
 # -----------------------------
+# Deno CLI install
+# -----------------------------
+if ! command -v deno >/dev/null 2>&1; then
+  log "Installing Deno CLI..."
+  curl -fsSL https://deno.land/install.sh | sh
+else
+  log "Deno CLI already installed; skipping."
+fi
+
+# -----------------------------
 # Clone additional repos declared in devcontainer.json.
 # Non-fatal if missing.
 # -----------------------------
