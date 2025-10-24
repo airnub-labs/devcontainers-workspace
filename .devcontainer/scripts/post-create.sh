@@ -98,8 +98,8 @@ log "Installing Supabase CLI..."
 "$HERE/install-supabase-cli.sh"
 
 # -----------------------------
-# Clone additional repos declared in devcontainer.json
-# (intersect with workspace folders). Non-fatal if missing.
+# Clone additional repos declared in devcontainer.json.
+# Non-fatal if missing.
 # -----------------------------
 if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
   # Ensure jq for JSON parsing if available via apt-get
@@ -112,16 +112,9 @@ if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
     fi
   fi
 
-  # Discover a .code-workspace file at repo root if not explicitly set
-  WS_FILE="$(find "$ROOT" -maxdepth 1 -name "*.code-workspace" | head -n 1 || true)"
-  if [[ -z "$WS_FILE" ]]; then
-    WS_FILE="$ROOT/airnub-labs.code-workspace"
-  fi
-
-  log "Cloning repositories declared in devcontainer.json (filtered by workspace folders)..."
-  FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 \
+  log "Cloning repositories declared in devcontainer.json..."
+  ALLOW_WILDCARD=0 \
   WORKSPACE_ROOT="$ROOT" \
-  WORKSPACE_FILE="$WS_FILE" \
   bash "$HERE/clone-from-devcontainer-repos.sh" || log "Clone step skipped or failed (non-fatal)"
 else
   log "clone-from-devcontainer-repos.sh not found; skipping clone step"
