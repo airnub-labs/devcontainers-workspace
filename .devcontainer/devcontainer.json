@@ -4,6 +4,7 @@
   //   "./docker-compose.yml"
   // ],
   // "service": "devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "workspaceMount": "source=${localWorkspaceFolder},target=/airnub-labs/vscode-meta-workspace-internal,type=bind",
   "workspaceFolder": "airnub-labs/vscode-meta-workspace-internal",
   "features": {
