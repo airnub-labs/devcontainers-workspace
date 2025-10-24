@@ -120,6 +120,7 @@ if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
 
   log "Cloning repositories declared in devcontainer.json (filtered by workspace folders)..."
   FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 \
+  WORKSPACE_ROOT="$ROOT" \
   WORKSPACE_FILE="$WS_FILE" \
   bash "$HERE/clone-from-devcontainer-repos.sh" || log "Clone step skipped or failed (non-fatal)"
 else

@@ -55,12 +55,14 @@ This document explains **how the meta workspace clones project repos** in a sing
    * Concrete entries `owner/repo` → always candidates.
    * Wildcards `owner/*` → *ignored by default* (you can enable expansion; see below).
 3. If **`FILTER_BY_WORKSPACE=1`** (default in our wiring), the script reads the `*.code-workspace` file and keeps only repos whose **repo name** appears as a folder path in the workspace file.
-4. For each repo to clone:
+4. For each repo to clone (using `$WORKSPACE_ROOT`, which defaults to `/workspaces` but is set to `/Project-Airnub-Labs` in this meta workspace):
 
-   * If `/workspaces/<repo_name>/.git` already exists → **fetch/prune** (no merge) and continue.
-   * Else clone to `/workspaces/<repo_name>` using the best available auth mode (see next section).
+   * If `$WORKSPACE_ROOT/<repo_name>/.git` already exists → **fetch/prune** (no merge) and continue.
+   * Else clone to `$WORKSPACE_ROOT/<repo_name>` using the best available auth mode (see next section).
 
-> **Recursion guard:** If `WORKSPACE_ROOT` resolves *inside* this meta workspace folder, the helper logs a warning and falls back to the parent directory so it doesn’t try to create paths like `Projects-Airnub-Labs/Projects-Airnub-Labs`. Likewise, any individual repo whose target would land inside the meta repo is skipped. Keep `WORKSPACE_ROOT` pointing to a parent directory (the default) so clones remain siblings of the workspace repo.
+> **Recursion guard:** If `WORKSPACE_ROOT` resolves *inside* this meta workspace folder, the helper logs a warning and falls back to the parent directory so it doesn’t try to create paths like `Project-Airnub-Labs/Project-Airnub-Labs`. Likewise, any individual repo whose target would land inside the meta repo is skipped.
+>
+> This workspace intentionally sets `WORKSPACE_ROOT` to the meta repo root so that cloned projects appear in the same folder tree as local development. The helper detects this exact match, logs an informational message, and relies on the repo’s top-level `.gitignore` (which ignores everything except the meta tooling) to keep the nested clones untracked.
 
 The clone step is **idempotent** and **non-destructive**.
 
@@ -83,7 +85,7 @@ You can force a mode via `CLONE_WITH=gh|ssh|https|https-pat`.
 
 | Variable              | Default                           | What it does                                            |
 | --------------------- | --------------------------------- | ------------------------------------------------------- |
-| `WORKSPACE_ROOT`      | `/workspaces`                     | Target directory for all clones                         |
+| `WORKSPACE_ROOT`      | `/workspaces` *(overridden to `/Project-Airnub-Labs` in this workspace)* | Target directory for all clones                         |
 | `DEVCONTAINER_FILE`   | `.devcontainer/devcontainer.json` | Where we read the permissions block                     |
 | `WORKSPACE_FILE`      | *(auto‑discover)*                 | Path to `*.code-workspace` for folder intersection      |
 | `CLONE_WITH`          | `auto`                            | `gh`, `ssh`, `https`, or `https-pat`                    |
@@ -167,14 +169,14 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 1. Open the workspace in the container; in a terminal run:
 
    ```bash
-   ls /workspaces
+   ls /Project-Airnub-Labs
    ```
 
    You should see the repos listed in your workspace (and/or explicit permissions) as directories.
 2. Inside one repo, confirm the remote:
 
    ```bash
-   cd /workspaces/million-dollar-maps
+   cd /Project-Airnub-Labs/million-dollar-maps
    git remote -v
    ```
 
@@ -205,7 +207,7 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 ```bash
 # Re-run clone step (intersection with workspace)
 FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 \
-WORKSPACE_FILE="/workspaces/<meta-repo>/airnub-labs.code-workspace" \
+WORKSPACE_FILE="/Project-Airnub-Labs/airnub-labs.code-workspace" \
 bash .devcontainer/scripts/clone-from-devcontainer-repos.sh
 
 # Force a specific auth mode

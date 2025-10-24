@@ -53,8 +53,12 @@ path_within() {
 }
 
 if path_within "$WORKSPACE_ROOT" "$ROOT_DIR"; then
-  warn "WORKSPACE_ROOT ($WORKSPACE_ROOT) lives inside the meta workspace ($ROOT_DIR); using the parent directory instead to avoid recursive clones."
-  WORKSPACE_ROOT="$(dirname "$ROOT_DIR")"
+  if [[ "$WORKSPACE_ROOT" != "$ROOT_DIR" ]]; then
+    warn "WORKSPACE_ROOT ($WORKSPACE_ROOT) lives inside the meta workspace ($ROOT_DIR); using the parent directory instead to avoid recursive clones."
+    WORKSPACE_ROOT="$(dirname "$ROOT_DIR")"
+  else
+    log "WORKSPACE_ROOT points at the meta workspace root; assuming Git ignore rules will keep nested clones untracked."
+  fi
 fi
 
 if [[ -z "${WORKSPACE_FILE:-}" ]]; then
@@ -209,8 +213,12 @@ clone_or_update() {
   local target="$WORKSPACE_ROOT/$dest_dir"
 
   if path_within "$target" "$ROOT_DIR"; then
-    warn "Skipping $owner_repo because target $target would reside inside the meta workspace directory ($ROOT_DIR). Adjust WORKSPACE_ROOT if this was intentional."
-    return 0
+    if [[ "$WORKSPACE_ROOT" == "$ROOT_DIR" ]]; then
+      log "Target $target is inside the meta workspace root; relying on .gitignore to keep it untracked."
+    else
+      warn "Skipping $owner_repo because target $target would reside inside the meta workspace directory ($ROOT_DIR). Adjust WORKSPACE_ROOT if this was intentional."
+      return 0
+    fi
   fi
 
   mkdir -p "$WORKSPACE_ROOT"
