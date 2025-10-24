@@ -1,12 +1,12 @@
 {
-  "name": "airnub-labs/vscode-meta-workspace-internal",
+  "name": "airnub-labs",
   // "dockerComposeFile": [
   //   "./docker-compose.yml"
   // ],
   // "service": "devcontainer",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/airnub-labs/vscode-meta-workspace-internal,type=bind",
-  "workspaceFolder": "/airnub-labs/vscode-meta-workspace-internal",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/airnub-labs,type=bind",
+  "workspaceFolder": "/airnub-labs",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/node:1": {
@@ -75,9 +75,32 @@
     "vscode": {
       "settings": {
         "typescript.tsdk": "node_modules/typescript/lib",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "deno.enablePaths": [
+          "supabase/functions"
+        ],
+        "deno.lint": true,
+        "deno.unstable": [
+          "bare-node-builtins",
+          "byonm",
+          "sloppy-imports",
+          "unsafe-proto",
+          "webgpu",
+          "broadcast-channel",
+          "worker-options",
+          "cron",
+          "kv",
+          "ffi",
+          "fs",
+          "http",
+          "net"
+        ],
+        "[typescript]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+        }
       },
       "extensions": [
+        "denoland.vscode-deno",
         "ms-azuretools.vscode-docker",
         "ms-playwright.playwright",
         "dbaeumer.vscode-eslint",
