@@ -111,7 +111,7 @@ You have two options:
 
 * Create a Codespace from this workspace repo.
 * (Optional) Configure `customizations.codespaces.repositories` in its `devcontainer.json` to grant the Codespace token **read/write** to other repos (so you can clone/push to them without extra auth). You’ll approve these scopes when the Codespace is created.
-* After boot, clone sibling repos into `/workspaces/<repo>` and proceed exactly like local.
+* After boot, any repos listed under `customizations.codespaces.repositories` are cloned into `/workspaces/<repo>` automatically—open whichever one you need and proceed exactly like local.
 
 > ⚠️ **Public template:** include commented examples in `devcontainer.json` for the `repositories` block so users can fill their own.
 
@@ -122,7 +122,7 @@ You have two options:
 **Add another project to the workspace**
 
 1. Add its folder path to `airnub-labs.code-workspace` → save.
-2. (If using the meta Codespace) clone it into `/workspaces/<new-repo>`.
+2. (If using the meta Codespace) add it under `customizations.codespaces.repositories` so the helper clones it automatically (or re-run the clone helper manually).
 
 **Switch active project**
 

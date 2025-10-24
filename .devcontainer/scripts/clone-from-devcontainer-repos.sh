@@ -17,7 +17,7 @@ fi
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$DEFAULT_WORKSPACE_ROOT}"
 DEVCONTAINER_FILE="${DEVCONTAINER_FILE:-$ROOT_DIR/.devcontainer/devcontainer.json}"
 ALLOW_WILDCARD="${ALLOW_WILDCARD:-0}"
-FILTER_BY_WORKSPACE="${FILTER_BY_WORKSPACE:-1}"
+FILTER_BY_WORKSPACE="${FILTER_BY_WORKSPACE:-0}"
 
 path_within() {
   python3 - "$1" "$2" <<'PY'
@@ -39,12 +39,14 @@ if path_within "$WORKSPACE_ROOT" "$ROOT_DIR"; then
   WORKSPACE_ROOT="$(dirname "$ROOT_DIR")"
 fi
 
-if [[ -z "${WORKSPACE_FILE:-}" ]]; then
-  mapfile -t __ws_candidates < <(find "$ROOT_DIR" -maxdepth 1 -name "*.code-workspace" -print 2>/dev/null)
-  if (( ${#__ws_candidates[@]} > 0 )); then
-    WORKSPACE_FILE="${__ws_candidates[0]}"
+if [[ "$FILTER_BY_WORKSPACE" == "1" ]]; then
+  if [[ -z "${WORKSPACE_FILE:-}" ]]; then
+    mapfile -t __ws_candidates < <(find "$ROOT_DIR" -maxdepth 1 -name "*.code-workspace" -print 2>/dev/null)
+    if (( ${#__ws_candidates[@]} > 0 )); then
+      WORKSPACE_FILE="${__ws_candidates[0]}"
+    fi
+    unset __ws_candidates
   fi
-  unset __ws_candidates
 fi
 
 pick_mode() {
@@ -189,6 +191,15 @@ main() {
   log "Clone mode: $MODE"
   log "Workspace root: $WORKSPACE_ROOT"
   log "Devcontainer manifest: $DEVCONTAINER_FILE"
+  if [[ "$FILTER_BY_WORKSPACE" == "1" ]]; then
+    if [[ -n "${WORKSPACE_FILE:-}" ]]; then
+      log "Filtering clone candidates by workspace file: $WORKSPACE_FILE"
+    else
+      log "Filtering by workspace requested but no workspace file discovered; cloning all candidates instead."
+    fi
+  else
+    log "Cloning all repositories declared under customizations.codespaces.repositories"
+  fi
 
   if [[ ! -f "$DEVCONTAINER_FILE" ]]; then
     err "devcontainer.json not found at $DEVCONTAINER_FILE"

@@ -190,64 +190,57 @@ fi
 WORKSPACE_ROOT_DEFAULT="$(dirname "$REPO_ROOT")"
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$WORKSPACE_ROOT_DEFAULT}"
 
-# Try to locate a .code-workspace file next to this meta repo
-WS_FILE="$(find "$REPO_ROOT" -maxdepth 1 -name "*.code-workspace" | head -n 1 || true)"
-[[ -n "$WS_FILE" ]] || WS_FILE="$REPO_ROOT/airnub-labs.code-workspace"
+# Read clone targets from devcontainer.json (customizations.codespaces.repositories)
+DEVCONTAINER_FILE="${DEVCONTAINER_FILE:-$REPO_ROOT/.devcontainer/devcontainer.json}"
 
-# Best-effort jq install if needed
-ensure_jq() {
-  if command -v jq >/dev/null 2>&1; then return 0; fi
-  if command -v apt-get >/dev/null 2>&1; then
-    log "jq not found; installing via apt-get..."
-    apt-get update -y && apt-get install -y jq || log "jq install failed; proceeding without it"
-  else
-    log "jq not available and apt-get missing; workspace checks limited"
+list_configured_repo_names() {
+  if [[ ! -f "$DEVCONTAINER_FILE" ]]; then
+    return 0
   fi
-}
 
-list_workspace_repo_names() {
-  if [[ ! -f "$WS_FILE" ]]; then return 0; fi
-  if command -v jq >/dev/null 2>&1; then
-    jq -r '.folders[].path' "$WS_FILE" 2>/dev/null | awk -F/ '{print $NF}' | sed '/^\.$/d'
-  else
-    # minimal python fallback
-    python3 - "$WS_FILE" <<'PY' || true
+  python3 - "$DEVCONTAINER_FILE" <<'PY' || true
 import json, sys
+path = sys.argv[1]
 try:
-  with open(sys.argv[1]) as f:
-    data=json.load(f)
-  for folder in data.get('folders', []):
-    p=folder.get('path')
-    if p and p not in ('.', '.devcontainer'):
-      print(p.split('/')[-1])
-except Exception:
-  pass
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+except FileNotFoundError:
+    sys.exit(0)
+
+repos = (
+    data.get("customizations", {})
+        .get("codespaces", {})
+        .get("repositories", {})
+)
+
+seen = set()
+for key in repos.keys():
+    repo = key.split("/", 1)[-1]
+    if repo in seen:
+        continue
+    seen.add(repo)
+    print(repo)
 PY
-  fi
 }
 
 # Optional re-clone on start (off by default)
 if [[ "${CLONE_ON_START:-false}" == "true" && -x "$SCRIPT_DIR/clone-from-devcontainer-repos.sh" ]]; then
-  ensure_jq
   log "CLONE_ON_START=true → invoking clone-from-devcontainer-repos.sh"
-  FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 \
-  WORKSPACE_FILE="$WS_FILE" \
+  ALLOW_WILDCARD=0 \
   bash "$SCRIPT_DIR/clone-from-devcontainer-repos.sh" || log "Clone-on-start failed (non-fatal)"
 else
-  # Emit a helpful hint if any workspace folder is missing as a git repo
-  ensure_jq
+  # Emit a helpful hint if any configured repo is missing as a git repo
   missing=()
   while IFS= read -r name; do
-    [[ -z "$name" || "$name" == ".devcontainer" ]] && continue
+    [[ -z "$name" ]] && continue
     if [[ ! -d "$WORKSPACE_ROOT/$name/.git" ]]; then
       missing+=("$name")
     fi
-  done < <(list_workspace_repo_names)
+  done < <(list_configured_repo_names)
 
   if (( ${#missing[@]} > 0 )); then
     log "Detected missing repo clones: ${missing[*]}"
     log "Hint: Run the clone helper manually:"
-    log "      FILTER_BY_WORKSPACE=1 ALLOW_WILDCARD=0 WORKSPACE_FILE=\"$WS_FILE\" \\
-           bash \"$SCRIPT_DIR/clone-from-devcontainer-repos.sh\""
+    log "      ALLOW_WILDCARD=0 bash \"$SCRIPT_DIR/clone-from-devcontainer-repos.sh\""
   fi
 fi
