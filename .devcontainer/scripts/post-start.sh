@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 
+SUPABASE_PROJECT_DIR="${SUPABASE_PROJECT_DIR:-$REPO_ROOT/supabase}"
+SUPABASE_CONFIG_PATH="${SUPABASE_CONFIG_PATH:-$SUPABASE_PROJECT_DIR/config.toml}"
+
 log() { echo "[post-start] $*"; }
 
 wait_for_docker_daemon() {
@@ -30,6 +33,7 @@ wait_for_docker_daemon() {
 docker_cli_present=false
 docker_ready=false
 supabase_cli_present=false
+supabase_project_available=false
 
 if command -v docker >/dev/null 2>&1; then
   docker_cli_present=true
@@ -48,11 +52,21 @@ else
   log "Supabase CLI not found on PATH; Supabase startup will be skipped."
 fi
 
+if [[ -d "$SUPABASE_PROJECT_DIR" && -f "$SUPABASE_CONFIG_PATH" ]]; then
+  supabase_project_available=true
+else
+  log "Supabase configuration not found (expected $SUPABASE_CONFIG_PATH); Supabase startup will be skipped."
+fi
+
 supabase_status_ready() {
+  if [[ "$supabase_project_available" != "true" ]]; then
+    return 1
+  fi
+
   local status_file
   status_file="$(mktemp)"
 
-  if supabase status >"$status_file" 2>&1; then
+  if (cd "$SUPABASE_PROJECT_DIR" && supabase status >"$status_file" 2>&1); then
     if grep -qi 'api url' "$status_file"; then
       rm -f "$status_file"
       return 0
@@ -83,10 +97,14 @@ wait_for_supabase_ready() {
 }
 
 start_supabase_services() {
+  if [[ "$supabase_project_available" != "true" ]]; then
+    return 1
+  fi
+
   local output
   local exit_code
 
-  if output="$(supabase start 2>&1)"; then
+  if output="$(cd "$SUPABASE_PROJECT_DIR" && supabase start 2>&1)"; then
     log "Supabase services started."
     return 0
   fi
@@ -105,7 +123,7 @@ start_supabase_services() {
 
 supabase_stack_ready=false
 
-if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" ]]; then
+if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   log "Checking Supabase local stack status..."
   if supabase_status_ready; then
     log "Supabase services already running."
@@ -125,6 +143,8 @@ if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" ]]; then
   fi
 elif [[ "$supabase_cli_present" != "true" ]]; then
   log "Skipping Supabase startup because the Supabase CLI is unavailable."
+elif [[ "$supabase_project_available" != "true" ]]; then
+  log "Skipping Supabase startup because supabase/config.toml is missing."
 elif [[ "$docker_ready" != "true" ]]; then
   log "Skipping Supabase startup because Docker is unavailable."
 fi
@@ -135,20 +155,26 @@ else
   log "Docker unavailable; unable to verify Redis sidecar status."
 fi
 
-if [[ "$supabase_stack_ready" != "true" && "$supabase_cli_present" == "true" ]]; then
+if [[ "$supabase_stack_ready" != "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   log "Supabase stack was not confirmed ready during post-start."
 fi
 
 supabase_ready="$supabase_stack_ready"
 
 if command -v pnpm >/dev/null 2>&1; then
-  if [[ "${supabase_ready}" == "true" ]]; then
-    echo "[post-start] Syncing local environment files from Supabase status..."
-    pnpm db:env:local
-  elif [[ "$supabase_cli_present" == "true" ]]; then
-    echo "[post-start] Skipping environment sync because Supabase services are not ready." >&2
+  if [[ -f "$REPO_ROOT/package.json" ]]; then
+    if [[ "${supabase_ready}" == "true" ]]; then
+      echo "[post-start] Syncing local environment files from Supabase status..."
+      pnpm db:env:local
+    elif [[ "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
+      echo "[post-start] Skipping environment sync because Supabase services are not ready." >&2
+    elif [[ "$supabase_cli_present" == "true" ]]; then
+      echo "[post-start] Skipping environment sync because Supabase configuration is unavailable." >&2
+    else
+      echo "[post-start] Skipping environment sync because Supabase CLI is unavailable." >&2
+    fi
   else
-    echo "[post-start] Skipping environment sync because Supabase CLI is unavailable." >&2
+    echo "[post-start] Skipping db:env:local because no package.json was found in $REPO_ROOT." >&2
   fi
 else
   echo "[post-start] pnpm not found; cannot run db:env:local." >&2

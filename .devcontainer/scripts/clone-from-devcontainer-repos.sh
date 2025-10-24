@@ -1,84 +1,238 @@
 #!/usr/bin/env bash
-return 0
+set -euo pipefail
+[[ "${DEBUG:-false}" == "true" ]] && set -x
+
+log() { echo "[clone] $*"; }
+warn() { echo "[clone][warn] $*" >&2; }
+err() { echo "[clone][error] $*" >&2; }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+DEFAULT_WORKSPACE_ROOT="/workspaces"
+if [[ ! -d "$DEFAULT_WORKSPACE_ROOT" ]]; then
+  DEFAULT_WORKSPACE_ROOT="$(dirname "$ROOT_DIR")"
 fi
-local names=()
-mapfile -t names < <(json_get_workspace_folders "$WORKSPACE_FILE")
-if [[ ${#names[@]} -eq 0 ]]; then
-printf '%s\n' "${repos[@]}"
-return 0
+
+WORKSPACE_ROOT="${WORKSPACE_ROOT:-$DEFAULT_WORKSPACE_ROOT}"
+DEVCONTAINER_FILE="${DEVCONTAINER_FILE:-$ROOT_DIR/.devcontainer/devcontainer.json}"
+ALLOW_WILDCARD="${ALLOW_WILDCARD:-0}"
+FILTER_BY_WORKSPACE="${FILTER_BY_WORKSPACE:-1}"
+
+if [[ -z "${WORKSPACE_FILE:-}" ]]; then
+  mapfile -t __ws_candidates < <(find "$ROOT_DIR" -maxdepth 1 -name "*.code-workspace" -print 2>/dev/null)
+  if (( ${#__ws_candidates[@]} > 0 )); then
+    WORKSPACE_FILE="${__ws_candidates[0]}"
+  fi
+  unset __ws_candidates
 fi
-local allow="|$(printf '%s|' "${names[@]}")"
-printf '%s\n' "${repos[@]}" | awk -F/ -v a="$allow" 'index(a, $2"|")>0'
+
+pick_mode() {
+  local requested="${CLONE_WITH:-auto}"
+  case "$requested" in
+    gh|ssh|https|https-pat) echo "$requested"; return 0 ;;
+    auto)
+      if command -v gh >/dev/null 2>&1 && gh auth status -h github.com >/dev/null 2>&1; then
+        echo "gh"; return 0
+      fi
+      if command -v ssh >/dev/null 2>&1 && [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+        echo "ssh"; return 0
+      fi
+      if [[ -n "${GH_MULTI_REPO_PAT:-}" ]]; then
+        echo "https-pat"; return 0
+      fi
+      echo "https"; return 0
+      ;;
+    *)
+      warn "Unknown CLONE_WITH value '$requested'; falling back to https"
+      echo "https"
+      return 0
+      ;;
+  esac
 }
 
+collect_repo_specs() {
+  python3 <<'PY' "$DEVCONTAINER_FILE"
+import json, sys
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+except FileNotFoundError:
+    sys.exit(1)
+repos = (
+    data.get("customizations", {})
+        .get("codespaces", {})
+        .get("repositories", {})
+)
+for key in repos.keys():
+    print(key)
+PY
+}
+
+expand_wildcard() {
+  local pattern="$1"
+  local owner="${pattern%%/*}"
+  local remainder="${pattern#*/}"
+
+  if [[ "$remainder" != "*" ]]; then
+    warn "Unsupported wildcard pattern '$pattern'; only owner/* is supported"
+    return 0
+  fi
+
+  if ! command -v gh >/dev/null 2>&1; then
+    warn "Cannot expand wildcard '$pattern' because GitHub CLI is unavailable"
+    return 0
+  fi
+
+  log "Expanding wildcard '$pattern' via gh repo list"
+  gh repo list "$owner" --limit 200 --json nameWithOwner --jq '.[].nameWithOwner' 2>/dev/null || true
+}
+
+filter_specs_by_workspace() {
+  local specs_json
+  specs_json="$1"
+  shift
+  python3 <<'PY' "$WORKSPACE_FILE" "$specs_json"
+import json, os, sys
+ws_path, specs_blob = sys.argv[1], sys.argv[2]
+try:
+    with open(ws_path, encoding="utf-8") as fh:
+        ws = json.load(fh)
+except FileNotFoundError:
+    sys.exit(0)
+names = set()
+for folder in ws.get("folders", []):
+    path = folder.get("path")
+    if not path:
+        continue
+    norm = os.path.normpath(path)
+    if norm in (".", "./", "../"):
+        continue
+    leaf = os.path.basename(norm)
+    if leaf == ".devcontainer":
+        continue
+    names.add(leaf)
+specs = json.loads(specs_blob)
+for spec in specs:
+    repo_name = spec.split("/", 1)[-1]
+    if repo_name in names:
+        print(spec)
+PY
+}
 
 clone_or_update() {
-local owner_repo="$1" dest_dir="$2"
-local target="$WORKSPACE_ROOT/$dest_dir"
+  local owner_repo="$1"
+  local dest_dir="$2"
+  local target="$WORKSPACE_ROOT/$dest_dir"
 
+  mkdir -p "$WORKSPACE_ROOT"
 
-if [[ -d "$target/.git" ]]; then
-log "Updating $owner_repo in $target"
-git -C "$target" fetch --all --prune || warn "fetch failed for $dest_dir"
-return 0
-fi
+  if [[ -d "$target/.git" ]]; then
+    log "Updating $owner_repo in $target"
+    git -C "$target" fetch --all --prune || warn "Fetch failed for $dest_dir"
+    return 0
+  fi
 
-
-log "Cloning $owner_repo → $target"
-mkdir -p "$WORKSPACE_ROOT"
-
-
-case "$MODE" in
-gh)
-gh repo clone "$owner_repo" "$target" -- --origin origin ;;
-ssh)
-git clone "git@github.com:${owner_repo}.git" "$target" ;;
-https-pat)
-[[ -n "${GH_MULTI_REPO_PAT:-}" ]] || { err "GH_MULTI_REPO_PAT not set"; exit 3; }
-git clone "https://${GH_MULTI_REPO_PAT}@github.com/${owner_repo}.git" "$target"
-git -C "$target" remote set-url origin "https://github.com/${owner_repo}.git" ;;
-https)
-git clone "https://github.com/${owner_repo}.git" "$target" || {
-err "HTTPS clone failed (private repo?). Authenticate or set permissions."; exit 4
-} ;;
-esac
+  log "Cloning $owner_repo → $target"
+  case "$MODE" in
+    gh)
+      gh repo clone "$owner_repo" "$target" -- --origin origin
+      ;;
+    ssh)
+      git clone "git@github.com:${owner_repo}.git" "$target"
+      ;;
+    https-pat)
+      if [[ -z "${GH_MULTI_REPO_PAT:-}" ]]; then
+        err "GH_MULTI_REPO_PAT must be set when using https-pat mode"
+        return 1
+      fi
+      git clone "https://${GH_MULTI_REPO_PAT}@github.com/${owner_repo}.git" "$target"
+      git -C "$target" remote set-url origin "https://github.com/${owner_repo}.git"
+      ;;
+    https)
+      git clone "https://github.com/${owner_repo}.git" "$target" || {
+        err "HTTPS clone failed for ${owner_repo}. Check permissions or authentication."
+        return 1
+      }
+      ;;
+  esac
 }
-
 
 main() {
-MODE=$(pick_mode)
-log "Clone mode: $MODE"
-log "Devcontainer: $DEVCONTAINER_FILE"
-[[ -f "$DEVCONTAINER_FILE" ]] || { err "devcontainer.json not found: $DEVCONTAINER_FILE"; exit 1; }
+  MODE="$(pick_mode)"
+  log "Clone mode: $MODE"
+  log "Workspace root: $WORKSPACE_ROOT"
+  log "Devcontainer manifest: $DEVCONTAINER_FILE"
 
+  if [[ ! -f "$DEVCONTAINER_FILE" ]]; then
+    err "devcontainer.json not found at $DEVCONTAINER_FILE"
+    exit 1
+  fi
 
-mapfile -t initial < <(collect_repo_specs)
-if [[ ${#initial[@]} -eq 0 ]]; then
-warn "No clone candidates collected from devcontainer.json"; exit 0
-fi
+  mapfile -t raw_specs < <(collect_repo_specs)
+  if (( ${#raw_specs[@]} == 0 )); then
+    warn "No repositories declared under customizations.codespaces.repositories"
+    exit 0
+  fi
 
+  declare -a candidates=()
+  declare -a deferred=()
 
-local to_clone
-if [[ "$FILTER_BY_WORKSPACE" == "1" && -n "$WORKSPACE_FILE" && -f "$WORKSPACE_FILE" ]]; then
-mapfile -t to_clone < <(printf '%s\n' "${initial[@]}" | filter_by_workspace)
-else
-mapfile -t to_clone < <(printf '%s\n' "${initial[@]}")
-fi
+  for spec in "${raw_specs[@]}"; do
+    if [[ "$spec" == *"*"* ]]; then
+      if [[ "$ALLOW_WILDCARD" == "1" ]]; then
+        deferred+=("$spec")
+      else
+        warn "Ignoring wildcard '$spec'; set ALLOW_WILDCARD=1 to enable expansion"
+      fi
+    else
+      candidates+=("$spec")
+    fi
+  done
 
+  for pattern in "${deferred[@]}"; do
+    while IFS= read -r expanded; do
+      [[ -z "$expanded" ]] && continue
+      candidates+=("$expanded")
+    done < <(expand_wildcard "$pattern")
+  done
 
-if [[ ${#to_clone[@]} -eq 0 ]]; then
-warn "Nothing to clone after filtering"; exit 0
-fi
+  if (( ${#candidates[@]} == 0 )); then
+    warn "No clone candidates remain after wildcard processing"
+    exit 0
+  fi
 
+  # Deduplicate
+  declare -A seen=()
+  declare -a deduped=()
+  for spec in "${candidates[@]}"; do
+    if [[ -z "${seen[$spec]:-}" ]]; then
+      deduped+=("$spec")
+      seen["$spec"]=1
+    fi
+  done
 
-for spec in "${to_clone[@]}"; do
-repo_name=${spec#*/}
-clone_or_update "$spec" "$repo_name"
-done
+  if [[ "$FILTER_BY_WORKSPACE" == "1" && -n "${WORKSPACE_FILE:-}" && -f "$WORKSPACE_FILE" ]]; then
+    local json_blob
+    json_blob="$(printf '%s\n' "${deduped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    mapfile -t filtered < <(filter_specs_by_workspace "$json_blob")
+  else
+    mapfile -t filtered < <(printf '%s\n' "${deduped[@]}")
+  fi
 
+  if (( ${#filtered[@]} == 0 )); then
+    warn "Nothing to clone after applying workspace filters"
+    exit 0
+  fi
 
-log "Done. Repos are under $WORKSPACE_ROOT."
+  for spec in "${filtered[@]}"; do
+    local repo_name
+    repo_name="${spec#*/}"
+    clone_or_update "$spec" "$repo_name"
+  done
+
+  log "Done. Repositories are available under $WORKSPACE_ROOT."
 }
-
 
 main "$@"
