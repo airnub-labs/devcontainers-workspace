@@ -19,6 +19,26 @@ DEVCONTAINER_FILE="${DEVCONTAINER_FILE:-$ROOT_DIR/.devcontainer/devcontainer.jso
 ALLOW_WILDCARD="${ALLOW_WILDCARD:-0}"
 FILTER_BY_WORKSPACE="${FILTER_BY_WORKSPACE:-1}"
 
+path_within() {
+  python3 - "$1" "$2" <<'PY'
+import os, sys
+child = os.path.realpath(os.path.abspath(sys.argv[1]))
+parent = os.path.realpath(os.path.abspath(sys.argv[2]))
+if child == parent:
+    sys.exit(0)
+if parent == os.sep:
+    sys.exit(1)
+if child.startswith(parent.rstrip(os.sep) + os.sep):
+    sys.exit(0)
+sys.exit(1)
+PY
+}
+
+if path_within "$WORKSPACE_ROOT" "$ROOT_DIR"; then
+  warn "WORKSPACE_ROOT ($WORKSPACE_ROOT) lives inside the meta workspace ($ROOT_DIR); using the parent directory instead to avoid recursive clones."
+  WORKSPACE_ROOT="$(dirname "$ROOT_DIR")"
+fi
+
 if [[ -z "${WORKSPACE_FILE:-}" ]]; then
   mapfile -t __ws_candidates < <(find "$ROOT_DIR" -maxdepth 1 -name "*.code-workspace" -print 2>/dev/null)
   if (( ${#__ws_candidates[@]} > 0 )); then
@@ -125,6 +145,11 @@ clone_or_update() {
   local owner_repo="$1"
   local dest_dir="$2"
   local target="$WORKSPACE_ROOT/$dest_dir"
+
+  if path_within "$target" "$ROOT_DIR"; then
+    warn "Skipping $owner_repo because target $target would reside inside the meta workspace directory ($ROOT_DIR). Adjust WORKSPACE_ROOT if this was intentional."
+    return 0
+  fi
 
   mkdir -p "$WORKSPACE_ROOT"
 

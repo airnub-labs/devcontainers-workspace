@@ -16,7 +16,7 @@ This repository is a **meta workspace** for developing multiple projects side‑
 
 New to this workspace? Read the detailed guide:
 
-* **[Workspace Clone Strategy — Implementation Guide](Workspace Clone Strategy — Implementation Guide)**
+* **[Workspace Clone Strategy — Implementation Guide](./docs/clone-strategy.md)**
 
 That doc explains how repository permissions are declared, how the clone helper works, and how it stays aligned with Codespaces. It also covers intersection with the multi‑root workspace file and optional wildcard behavior.
 
@@ -140,6 +140,7 @@ You have two options:
 * **One runtime at a time:** Don’t spin up multiple Supabase stacks on different ports; this workspace assumes one shared stack.
 * **Port expectations:** If you customize ports in `supabase/config.toml`, update any app env files accordingly.
 * **Rebuild vs recreate:** Changes to `devcontainer.json` usually require a **Rebuild**; some changes (like Codespaces repo permissions) only apply to **new** Codespaces after commit.
+* **Keep clones outside the meta repo folder:** The clone helper skips any target that would live inside this repo (to prevent recursive `Projects-Airnub-Labs/Projects-Airnub-Labs`-style paths). Let the helper place sibling repos next to the meta workspace folder or override `WORKSPACE_ROOT` with another parent directory.
 
 ---
 
