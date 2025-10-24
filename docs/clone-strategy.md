@@ -60,6 +60,8 @@ This document explains **how the meta workspace clones project repos** in a sing
    * If `/workspaces/<repo_name>/.git` already exists → **fetch/prune** (no merge) and continue.
    * Else clone to `/workspaces/<repo_name>` using the best available auth mode (see next section).
 
+> **Recursion guard:** If `WORKSPACE_ROOT` resolves *inside* this meta workspace folder, the helper logs a warning and falls back to the parent directory so it doesn’t try to create paths like `Projects-Airnub-Labs/Projects-Airnub-Labs`. Likewise, any individual repo whose target would land inside the meta repo is skipped. Keep `WORKSPACE_ROOT` pointing to a parent directory (the default) so clones remain siblings of the workspace repo.
+
 The clone step is **idempotent** and **non-destructive**.
 
 ---
