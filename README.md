@@ -133,6 +133,10 @@ You have two options:
 
 * Use `SUPABASE_URL=http://localhost:54321` and your local anon/service keys as per the CLI output/Studio.
 
+**Refresh Supabase env vars**
+
+* Run `./supabase/scripts/db-env-local.sh` to capture the latest keys into `supabase/.env.local` (the script starts the stack if needed).
+
 ---
 
 ## Gotchas
