@@ -5,9 +5,9 @@ services:
     image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
     command: sleep infinity
     init: true
-    # mount the WHOLE parent folder (the folder that contains ALL repos)
+    # bind mount the current workspace to match the devcontainer workspaceMount
     volumes:
-      - ..:/workspaces:cached     
+      - ${LOCAL_WORKSPACE_FOLDER}:/airnub-labs:cached
     depends_on:
       redis:
         condition: service_healthy
