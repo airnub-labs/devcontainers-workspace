@@ -2,18 +2,6 @@
   "folders": [
     {
       "path": "."
-    },
-    {
-      "path": ".devcontainer"
-    },
-    {
-      "path": "docs"
-    },
-    {
-      "path": "supabase"
-    },
-    {
-      "path": "million-dollar-maps"
     }
   ],
   "settings": {}
