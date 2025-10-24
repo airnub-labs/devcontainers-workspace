@@ -1,7 +1,0 @@
-{
-  "name": "vscode-meta-workspace-internal",
-  "private": true,
-  "scripts": {
-    "db:env:local": "bash ./supabase/scripts/db-env-local.sh"
-  }
-}
