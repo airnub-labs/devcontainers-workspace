@@ -1,6 +1,8 @@
 {
   "name": "Airnub Labs",
-  "dockerComposeFile": ["./docker-compose.yml"],
+  "dockerComposeFile": [
+    "./docker-compose.yml"
+  ],
   "service": "devcontainer",
   "workspaceFolder": "/workspaces",
   "features": {
@@ -21,27 +23,46 @@
   "updateContentCommand": "bash -lc 'set -e; for dir in */.devcontainer; do if [ -x \"$dir/scripts/update-content.sh\" ]; then \"$dir/scripts/update-content.sh\"; exit $?; fi; done; echo \"[update-content][warn] No update-content script found; skipping.\"'",
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
-  "forwardPorts": [3000, 3100, 54321, 54322, 54323, 54324, 54326, 6379],
+  "forwardPorts": [
+    3000,
+    3100,
+    54321,
+    54322,
+    54323,
+    54324,
+    54326,
+    6379
+  ],
   "portsAttributes": {
-    "3000": { "label": "Web app" },
-    "3100": { "label": "Admin app" },
-    "54321": { "label": "Supabase API" },
-    "54322": { "label": "Supabase Postgres" },
-    "54323": { "label": "Supabase Studio" },
-    "54324": { "label": "Supabase Inbucket" },
-    "54326": { "label": "Supabase Storage" },
-    "6379": { "label": "Redis" }
+    "3000": {
+      "label": "Web app"
+    },
+    "3100": {
+      "label": "Admin app"
+    },
+    "54321": {
+      "label": "Supabase API"
+    },
+    "54322": {
+      "label": "Supabase Postgres"
+    },
+    "54323": {
+      "label": "Supabase Studio"
+    },
+    "54324": {
+      "label": "Supabase Inbucket"
+    },
+    "54326": {
+      "label": "Supabase Storage"
+    },
+    "6379": {
+      "label": "Redis"
+    }
   },
   "customizations": {
     "codespaces": {
       "repositories": {
         "airnub-labs/million-dollar-maps": {
-          "permissions": {
-            "contents": "write",
-            "pull_requests": "write"
-          }
-        },
-        "airnub-labs/*": {
           "permissions": {
             "contents": "write",
             "pull_requests": "write"
