@@ -6,7 +6,7 @@
   // "service": "devcontainer",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "workspaceMount": "source=${localWorkspaceFolder},target=/airnub-labs/vscode-meta-workspace-internal,type=bind",
-  "workspaceFolder": "airnub-labs/vscode-meta-workspace-internal",
+  "workspaceFolder": "/airnub-labs/vscode-meta-workspace-internal",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/node:1": {
@@ -22,7 +22,7 @@
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
   ],
-  "updateContentCommand": "bash -lc 'set -e; for dir in */.devcontainer; do if [ -x \"$dir/scripts/update-content.sh\" ]; then \"$dir/scripts/update-content.sh\"; exit $?; fi; done; echo \"[update-content][warn] No update-content script found; skipping.\"'",
+  "updateContentCommand": "bash -lc 'set -e; if [ -x .devcontainer/scripts/update-content.sh ]; then .devcontainer/scripts/update-content.sh; exit $?; fi; for dir in */.devcontainer; do if [ -x \"$dir/scripts/update-content.sh\" ]; then \"$dir/scripts/update-content.sh\"; exit $?; fi; done; echo \"[update-content][warn] No update-content script found; skipping.\"'",
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
