@@ -3,7 +3,9 @@ set -euo pipefail
 [[ "${DEBUG:-false}" == "true" ]] && set -x
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null || cd "$HERE/.." && pwd)"
+if ! ROOT="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null)"; then
+  ROOT="$(cd "$HERE/.." && pwd)"
+fi
 
 log() { echo "[post-create] $*"; }
 
