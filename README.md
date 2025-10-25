@@ -2,199 +2,58 @@
 
 > One dev container, many projects — with a shared Redis and **one** local Supabase stack. Works locally and in **GitHub Codespaces**.
 
-> **Public template note:** This README is written so it can be copied to the public template repo (`vscode-meta-workspace`) with minimal edits. See the inline ⚠️ notes.
-
-This repository is a **meta workspace** for developing multiple projects side‑by‑side in a **single** Dev Container. It pairs a multi‑root VS Code workspace with a shared runtime (Redis + Supabase local stack), so you don’t have to juggle several containers or keep track of different Supabase ports per project. Instead, you focus on **one active project at a time** and run its migrations against the shared local stack.
-
-* Multi‑root workspaces let one VS Code window contain multiple folders/repos.
-* The Dev Container mounts the **parent** folder into the container (→ `/workspaces`), so all sibling projects are visible.
-* One shared Supabase + Redis is available for whichever project is active.
+This repo gives you a ready-to-go workspace for Airnub Labs projects. You open a single VS Code window, and it boots a Dev Container that exposes every sibling repo plus a shared Supabase + Redis runtime.
 
 ---
 
-## 📚 Clone Strategy & Implementation
+## What you get
 
-New to this workspace? Read the detailed guide:
-
-* **[Workspace Clone Strategy — Implementation Guide](./docs/clone-strategy.md)**
-
-That doc explains how repository permissions are declared, how the clone helper works, and how it stays aligned with Codespaces. It also covers intersection with the multi‑root workspace file and optional wildcard behavior.
-
-> ⚠️ **Public template:** if you move this doc under `docs/`, update this link to `./docs/clone-strategy.md`.
+* **Multi-root workspace:** `airnub-labs.code-workspace` opens all of your project folders side-by-side.
+* **Shared runtime:** the Dev Container maps the parent directory to `/workspaces`, provides Docker-in-Docker, Node 24 with pnpm, Python 3.12, and ships with Redis plus a Supabase local stack configured in [`supabase/config.toml`](./supabase/config.toml).
+* **Helper scripts:** `.devcontainer/scripts/` manages cloning and bootstrap tasks, while `supabase/scripts/` keeps local Supabase credentials in sync across repos.
 
 ---
 
-## Why this exists
+## Quick start
 
-Running a full Supabase stack per project (each with different ports) was cumbersome. This workspace provides:
+### Option A — Local VS Code + Dev Containers
 
-* **One** Dev Container with Docker‑in‑Docker, Node (with pnpm), and Python tooling, plus a Redis sidecar.
-* **One** local Supabase stack (via the Supabase CLI) used by whichever project you’re actively developing; you simply run that project’s migrations (and only that project’s) when switching.
+1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.
+2. In the Dev Container terminal, list the mounted repos with `ls /workspaces`.
+3. Start the shared services once per session: `supabase start` (Studio: http://localhost:54323, API: http://localhost:54321).
+4. Work in a project folder (for example `cd /workspaces/million-dollar-maps`) and run that project’s migrations against the shared stack.
 
-> Supabase’s local stack includes Postgres, Auth, Storage, and Studio. Common local defaults: **API 54321**, **DB 54322**, **Studio 54323**, **Inbucket 54324**, **Storage 54326** (configurable in `supabase/config.toml`).
+### Option B — GitHub Codespaces
 
----
+1. Create a Codespace from this repo.
+2. (Optional) Update `.devcontainer/devcontainer.json → customizations.codespaces.repositories` so the Codespace token can clone other private repos.
+3. After the container boots, clone sibling repos into `/workspaces/<repo>` (post-create hooks handle the common cases) and use the same Supabase workflow as local.
 
-## How this workspace differs from per‑project `.devcontainer/`
-
-**This workspace repo** (meta workspace):
-
-* Lives at the **parent** level (e.g. `Projects-Airnub-Labs/`).
-* Contains a `.devcontainer/` that mounts the **parent** folder to `/workspaces`, exposing all repos in one container.
-* Includes `airnub-labs.code-workspace` (multi‑root) so you can open multiple repos in one VS Code window.
-* Runs **one** shared Supabase stack + Redis for **any** project in the workspace.
-
-**Each project repo** (e.g. `million-dollar-maps`) still has its **own** `.devcontainer/`:
-
-* So you can open that repo directly in **GitHub Codespaces** (or locally) with a predictable, repo‑scoped environment.
-
-**When to use which**
-
-* Day‑to‑day, single‑repo work in Codespaces → open the project repo (uses its own `.devcontainer/`).
-* Cross‑repo work locally or in a “meta” Codespace → open this **workspace repo** (clones/opens multiple repos together and shares one runtime). You can grant extra repo permissions in `devcontainer.json` so the Codespace can read/write other repos.
-
-> ⚠️ **Public template:** in `.devcontainer/devcontainer.json`, ship **placeholders** for `customizations.codespaces.repositories` instead of org‑wide wildcards.
+Need a refresher on the helper scripts or the clone automation? See the docs linked below.
 
 ---
 
-## What’s inside
+## Shared Supabase workflow (at a glance)
 
-* **`.devcontainer/`**
+* Services run with the project ref defined in [`supabase/config.toml`](./supabase/config.toml) — by default `airnub-labs`.
+* Run migrations with the Supabase CLI from inside the project directory, always targeting the shared ref:
 
-  * `devcontainer.json` uses Dev Container **Features** (Docker‑in‑Docker, Node, pnpm, Python) to standardize tooling.
-  * `docker-compose.yml` mounts the **parent** directory at `/workspaces` so all sibling repos appear inside the container.
-  * `scripts/` includes post‑create/start hooks and the clone helper.
-* **`airnub-labs.code-workspace`**
+  ```bash
+  supabase db push --project-ref airnub-labs --local
+  ```
 
-  * Lists your projects (e.g., `million-dollar-maps`, etc.) as folders in a single window.
+* Copy `supabase/scripts/use-shared-supabase.sh` into your project (or call it directly) to sync env vars, apply migrations, reset, or check status with a single command.
 
-> ⚠️ **Public template:** consider renaming the workspace file to `workspace.code-workspace`.
-
----
-
-## Local usage (VS Code Dev Containers)
-
-1. **Open the workspace**: open `airnub-labs.code-workspace` → **Reopen in Container**.
-2. **Verify mount**: in the container terminal, `ls /workspaces` should show all project folders (we bind‑mount the parent to `/workspaces`).
-3. **Start Supabase (once):**
-
-```bash
-# inside the container
-supabase start
-# Studio: http://localhost:54323  | API: http://localhost:54321
-```
-
-4. **Work on a project**: open `/workspaces/million-dollar-maps` in the Explorer.
-5. **Run that project’s migrations only** (example):
-
-```bash
-cd /workspaces/million-dollar-maps
-# choose the command you use in this repo and point it at the shared ref
-supabase db push --project-ref airnub-labs --local
-# or, for a destructive reset (auto-confirmed):
-supabase db reset --project-ref airnub-labs --local -y
-```
-
-> The Supabase CLI infers a “project ref” from your current directory. Without the `--project-ref airnub-labs` flag (or `SUPABASE_PROJECT_REF=airnub-labs` env var), it looks for containers named after the project folder (e.g. `supabase_db_million-dollar-maps`) and fails. Always target the shared ref declared in this workspace’s `supabase/config.toml`.
-
-### Helper script per project
-
-Copy (or symlink) `supabase/scripts/use-shared-supabase.sh` into each project repo so teammates have an obvious entry point when they open that project directly. Example for a repo named `million-dollar-maps` living alongside this workspace repo:
-
-```bash
-cd /workspaces/million-dollar-maps
-mkdir -p scripts
-cp /workspaces/vscode-meta-workspace-internal/supabase/scripts/use-shared-supabase.sh scripts/use-shared-supabase.sh
-```
-
-From that project you can then run:
-
-```bash
-# Apply migrations to the shared stack
-./scripts/use-shared-supabase.sh push
-
-# Or perform the destructive reset with the -y flag baked in
-./scripts/use-shared-supabase.sh reset
-
-# Check whether the shared stack is up
-./scripts/use-shared-supabase.sh status
-```
-
-> The helper script reads the shared `project_id` from `supabase/config.toml`, exports `SUPABASE_PROJECT_REF`, and forwards the appropriate flags (including `-y` for `reset`) so it always talks to the shared containers.
->
-> Every run also refreshes the workspace Supabase `.env.local` and merges those values into the project’s root `.env.local`, preserving any custom project-specific keys so they are never overwritten. That keeps local API keys/storage buckets aligned with the shared stack while retaining per-project secrets. The helper writes the new Supabase CLI variable names (`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, etc.) and prunes the deprecated `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` pair automatically.
-
-> This applies *that repo’s* schema to the shared local stack. Switch projects by applying **their** migrations next.
-
-**Tip:** VS Code follows **one window = one container**. If you need a different container, open another window.
+Full instructions for automation, env sync, and helper usage live in the documentation below.
 
 ---
 
-## Codespaces usage
+## Learn more
 
-You have two options:
-
-### A) Open a **project** repo in Codespaces
-
-* Click **Code → Create codespace** in that repo. It uses the repo’s own `.devcontainer/`.
-
-### B) Open the **workspace repo** in Codespaces (multi‑repo session)
-
-* Create a Codespace from this workspace repo.
-* (Optional) Configure `customizations.codespaces.repositories` in its `devcontainer.json` to grant the Codespace token **read/write** to other repos (so you can clone/push to them without extra auth). You’ll approve these scopes when the Codespace is created.
-* After boot, clone sibling repos into `/workspaces/<repo>` and proceed exactly like local.
-
-> ⚠️ **Public template:** include commented examples in `devcontainer.json` for the `repositories` block so users can fill their own.
+* **[Workspace architecture](./docs/workspace-architecture.md):** how the Dev Container is wired, what services run, and how the multi-root workspace is organized.
+* **[Shared Supabase operations](./docs/shared-supabase.md):** start/stop commands, helper script usage, and env-var management.
+* **[Workspace clone strategy](./docs/clone-strategy.md):** how repo permissions translate into automatic cloning in Dev Containers and Codespaces.
 
 ---
 
-## Common tasks
-
-**Add another project to the workspace**
-
-1. Add its folder path to `airnub-labs.code-workspace` → save.
-2. (If using the meta Codespace) clone it into `/workspaces/<new-repo>`.
-
-**Switch active project**
-
-1. Stop any running app servers from the previous project.
-2. `cd /workspaces/<other-project>` → apply migrations for that project only.
-
-**Connect an app to local Supabase**
-
-* Use `SUPABASE_URL=http://localhost:54321` along with `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` from the CLI output/Studio.
-
----
-
-## Gotchas
-
-* **One runtime at a time:** Don’t spin up multiple Supabase stacks on different ports; this workspace assumes one shared stack.
-* **Port expectations:** If you customize ports in `supabase/config.toml`, update any app env files accordingly.
-* **Rebuild vs recreate:** Changes to `devcontainer.json` usually require a **Rebuild**; some changes (like Codespaces repo permissions) only apply to **new** Codespaces after commit.
-* **Keep clones outside the meta repo folder:** The clone helper skips any target that would live inside this repo (to prevent recursive `Projects-Airnub-Labs/Projects-Airnub-Labs`-style paths). Let the helper place sibling repos next to the meta workspace folder or override `WORKSPACE_ROOT` with another parent directory.
-
----
-
-## Quick reference commands
-
-```bash
-# In container: list projects
-ls /workspaces
-
-# Start/stop Supabase
-supabase start
-supabase stop
-
-# Apply a project’s DB changes
-cd /workspaces/<project>
-supabase db push --project-ref airnub-labs --local
-# or
-supabase db reset --project-ref airnub-labs --local -y
-
-# Shortcut (after copying helper script into the project)
-./scripts/use-shared-supabase.sh push
-```
-
----
-
-**TL;DR:** One container, one Redis, one Supabase stack. Work across many repos without port chaos—just run *one project’s* migrations at a time.
+**TL;DR:** Open the workspace, run `supabase start`, and develop any Airnub Labs project against the shared stack without juggling multiple containers.
