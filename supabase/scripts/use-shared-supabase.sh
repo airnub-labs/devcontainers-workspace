@@ -3,10 +3,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUPABASE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+WORKSPACE_ROOT="$(cd "${SUPABASE_ROOT}/.." && pwd)"
 CONFIG_TOML="${SUPABASE_ROOT}/config.toml"
 SUPABASE_ENV_HELPER="${SUPABASE_ROOT}/scripts/db-env-local.sh"
 SHARED_ENV_FILE="${SUPABASE_ROOT}/.env.local"
 PROJECT_ENV_FILE="${PROJECT_ENV_FILE:-$(pwd)/.env.local}"
+PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
 
 error() {
   echo "[use-shared-supabase] $*" >&2
@@ -35,6 +37,18 @@ if [[ -z "${PROJECT_REF}" ]]; then
   error "Could not determine project ref. Set SUPABASE_PROJECT_REF or ensure config.toml has project_id."
   exit 1
 fi
+
+if [[ ! -d "${WORKSPACE_ROOT}" ]]; then
+  error "Could not determine workspace root (looked for parent of ${SUPABASE_ROOT})."
+  exit 1
+fi
+
+if [[ ! -d "${PROJECT_DIR}" ]]; then
+  error "Project directory not found: ${PROJECT_DIR}"
+  exit 1
+fi
+
+PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
 
 sync_shared_env() {
   local ensure_start="${1:-true}"
@@ -133,30 +147,30 @@ case "${COMMAND}" in
     if ! sync_shared_env true; then
       error "Continuing with push even though env sync failed."
     fi
-    echo "[use-shared-supabase] Applying migrations from $(pwd) to shared stack (project ref: ${PROJECT_REF})."
-    SUPABASE_PROJECT_REF="${PROJECT_REF}" supabase db push --project-ref "${PROJECT_REF}" --local "$@"
+    echo "[use-shared-supabase] Applying migrations from ${PROJECT_DIR} via workspace ${WORKSPACE_ROOT} (project ref: ${PROJECT_REF})."
+    (cd "${WORKSPACE_ROOT}" && supabase db push --workdir "${PROJECT_DIR}" --local "$@")
     ;;
   reset)
     if ! sync_shared_env true; then
       error "Continuing with reset even though env sync failed."
     fi
-    echo "[use-shared-supabase] WARNING: Resetting shared stack for $(pwd). This wipes existing data."
-    SUPABASE_PROJECT_REF="${PROJECT_REF}" supabase db reset --project-ref "${PROJECT_REF}" --local -y "$@"
+    echo "[use-shared-supabase] WARNING: Resetting shared stack for ${PROJECT_DIR} via workspace ${WORKSPACE_ROOT}. This wipes existing data."
+    (cd "${WORKSPACE_ROOT}" && supabase db reset --workdir "${PROJECT_DIR}" --local -y "$@")
     ;;
   status)
     if ! sync_shared_env false; then
       error "Status reported without refreshing shared env vars."
     fi
-    echo "[use-shared-supabase] Checking shared stack status (project ref: ${PROJECT_REF})."
-    SUPABASE_PROJECT_REF="${PROJECT_REF}" supabase status -o env --project-ref "${PROJECT_REF}" "$@"
+    echo "[use-shared-supabase] Checking shared stack status for ${PROJECT_DIR} via workspace ${WORKSPACE_ROOT} (project ref: ${PROJECT_REF})."
+    (cd "${WORKSPACE_ROOT}" && supabase status -o env --workdir "${PROJECT_DIR}" "$@")
     ;;
   *)
     cat <<USAGE >&2
 Usage: $(basename "$0") [push|reset|status] [additional supabase args]
 
-push   - Run 'supabase db push --local' against the shared stack.
-reset  - Run 'supabase db reset --local -y' (destructive).
-status - Run 'supabase status -o env'.
+push   - Run 'supabase db push --workdir <project> --local' against the shared stack.
+reset  - Run 'supabase db reset --workdir <project> --local -y' (destructive).
+status - Run 'supabase status -o env --workdir <project>'.
 
 Set SUPABASE_PROJECT_REF if the shared stack uses a different ref.
 USAGE
