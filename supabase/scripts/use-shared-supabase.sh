@@ -7,8 +7,8 @@ WORKSPACE_ROOT="$(cd "${SUPABASE_ROOT}/.." && pwd)"
 CONFIG_TOML="${SUPABASE_ROOT}/config.toml"
 SUPABASE_ENV_HELPER="${SUPABASE_ROOT}/scripts/db-env-local.sh"
 SHARED_ENV_FILE="${SUPABASE_ROOT}/.env.local"
-PROJECT_ENV_FILE="${PROJECT_ENV_FILE:-$(pwd)/.env.local}"
-PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
+PROJECT_DIR="${PROJECT_DIR:-${SUPABASE_ROOT}}"
+PROJECT_ENV_FILE="${PROJECT_ENV_FILE:-}"
 
 error() {
   echo "[use-shared-supabase] $*" >&2
@@ -49,6 +49,10 @@ if [[ ! -d "${PROJECT_DIR}" ]]; then
 fi
 
 PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
+
+if [[ -z "${PROJECT_ENV_FILE}" ]]; then
+  PROJECT_ENV_FILE="${PROJECT_DIR}/.env.local"
+fi
 
 sync_shared_env() {
   local ensure_start="${1:-true}"
