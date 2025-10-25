@@ -38,7 +38,8 @@ The first build of the Dev Container or Codespace takes a few minutes while the 
 
 1. Create a Codespace from this repo.
 2. (Optional) Update `.devcontainer/devcontainer.json → customizations.codespaces.repositories` so the Codespace token can clone other private repos.
-3. After the container boots, clone sibling repos into `/workspaces/<repo>` (post-create hooks handle the common cases) and use the same Supabase workflow as local.
+3. Securely add any required secrets via the Codespaces command palette: press <kbd>Shift</kbd>+<kbd>Command</kbd>+<kbd>P</kbd> (macOS) or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (Windows/Linux), type `>Codespaces: Manage User Secrets`, and follow the prompts to set key/value pairs that your workspace can access.
+4. After the container boots, clone sibling repos into `/workspaces/<repo>` (post-create hooks handle the common cases) and use the same Supabase workflow as local.
 
 Need a refresher on the helper scripts or the clone automation? See the docs linked below.
 
