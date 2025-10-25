@@ -211,9 +211,7 @@ format_project_marker_value() {
 initialize_current_project_marker() {
   local project_path="$1"
   local supabase_dir="$ROOT_DIR/supabase"
-  local marker_file="$supabase_dir/.airnub-current-project"
-
-  [[ -d "$supabase_dir" ]] || return 0
+  local marker_file="$ROOT_DIR/.airnub-current-project"
 
   if [[ -s "$marker_file" ]]; then
     return 0
@@ -237,7 +235,7 @@ initialize_current_project_marker() {
     return 0
   fi
 
-  mkdir -p "$supabase_dir"
+  mkdir -p "$(dirname "$marker_file")"
   printf '%s\n' "$marker_value" >"$marker_file"
   log "Initialized Supabase project marker at $marker_file → $marker_value"
 }

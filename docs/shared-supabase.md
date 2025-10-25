@@ -71,9 +71,9 @@ The CLI follows a consistent naming pattern:
 
 All subcommands accept relative or absolute paths, forward extra arguments after `--` to the Supabase CLI, and surface the same behaviour as the helper scripts described later in this guide.
 
-`airnub use` is the beginner-friendly path: it resolves the project directory, syncs `.env.local`, runs `supabase db push`, then prints `supabase status` so you can immediately confirm which project is wired to the shared stack. The command also records the selection in `supabase/.airnub-current-project`, which powers `airnub project current` for quick checks when you return to the workspace later. Add `--skip-status` if you prefer to omit the status call.
+`airnub use` is the beginner-friendly path: it resolves the project directory, syncs `.env.local`, runs `supabase db push`, then prints `supabase status` so you can immediately confirm which project is wired to the shared stack. The command also records the selection in `./.airnub-current-project`, which powers `airnub project current` for quick checks when you return to the workspace later. Add `--skip-status` if you prefer to omit the status call.
 
-On a freshly provisioned workspace the clone helper initializes `supabase/.airnub-current-project` using the first repository it cloned (or `./supabase` when no repos exist yet), so the CLI remembers a useful default even before you run `airnub use`.
+On a freshly provisioned workspace the clone helper initializes `./.airnub-current-project` using the first repository it cloned (or `./supabase` when no repos exist yet), so the CLI remembers a useful default even before you run `airnub use`. If you previously used the Supabase-scoped marker (`supabase/.airnub-current-project`), the CLI quietly migrates it to the new root-level location the next time you run a command.
 
 Need to prep a project’s env files after switching? Run `airnub project setup` on the remembered project (or pass `--project-dir`) to copy `.env.example` to `.env.local` when missing, append any new keys from the example, and refresh Supabase credentials in one step.
 

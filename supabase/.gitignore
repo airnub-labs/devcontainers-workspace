@@ -6,4 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Legacy airnub project marker (current location lives at repo root)
 .airnub-current-project

@@ -5,7 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 SUPABASE_DIR="${SUPABASE_DIR:-${REPO_ROOT}/supabase}"
 DB_ENV_HELPER="${DB_ENV_HELPER:-${SUPABASE_DIR}/scripts/db-env-local.sh}"
-CURRENT_PROJECT_FILE="${CURRENT_PROJECT_FILE:-${SUPABASE_DIR}/.airnub-current-project}"
+CURRENT_PROJECT_FILE="${CURRENT_PROJECT_FILE:-${REPO_ROOT}/.airnub-current-project}"
+LEGACY_PROJECT_FILE="${LEGACY_PROJECT_FILE:-${SUPABASE_DIR}/.airnub-current-project}"
 
 usage() {
   cat <<'USAGE'
@@ -266,6 +267,21 @@ sync_shared_env_into_project() {
   merge_shared_env_into_project "$project_env_file"
 }
 
+ensure_current_project_marker() {
+  if [[ -f "$CURRENT_PROJECT_FILE" ]]; then
+    return 0
+  fi
+
+  if [[ -n "${LEGACY_PROJECT_FILE:-}" && "$LEGACY_PROJECT_FILE" != "$CURRENT_PROJECT_FILE" && -f "$LEGACY_PROJECT_FILE" ]]; then
+    mkdir -p "$(dirname "$CURRENT_PROJECT_FILE")"
+    cp "$LEGACY_PROJECT_FILE" "$CURRENT_PROJECT_FILE"
+    rm -f "$LEGACY_PROJECT_FILE"
+    return 0
+  fi
+
+  return 1
+}
+
 remember_project() {
   local project_dir="$1"
   local output="$project_dir"
@@ -277,11 +293,17 @@ remember_project() {
     output="./${relative}"
   fi
 
+  ensure_current_project_marker || true
   mkdir -p "$(dirname "$CURRENT_PROJECT_FILE")"
   printf '%s\n' "$output" >"$CURRENT_PROJECT_FILE"
+
+  if [[ -n "${LEGACY_PROJECT_FILE:-}" && "$LEGACY_PROJECT_FILE" != "$CURRENT_PROJECT_FILE" ]]; then
+    rm -f "$LEGACY_PROJECT_FILE"
+  fi
 }
 
 show_current_project() {
+  ensure_current_project_marker || true
   if [[ -f "$CURRENT_PROJECT_FILE" ]]; then
     printf 'Last project used: %s\n' "$(<"$CURRENT_PROJECT_FILE")"
   else
@@ -290,6 +312,7 @@ show_current_project() {
 }
 
 get_current_project_dir() {
+  ensure_current_project_marker || true
   if [[ ! -f "$CURRENT_PROJECT_FILE" ]]; then
     return 1
   fi

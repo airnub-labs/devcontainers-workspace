@@ -59,7 +59,7 @@ This document explains **how the meta workspace clones project repos** in a sing
    * If `$WORKSPACE_ROOT/<repo_name>/.git` already exists → **fetch/prune** (no merge) and continue.
    * Else clone to `$WORKSPACE_ROOT/<repo_name>` using the best available auth mode (see next section).
 
-   After the loop, the helper seeds `supabase/.airnub-current-project` with the first repo it touched so the bundled `airnub` CLI has a sensible default (falling back to `./supabase` when nothing was cloned).
+   After the loop, the helper seeds `./.airnub-current-project` with the first repo it touched so the bundled `airnub` CLI has a sensible default (falling back to `./supabase` when nothing was cloned). Existing workspaces that still have `supabase/.airnub-current-project` are migrated automatically the next time the CLI runs.
 
 > **Recursion guard:** If `WORKSPACE_ROOT` resolves *inside* this meta workspace folder, the helper logs a warning and falls back to the parent directory so it doesn’t try to create paths like `Project-Airnub-Labs/Project-Airnub-Labs`. Likewise, any individual repo whose target would land inside the meta repo is skipped.
 >
