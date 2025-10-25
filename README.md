@@ -18,6 +18,14 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 
 ## Quick start
 
+### Fast iPad edits via VS Code for Web
+
+On an iPad (or any browser-only device) you can jump straight into this workspace without installing anything locally:
+
+1. Open [vscode.dev/github/airnub-labs/vscode-meta-workspace-internal](https://vscode.dev/github/airnub-labs/vscode-meta-workspace-internal) for a lightweight, browser-based VS Code instance that loads this repo instantly.
+2. When you need more power, use the **Remote** menu inside vscode.dev to connect to an existing Codespace or create a new one for this repository.
+3. Alternatively, browse to the repository on GitHub and choose **Code → Create codespace on main** to launch a full Codespace session directly.
+
 ### AI coding extensions
 
 This workspace ships with three AI assistants pre-installed. Sign in once and VS Code remembers your session across restarts of the same container.
