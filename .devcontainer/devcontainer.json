@@ -94,7 +94,8 @@
         "workbench.startupEditor": "readme",
         "workbench.views.defaultViewContainerLocations": {
           "workbench.view.extension.codexViewContainer": "secondarySideBar",
-          "workbench.view.extension.geminiChat": "secondarySideBar"
+          "workbench.view.extension.geminiChat": "secondarySideBar",
+          "workbench.view.extension.claudeCode": "secondarySideBar"
         }
       },
       "extensions": [
@@ -113,7 +114,8 @@
         "GitHub.copilot-chat",
         "openai.chatgpt",
         "google.geminicodeassist",
-        "google.gemini-cli-vscode-ide-companion"
+        "google.gemini-cli-vscode-ide-companion",
+        "anthropic.claude-code"
       ]
     }
   }

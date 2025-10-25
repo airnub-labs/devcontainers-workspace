@@ -182,6 +182,27 @@ else
   log "Gemini CLI already installed; skipping."
 fi
 
+# -----------------------------
+# Claude CLI install
+# -----------------------------
+if ! command -v claude >/dev/null 2>&1; then
+  if command -v pnpm >/dev/null 2>&1; then
+    log "Installing Claude CLI via pnpm..."
+    claude_log="$(mktemp)"
+    if ! pnpm add -g @anthropic-ai/claude-code >"$claude_log" 2>&1; then
+      log "Claude CLI install failed; continuing without it."
+      log "Details: $(tail -n 20 "$claude_log" 2>/dev/null || echo 'see installer output')"
+    else
+      log "Claude CLI installation complete."
+    fi
+    rm -f "$claude_log"
+  else
+    log "pnpm not available; skipping Claude CLI installation."
+  fi
+else
+  log "Claude CLI already installed; skipping."
+fi
+
 # Ensure pnpm global bin directory is on PATH for future shells
 if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then
   case ":$PATH:" in
