@@ -122,7 +122,7 @@ From that project you can then run:
 
 > The helper script reads the shared `project_id` from `supabase/config.toml`, exports `SUPABASE_PROJECT_REF`, and forwards the appropriate flags (including `-y` for `reset`) so it always talks to the shared containers.
 >
-> Every run also refreshes the workspace Supabase `.env.local` and merges those values into the project’s root `.env.local`, preserving any custom project-specific keys so they are never overwritten. That keeps local API keys/storage buckets aligned with the shared stack while retaining per-project secrets.
+> Every run also refreshes the workspace Supabase `.env.local` and merges those values into the project’s root `.env.local`, preserving any custom project-specific keys so they are never overwritten. That keeps local API keys/storage buckets aligned with the shared stack while retaining per-project secrets. The helper writes the new Supabase CLI variable names (`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, etc.) and prunes the deprecated `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` pair automatically.
 
 > This applies *that repo’s* schema to the shared local stack. Switch projects by applying **their** migrations next.
 
@@ -162,7 +162,7 @@ You have two options:
 
 **Connect an app to local Supabase**
 
-* Use `SUPABASE_URL=http://localhost:54321` and your local anon/service keys as per the CLI output/Studio.
+* Use `SUPABASE_URL=http://localhost:54321` along with `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` from the CLI output/Studio.
 
 ---
 

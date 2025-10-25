@@ -77,6 +77,16 @@ sync_shared_env() {
     shared_keys["${key}"]=1
   done <"${SHARED_ENV_FILE}"
 
+  # Prune deprecated Supabase key names so projects swap to the new publishable/secret pair.
+  local legacy_keys=(
+    SUPABASE_ANON_KEY
+    SUPABASE_SERVICE_ROLE_KEY
+  )
+
+  for legacy_key in "${legacy_keys[@]}"; do
+    shared_keys["${legacy_key}"]=1
+  done
+
   if [[ -f "${PROJECT_ENV_FILE}" ]]; then
     local -a custom_lines=()
     while IFS= read -r line || [[ -n "${line}" ]]; do
