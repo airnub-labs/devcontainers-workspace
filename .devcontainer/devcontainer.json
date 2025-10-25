@@ -17,7 +17,7 @@
     },
     "ghcr.io/devcontainers/features/nvidia-cuda:2": {
       "installCudnn": true
-    }    
+    }
   },
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",
@@ -31,7 +31,6 @@
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
     6379,
-    1455,
     54321,
     54322,
     54323,
@@ -41,9 +40,6 @@
   "portsAttributes": {
     "6379": {
       "label": "Redis"
-    },
-    "1455": {
-      "label": "ChatGPT Auth Callback"
     },
     "54321": {
       "label": "Supabase API"
@@ -131,6 +127,6 @@
     }
   },
   "hostRequirements": {
-    "gpu": "optional" 
+    "gpu": "optional"
   }
 }
