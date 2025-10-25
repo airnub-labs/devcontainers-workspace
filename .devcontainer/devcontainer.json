@@ -26,21 +26,15 @@
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
-    3000,
-    3100,
+    6379,
     54321,
     54322,
     54323,
-    54324,
-    54326,
-    6379
+    54324
   ],
   "portsAttributes": {
-    "3000": {
-      "label": "Web app"
-    },
-    "3100": {
-      "label": "Admin app"
+    "6379": {
+      "label": "Redis"
     },
     "54321": {
       "label": "Supabase API"
@@ -54,14 +48,8 @@
     "54324": {
       "label": "Supabase Inbucket"
     },
-    "54326": {
-      "label": "Supabase Storage"
-    },
     "54327": {
       "label": "Supabase Logflare"
-    },
-    "6379": {
-      "label": "Redis"
     }
   },
   "customizations": {
