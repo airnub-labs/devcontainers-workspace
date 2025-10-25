@@ -77,9 +77,9 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 * Prefer the repository's CLI wrapper for day-to-day tasks:
 
   ```bash
-  ./airnub env sync --project-dir ./million-dollar-maps
-  ./airnub db switch --project-dir ./million-dollar-maps
-  ./airnub db status --project-dir ./million-dollar-maps
+  ./airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
+  ./airnub project current                            # see which project was activated last
+  ./airnub db reset --project-dir ./million-dollar-maps
   ```
 
 * Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:

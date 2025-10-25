@@ -52,13 +52,15 @@ If you restart the container, re-run `supabase start -o env` once per session so
 From the workspace root, use the bundled CLI to sync credentials, apply migrations to the shared stack, or inspect its status without remembering Supabase flags:
 
 ```bash
-./airnub env sync --project-dir ./million-dollar-maps      # refresh .env.local for the project
-./airnub db switch --project-dir ./million-dollar-maps     # apply migrations to the shared stack
+./airnub use ./million-dollar-maps                        # env sync + migrations + status in one step
+./airnub project current                                  # show which project was activated last
 ./airnub db reset --project-dir ./million-dollar-maps      # destructive reset (non-interactive)
 ./airnub db status --project-dir ./million-dollar-maps     # check shared stack status
 ```
 
 All subcommands accept relative or absolute paths, forward extra arguments after `--` to the Supabase CLI, and surface the same behaviour as the helper scripts described later in this guide.
+
+`airnub use` is the beginner-friendly path: it resolves the project directory, syncs `.env.local`, runs `supabase db push`, then prints `supabase status` so you can immediately confirm which project is wired to the shared stack. The command also records the selection in `supabase/.airnub-current-project`, which powers `airnub project current` for quick checks when you return to the workspace later. Add `--skip-status` if you prefer to omit the status call.
 
 ### Manual Supabase CLI workflow
 

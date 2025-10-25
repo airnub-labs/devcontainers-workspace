@@ -6,6 +6,7 @@ REPO_ROOT="$SCRIPT_DIR"
 SUPABASE_DIR="${SUPABASE_DIR:-${REPO_ROOT}/supabase}"
 DB_ENV_HELPER="${DB_ENV_HELPER:-${SUPABASE_DIR}/scripts/db-env-local.sh}"
 SHARED_SCRIPT="${SHARED_SCRIPT:-${SUPABASE_DIR}/scripts/use-shared-supabase.sh}"
+CURRENT_PROJECT_FILE="${CURRENT_PROJECT_FILE:-${SUPABASE_DIR}/.airnub-current-project}"
 
 usage() {
   cat <<'USAGE'
@@ -16,6 +17,9 @@ Commands:
   db switch         Apply migrations so the shared Supabase stack matches a project.
   db reset          Reset the shared Supabase database for a project (destructive).
   db status         Show the shared Supabase stack status for a project.
+  project use       Sync env vars, run migrations, and show status for a project.
+  project current   Display the last project used with `project use`.
+  use               Shortcut for `project use`.
 
 Global options:
   -h, --help        Show this help message.
@@ -84,9 +88,65 @@ All arguments after "--" are forwarded to 'supabase status'.
 USAGE
 }
 
+project_usage() {
+  cat <<'USAGE'
+Usage: airnub project <subcommand> [options]
+
+Subcommands:
+  use                 Sync env vars, apply migrations, and show status for a project.
+  current             Show the most recent project selected with `project use`.
+
+Run "airnub project <subcommand> --help" for more details.
+USAGE
+}
+
+project_use_usage() {
+  cat <<'USAGE'
+Usage: airnub project use [options] <project-dir>
+
+Options:
+  --skip-status        Skip the final `supabase status` confirmation step.
+
+Examples:
+  airnub project use ./million-dollar-maps
+  airnub use ./million-dollar-maps
+USAGE
+}
+
+project_current_usage() {
+  cat <<'USAGE'
+Usage: airnub project current
+
+Shows the project directory that was last activated with `airnub project use`.
+USAGE
+}
+
 die() {
   echo "[airnub] $*" >&2
   exit 1
+}
+
+remember_project() {
+  local project_dir="$1"
+  local output="$project_dir"
+
+  if [[ "$project_dir" == "$REPO_ROOT" ]]; then
+    output="."
+  elif [[ "$project_dir" == "$REPO_ROOT"/* ]]; then
+    local relative="${project_dir#$REPO_ROOT/}"
+    output="./${relative}"
+  fi
+
+  mkdir -p "$(dirname "$CURRENT_PROJECT_FILE")"
+  printf '%s\n' "$output" >"$CURRENT_PROJECT_FILE"
+}
+
+show_current_project() {
+  if [[ -f "$CURRENT_PROJECT_FILE" ]]; then
+    printf 'Last project used: %s\n' "$(<"$CURRENT_PROJECT_FILE")"
+  else
+    echo "No project has been selected yet. Run 'airnub project use <dir>' first."
+  fi
 }
 
 resolve_dir() {
@@ -283,6 +343,91 @@ db_command() {
   esac
 }
 
+project_command() {
+  local action="${1:-}";
+  shift || true
+
+  case "$action" in
+    use)
+      local skip_status="false"
+      local project_input=""
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --skip-status)
+            skip_status="true"
+            shift
+            ;;
+          --help|-h)
+            project_use_usage
+            return 0
+            ;;
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            if [[ -n "$project_input" ]]; then
+              die "Project directory already provided: $project_input"
+            fi
+            project_input="$2"
+            shift 2
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments after '--': $*"
+            fi
+            ;;
+          --*)
+            die "Unknown option for 'airnub project use': $1"
+            ;;
+          *)
+            if [[ -n "$project_input" ]]; then
+              die "Multiple project directories provided: '$project_input' and '$1'"
+            fi
+            project_input="$1"
+            shift
+            ;;
+        esac
+      done
+
+      if [[ -z "$project_input" ]]; then
+        die "Project directory is required. See 'airnub project use --help'."
+      fi
+
+      local resolved_project
+      resolved_project="$(resolve_dir "$project_input")"
+
+      env_command sync --project-dir "$resolved_project"
+      db_command switch --project-dir "$resolved_project"
+      if [[ "$skip_status" != "true" ]]; then
+        db_command status --project-dir "$resolved_project"
+      fi
+
+      remember_project "$resolved_project"
+      show_current_project
+      ;;
+    current)
+      if [[ $# -gt 0 ]]; then
+        case "$1" in
+          --help|-h)
+            project_current_usage
+            return 0
+            ;;
+          *)
+            die "Unknown option for 'airnub project current': $1"
+            ;;
+        esac
+      fi
+      show_current_project
+      ;;
+    --help|-h|"")
+      project_usage
+      ;;
+    *)
+      die "Unknown project subcommand: ${action}"
+      ;;
+  esac
+}
+
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -298,6 +443,12 @@ main() {
       ;;
     db)
       db_command "$@"
+      ;;
+    project)
+      project_command "$@"
+      ;;
+    use)
+      project_command use "$@"
       ;;
     --help|-h)
       usage
