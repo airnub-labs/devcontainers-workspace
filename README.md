@@ -18,6 +18,15 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 
 ## Quick start
 
+### Using this workspace in your own GitHub org
+
+If another team wants to adopt this setup, offer them two paths:
+
+* **Create a new repo from this template** – keeps their copy private and lets them customize without affecting the original. In GitHub, choose **Use this template → Create a new repository** and select their organization/visibility.
+* **Fork this repo** – keeps an upstream link for easy updates, but the fork will be public to match this repository’s visibility. Only suggest this if public visibility is acceptable.
+
+The first build of the Dev Container or Codespace needs a few minutes while the image is assembled. After that initial build, starting/stopping the container (locally or in Codespaces) is fast, and the environment behaves the same in both places.
+
 ### Option A — Local VS Code + Dev Containers
 
 1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.
