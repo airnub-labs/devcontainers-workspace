@@ -148,7 +148,7 @@ case "${COMMAND}" in
       error "Status reported without refreshing shared env vars."
     fi
     echo "[use-shared-supabase] Checking shared stack status (project ref: ${PROJECT_REF})."
-    SUPABASE_PROJECT_REF="${PROJECT_REF}" supabase status --project-ref "${PROJECT_REF}" "$@"
+    SUPABASE_PROJECT_REF="${PROJECT_REF}" supabase status -o env --project-ref "${PROJECT_REF}" "$@"
     ;;
   *)
     cat <<USAGE >&2
