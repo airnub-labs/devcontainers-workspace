@@ -89,11 +89,11 @@ supabase_env_run_command() {
 }
 
 supabase_env_status() {
-  supabase_env_run_command status -o env "$SUPABASE_ENV_FILE"
+  supabase_env_run_command status "$SUPABASE_ENV_FILE"
 }
 
 supabase_env_start() {
-  if supabase_env_run_command start -o env "$SUPABASE_ENV_FILE"; then
+  if supabase_env_run_command start "$SUPABASE_ENV_FILE"; then
     return 0
   fi
 
