@@ -102,11 +102,13 @@
           "editor.defaultFormatter": "denoland.vscode-deno"
         },
         "workbench.activityBar.location": "top",
+        "workbench.colorTheme": "Default Dark Modern",
         "workbench.startupEditor": "readme",
         "workbench.views.defaultViewContainerLocations": {
           "workbench.view.extension.codexViewContainer": "secondarySideBar",
           "workbench.view.extension.geminiChat": "secondarySideBar"
-        }
+        },
+        "settingsSync.enabled": true
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
