@@ -179,6 +179,69 @@ clone_or_update() {
   esac
 }
 
+format_project_marker_value() {
+  local path="$1"
+
+  if [[ -z "$path" ]]; then
+    return 1
+  fi
+
+  if [[ ! -d "$path" ]]; then
+    return 1
+  fi
+
+  local resolved
+  resolved="$(cd "$path" && pwd)" || return 1
+
+  if [[ "$resolved" == "$ROOT_DIR" ]]; then
+    printf '.'
+    return 0
+  fi
+
+  case "$resolved" in
+    "$ROOT_DIR"/*)
+      printf './%s' "${resolved#$ROOT_DIR/}"
+      ;;
+    *)
+      printf '%s' "$resolved"
+      ;;
+  esac
+}
+
+initialize_current_project_marker() {
+  local project_path="$1"
+  local supabase_dir="$ROOT_DIR/supabase"
+  local marker_file="$supabase_dir/.airnub-current-project"
+
+  [[ -d "$supabase_dir" ]] || return 0
+
+  if [[ -s "$marker_file" ]]; then
+    return 0
+  fi
+
+  local target_path=""
+  if [[ -n "$project_path" && -d "$project_path" ]]; then
+    target_path="$project_path"
+  elif [[ -d "$supabase_dir" ]]; then
+    target_path="$supabase_dir"
+  fi
+
+  if [[ -z "$target_path" ]]; then
+    warn "No project directories available to initialize $marker_file"
+    return 0
+  fi
+
+  local marker_value
+  if ! marker_value="$(format_project_marker_value "$target_path")"; then
+    warn "Unable to compute marker value for $target_path"
+    return 0
+  fi
+
+  mkdir -p "$supabase_dir"
+  printf '%s\n' "$marker_value" >"$marker_file"
+  log "Initialized Supabase project marker at $marker_file → $marker_value"
+}
+
 main() {
   MODE="$(pick_mode)"
   log "Clone mode: $MODE"
@@ -240,11 +303,21 @@ main() {
     exit 0
   fi
 
+  local first_project_path=""
+
   for spec in "${filtered[@]}"; do
     local repo_name
     repo_name="${spec#*/}"
     clone_or_update "$spec" "$repo_name"
+    if [[ -z "$first_project_path" ]]; then
+      local candidate="$WORKSPACE_ROOT/$repo_name"
+      if [[ -d "$candidate" ]]; then
+        first_project_path="$candidate"
+      fi
+    fi
   done
+
+  initialize_current_project_marker "$first_project_path"
 
   log "Done. Repositories are available under $WORKSPACE_ROOT."
 }

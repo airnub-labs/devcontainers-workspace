@@ -87,6 +87,10 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
   ./airnub db status --project-dir ./million-dollar-maps
   ```
 
+  When the devcontainer clone helper runs for the first time it seeds `supabase/.airnub-current-project` with the first cloned
+  repo (and falls back to `./supabase` if nothing was cloned yet) so new contributors land on a sensible default for the shared
+  stack.
+
 * Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:
 
 ```bash
