@@ -117,8 +117,8 @@
         "GitHub.vscode-pull-request-github",
         "GitHub.copilot-chat",
         "openai.chatgpt",
-        "google.geminicodeassist"
-        // "google.gemini-cli-vscode-ide-companion"
+        "google.geminicodeassist",
+        "google.gemini-cli-vscode-ide-companion"
       ]
     }
   }
