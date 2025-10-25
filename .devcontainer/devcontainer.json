@@ -96,12 +96,7 @@
         },
         "workbench.activityBar.location": "top",
         "workbench.colorTheme": "Default Dark Modern",
-        "workbench.startupEditor": "readme",
-        "workbench.views.defaultViewContainerLocations": {
-          "workbench.view.extension.codexViewContainer": "secondarySideBar",
-          "workbench.view.extension.geminiChat": "secondarySideBar",
-          "workbench.view.extension.claudeCode": "secondarySideBar"
-        }
+        "workbench.startupEditor": "readme"
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
