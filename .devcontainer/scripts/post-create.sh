@@ -9,6 +9,59 @@ fi
 
 log() { echo "[post-create] $*"; }
 
+append_shell_snippet() {
+  local file="$1"
+  local marker="$2"
+  local snippet="$3"
+
+  if [[ ! -e "$file" ]]; then
+    touch "$file" 2>/dev/null || true
+  fi
+
+  if [[ -w "$file" ]] && ! grep -Fq "$marker" "$file" 2>/dev/null; then
+    {
+      printf '\n'
+      printf '# %s\n' "$marker"
+      printf '%s\n' "$snippet"
+    } >> "$file"
+  fi
+}
+
+persist_path_prefix() {
+  local target_path="$1"
+  local marker="$2"
+  local file
+  local -a shell_files=(
+    "$HOME/.profile"
+    "$HOME/.bash_profile"
+    "$HOME/.bashrc"
+    "$HOME/.zprofile"
+    "$HOME/.zshrc"
+  )
+
+  for file in "${shell_files[@]}"; do
+    append_shell_snippet "$file" "$marker" "export PATH=\"$target_path:\$PATH\""
+  done
+}
+
+persist_env_var() {
+  local var_name="$1"
+  local value="$2"
+  local marker="$3"
+  local file
+  local -a shell_files=(
+    "$HOME/.profile"
+    "$HOME/.bash_profile"
+    "$HOME/.bashrc"
+    "$HOME/.zprofile"
+    "$HOME/.zshrc"
+  )
+
+  for file in "${shell_files[@]}"; do
+    append_shell_snippet "$file" "$marker" "export $var_name=\"$value\""
+  done
+}
+
 # -----------------------------
 # pnpm bootstrap (unchanged)
 # -----------------------------
@@ -98,110 +151,19 @@ log "Installing Supabase CLI..."
 "$HERE/install-supabase-cli.sh"
 
 # -----------------------------
-# Deno CLI install
+# CLI installs (invoke dedicated scripts so they can be toggled easily)
 # -----------------------------
-if ! command -v deno >/dev/null 2>&1; then
-  log "Installing Deno CLI..."
-  deno_install_root="${DENO_INSTALL_ROOT:-$HOME/.deno}"
-  deno_installer="$(mktemp)"
-  if curl -fsSL https://deno.land/install.sh -o "$deno_installer"; then
-    chmod +x "$deno_installer" || true
-    if ! (DENO_INSTALL="$deno_install_root" \
-          DENO_INSTALL_SKIP_PATH=1 \
-          sh "$deno_installer" >/tmp/deno-install.log 2>&1); then
-      log "Deno install script failed; continuing without ensuring Deno is available."
-      log "Details: $(tail -n 20 /tmp/deno-install.log 2>/dev/null || echo 'see installer output')"
-    else
-      rm -f /tmp/deno-install.log
-      # Ensure the current environment can see the freshly installed binary.
-      case ":$PATH:" in
-        *":$deno_install_root/bin:"*) ;;
-        *) export PATH="$deno_install_root/bin:$PATH" ;;
-      esac
-      # Persist PATH updates for future shells when possible.
-      shell_profile="$HOME/.profile"
-      if [[ ! -e "$shell_profile" ]]; then
-        touch "$shell_profile" 2>/dev/null || true
-      fi
-      if [[ -w "$shell_profile" ]] && ! grep -Fq "$deno_install_root/bin" "$shell_profile" 2>/dev/null; then
-        {
-          echo ""
-          echo "# Added by devcontainer post-create to expose Deno"
-          echo "export PATH=\"$deno_install_root/bin:\$PATH\""
-        } >> "$shell_profile"
-      fi
-    fi
-  else
-    log "Failed to download Deno install script; skipping automatic Deno installation."
-  fi
-  rm -f /tmp/deno-install.log
-  rm -f "$deno_installer"
-else
-  log "Deno CLI already installed; skipping."
-fi
+log "Installing Deno CLI..."
+"$HERE/install-deno-cli.sh"
 
-# -----------------------------
-# Codex CLI install
-# -----------------------------
-if ! command -v codex >/dev/null 2>&1; then
-  if command -v python3 >/dev/null 2>&1; then
-    log "Installing Codex CLI via pip..."
-    codex_log="$(mktemp)"
-    if ! python3 -m pip install --user --upgrade codex-cli >"$codex_log" 2>&1; then
-      log "Codex CLI install failed; continuing without it."
-      log "Details: $(tail -n 20 "$codex_log" 2>/dev/null || echo 'see installer output')"
-    else
-      log "Codex CLI installation complete."
-    fi
-    rm -f "$codex_log"
-  else
-    log "python3 not available; skipping Codex CLI installation."
-  fi
-else
-  log "Codex CLI already installed; skipping."
-fi
+log "Installing Codex CLI..."
+"$HERE/install-codex-cli.sh"
 
-# -----------------------------
-# Gemini CLI install
-# -----------------------------
-if ! command -v gemini >/dev/null 2>&1; then
-  if command -v pnpm >/dev/null 2>&1; then
-    log "Installing Gemini CLI via pnpm..."
-    gemini_log="$(mktemp)"
-    if ! pnpm add -g @google/gemini-cli >"$gemini_log" 2>&1; then
-      log "Gemini CLI install failed; continuing without it."
-      log "Details: $(tail -n 20 "$gemini_log" 2>/dev/null || echo 'see installer output')"
-    else
-      log "Gemini CLI installation complete."
-    fi
-    rm -f "$gemini_log"
-  else
-    log "pnpm not available; skipping Gemini CLI installation."
-  fi
-else
-  log "Gemini CLI already installed; skipping."
-fi
+log "Installing Gemini CLI..."
+"$HERE/install-gemini-cli.sh"
 
-# -----------------------------
-# Claude CLI install
-# -----------------------------
-if ! command -v claude >/dev/null 2>&1; then
-  if command -v pnpm >/dev/null 2>&1; then
-    log "Installing Claude CLI via pnpm..."
-    claude_log="$(mktemp)"
-    if ! pnpm add -g @anthropic-ai/claude-code >"$claude_log" 2>&1; then
-      log "Claude CLI install failed; continuing without it."
-      log "Details: $(tail -n 20 "$claude_log" 2>/dev/null || echo 'see installer output')"
-    else
-      log "Claude CLI installation complete."
-    fi
-    rm -f "$claude_log"
-  else
-    log "pnpm not available; skipping Claude CLI installation."
-  fi
-else
-  log "Claude CLI already installed; skipping."
-fi
+log "Installing Claude CLI..."
+"$HERE/install-claude-cli.sh"
 
 # Ensure pnpm global bin directory is on PATH for future shells
 if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then
@@ -209,17 +171,8 @@ if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then
     *":$PNPM_HOME:"*) ;;
     *) export PATH="$PNPM_HOME:$PATH" ;;
   esac
-  shell_profile="$HOME/.profile"
-  if [[ ! -e "$shell_profile" ]]; then
-    touch "$shell_profile" 2>/dev/null || true
-  fi
-  if [[ -w "$shell_profile" ]] && ! grep -Fq "$PNPM_HOME" "$shell_profile" 2>/dev/null; then
-    {
-      echo ""
-      echo "# Added by devcontainer post-create to expose pnpm global binaries"
-      echo "export PATH=\"$PNPM_HOME:\$PATH\""
-    } >> "$shell_profile"
-  fi
+  persist_env_var "PNPM_HOME" "$PNPM_HOME" "Added by devcontainer post-create to configure pnpm home"
+  persist_path_prefix "$PNPM_HOME" "Added by devcontainer post-create to expose pnpm global binaries"
 fi
 
 # Ensure local Python user bin directory is on PATH for current and future shells
@@ -229,17 +182,7 @@ if [[ -d "$python_user_bin" ]]; then
     *":$python_user_bin:"*) ;;
     *) export PATH="$python_user_bin:$PATH" ;;
   esac
-  shell_profile="$HOME/.profile"
-  if [[ ! -e "$shell_profile" ]]; then
-    touch "$shell_profile" 2>/dev/null || true
-  fi
-  if [[ -w "$shell_profile" ]] && ! grep -Fq "$python_user_bin" "$shell_profile" 2>/dev/null; then
-    {
-      echo ""
-      echo "# Added by devcontainer post-create to expose Python user base binaries"
-      echo "export PATH=\"$python_user_bin:\$PATH\""
-    } >> "$shell_profile"
-  fi
+  persist_path_prefix "$python_user_bin" "Added by devcontainer post-create to expose Python user base binaries"
 fi
 
 # -----------------------------
