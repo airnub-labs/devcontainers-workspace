@@ -67,7 +67,7 @@ For a deeper dive into permissions, auth modes, and configuration knobs, read th
 
 ## Operational tips
 
-* **One Supabase stack at a time.** Keep the shared stack running via `supabase start`; don’t launch separate stacks per project.
+* **One Supabase stack at a time.** Keep the shared stack running via `supabase start -o env`; don’t launch separate stacks per project.
 * **Rebuild vs. recreate.** Container configuration changes usually need a **Rebuild**; updates to Codespaces repo permissions require creating a new Codespace session.
 * **Keep clones alongside the meta repo.** Let the helper place repos next to this workspace folder (the `.gitignore` ignores everything except the meta tooling). Avoid nesting project clones inside individual repos.
 * **Need another window?** VS Code uses one container per window—open an additional window if you need a different container profile.

@@ -22,7 +22,7 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 
 1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.
 2. In the Dev Container terminal, list the mounted repos with `ls /workspaces`.
-3. Start the shared services once per session: `supabase start` (Studio: [http://localhost:54323](http://localhost:54323), API: [http://localhost:54321](http://localhost:54321)). This single stack serves all projects in `/workspaces` so you don't need a separate Supabase instance per repo.
+3. Start the shared services once per session: `supabase start -o env` (Studio: [http://localhost:54323](http://localhost:54323), API: [http://localhost:54321](http://localhost:54321)). This single stack serves all projects in `/workspaces` so you don't need a separate Supabase instance per repo.
 4. Work in a project folder (for example `cd /workspaces/million-dollar-maps`) and run that project’s migrations against the shared stack.
 
 ### Option B — GitHub Codespaces
@@ -56,4 +56,4 @@ supabase db push --project-ref airnub-labs --local
 
 ---
 
-**TL;DR:** Open the workspace, run `supabase start`, and develop any Airnub Labs project against the shared stack without juggling multiple containers.
+**TL;DR:** Open the workspace, run `supabase start -o env`, and develop any Airnub Labs project against the shared stack without juggling multiple containers.

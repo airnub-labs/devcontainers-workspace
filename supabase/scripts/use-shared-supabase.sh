@@ -156,7 +156,7 @@ Usage: $(basename "$0") [push|reset|status] [additional supabase args]
 
 push   - Run 'supabase db push --local' against the shared stack.
 reset  - Run 'supabase db reset --local -y' (destructive).
-status - Run 'supabase status'.
+status - Run 'supabase status -o env'.
 
 Set SUPABASE_PROJECT_REF if the shared stack uses a different ref.
 USAGE
