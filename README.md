@@ -18,6 +18,24 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 
 ## Quick start
 
+### AI coding extensions
+
+This workspace ships with three AI assistants pre-installed. Sign in once and VS Code remembers your session across restarts of the same container.
+
+* **GitHub Copilot Chat** (`GitHub.copilot-chat`)
+  * Open the Command Palette and run `>GitHub: Sign in` (or use the Copilot Chat view’s sign-in button).
+  * Authorize with your GitHub account in the browser that opens. In Codespaces the authentication popup appears in the built-in browser automatically.
+  * After approving the request, the chat panel and inline completions activate immediately.
+* **ChatGPT** (`openai.chatgpt`)
+  * Run `>ChatGPT: Sign In` and follow the prompts in the external browser.
+  * When you are in a local VS Code window, complete the OAuth flow in the browser as usual.
+  * When you are in a Codespace, copy the final redirect URL from the external browser and paste it into a Codespaces preview tab (Ports panel → **Open in Browser**). That forces the callback through the Codespaces tunnel so the extension finishes signing you in.
+* **Claude Code** (`anthropic.claude-code`)
+  * Launch `>Claude: Sign In` from the Command Palette or click the sign-in link inside the Claude sidebar.
+  * Approve the Anthropic authorization request in the browser. The Codespaces webview handles the callback automatically, so no extra steps are required after granting access.
+
+Once you finish the respective sign-ins you can start using chat panels or inline suggestions without re-authenticating unless you destroy the workspace.
+
 ### Using this workspace in your own GitHub org
 
 When you want to bring this workspace into your own GitHub org, choose one of these paths:
