@@ -54,9 +54,17 @@ From the workspace root, use the bundled CLI to sync credentials, apply migratio
 ```bash
 ./airnub use ./million-dollar-maps                        # env sync + migrations + status in one step
 ./airnub project current                                  # show which project was activated last
-./airnub db reset --project-dir ./million-dollar-maps      # destructive reset (non-interactive)
-./airnub db status --project-dir ./million-dollar-maps     # check shared stack status
+./airnub env status --project-dir ./million-dollar-maps    # refresh env vars from a running stack
+./airnub db apply --project-dir ./million-dollar-maps      # supabase db push --local
+./airnub db reset --project-dir ./million-dollar-maps      # supabase db reset --local -y
+./airnub db status --project-dir ./million-dollar-maps     # supabase status -o env
 ```
+
+The CLI follows a consistent naming pattern:
+
+* `env` commands manage `.env.local` files (`sync`, `status`, `start`) and expose `--project-dir`, `--env-file`, `--ensure-start`, and `--status-only` for fine-grained control.
+* `db` commands (`apply`, `reset`, `status`) wrap the shared Supabase stack. Use `--project-env-file`, `--project-ref`, `--skip-env-sync`, `--ensure-env-sync`, or `--status-only-env-sync` to match different workflows, and pass additional Supabase CLI flags after `--`.
+* `project use` (and the `use` alias) chain the env + db commands, remember your selection, and support `--skip-status` when you want a faster handoff.
 
 All subcommands accept relative or absolute paths, forward extra arguments after `--` to the Supabase CLI, and surface the same behaviour as the helper scripts described later in this guide.
 
@@ -94,7 +102,7 @@ The executable [`./airnub`](../airnub) lives at the repository root and wraps tw
 ### `db-env-local.sh`
 
 * Captures the output of `supabase status -o env` (or `supabase start -o env` as a fallback) into `supabase/.env.local`.
-* Accepts `--status-only` to skip starting the stack, `--ensure-start` to allow starting it, and `--project-dir` to target a different Supabase config directory.
+* Accepts `--status-only` to skip starting the stack, `--ensure-start` to allow starting it, `--project-dir` to target a different Supabase config directory, and `--env-file` to write to a custom location.
 * Used internally by other scripts to keep credentials fresh.
 
 ### `use-shared-supabase.sh`
@@ -115,7 +123,7 @@ What it does on every run:
 2. Calls `db-env-local.sh` to ensure `supabase/.env.local` exists and contains up-to-date credentials.
 3. Copies those credentials into the project’s `.env.local` while preserving any project-specific variables and pruning deprecated Supabase keys (`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 
-You can override the target env file by exporting `PROJECT_ENV_FILE` before invoking the script.
+You can override the target env file by exporting `PROJECT_ENV_FILE` or using the CLI's `--project-env-file` flag. Set `SUPABASE_PROJECT_REF` to point at a different Supabase project, `SKIP_SHARED_ENV_SYNC=true` to bypass env refreshes, and `SHARED_ENV_ENSURE_START=false` when you only want to read env vars from a running stack.
 
 ## Troubleshooting & performance tips
 

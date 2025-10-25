@@ -13,16 +13,18 @@ usage() {
 Usage: airnub <command> [subcommand] [options]
 
 Commands:
-  env sync          Sync Supabase environment variables to a project .env.local.
-  db switch         Apply migrations so the shared Supabase stack matches a project.
-  db reset          Reset the shared Supabase database for a project (destructive).
-  db status         Show the shared Supabase stack status for a project.
-  project use       Sync env vars, run migrations, and show status for a project.
-  project current   Display the last project used with `project use`.
-  use               Shortcut for `project use`.
+  env sync            Write Supabase env vars to a project .env.local file.
+  env status          Refresh env vars only if the stack is already running.
+  env start           Ensure the stack is running and emit env vars.
+  db apply            Apply migrations against the shared Supabase stack.
+  db reset            Reset the shared Supabase stack for a project (destructive).
+  db status           Show the shared Supabase stack status for a project.
+  project use         Sync env vars, run migrations, and show status for a project.
+  project current     Display the last project used with `project use`.
+  use                 Shortcut for `project use`.
 
 Global options:
-  -h, --help        Show this help message.
+  -h, --help          Show this help message.
 
 Use "airnub <command> --help" for more information on a command.
 USAGE
@@ -30,12 +32,24 @@ USAGE
 
 env_usage() {
   cat <<'USAGE'
-Usage: airnub env sync [options]
+Usage: airnub env <subcommand> [options]
+
+Subcommands:
+  sync                Write env vars, starting Supabase if needed (default behaviour).
+  status              Only refresh env vars from a running Supabase stack.
+  start               Ensure Supabase is running and then write env vars.
 
 Options:
   --project-dir DIR   Supabase project directory (default: supabase/).
-  --status-only       Only refresh env vars if Supabase is already running.
-  --ensure-start      Start Supabase if it is not running (default).
+  --env-file PATH     Destination for env vars (default: <project>/.env.local).
+  --status-only       Equivalent to the `status` subcommand.
+  --ensure-start      Force starting Supabase before syncing env vars.
+  -h, --help          Show this help message.
+
+Examples:
+  airnub env sync --project-dir apps/my-app
+  airnub env status --env-file ./apps/my-app/.env.shared
+  airnub env start  # alias for `env sync --ensure-start`
 USAGE
 }
 
@@ -44,47 +58,20 @@ db_usage() {
 Usage: airnub db <subcommand> [options] [-- <supabase args>]
 
 Subcommands:
-  switch              Apply migrations for the shared Supabase stack.
+  apply               Apply migrations for the shared Supabase stack (alias: switch).
   reset               Reset the shared Supabase stack (destructive).
   status              Show shared Supabase stack details.
 
 Options:
-  --project-dir DIR   Supabase project directory (default: supabase/).
+  --project-dir DIR       Supabase project directory (default: supabase/).
+  --project-env-file PATH Override the project .env.local location.
+  --project-ref REF       Override the Supabase project ref.
+  --skip-env-sync         Do not refresh shared env vars before running the command.
+  --ensure-env-sync       Force starting Supabase when refreshing env vars.
+  --status-only-env-sync  Only refresh env vars if Supabase is already running.
+  -h, --help              Show this help message.
 
 All arguments after "--" are passed directly to the Supabase CLI for the selected subcommand.
-USAGE
-}
-
-db_switch_usage() {
-  cat <<'USAGE'
-Usage: airnub db switch [options] [-- <supabase args>]
-
-Options:
-  --project-dir DIR   Supabase project directory whose migrations should run (default: supabase/).
-
-All arguments after "--" are forwarded to 'supabase db push'.
-USAGE
-}
-
-db_reset_usage() {
-  cat <<'USAGE'
-Usage: airnub db reset [options] [-- <supabase args>]
-
-Options:
-  --project-dir DIR   Supabase project directory to reset (default: supabase/).
-
-All arguments after "--" are forwarded to 'supabase db reset'.
-USAGE
-}
-
-db_status_usage() {
-  cat <<'USAGE'
-Usage: airnub db status [options] [-- <supabase args>]
-
-Options:
-  --project-dir DIR   Supabase project directory to inspect (default: supabase/).
-
-All arguments after "--" are forwarded to 'supabase status'.
 USAGE
 }
 
@@ -175,14 +162,47 @@ resolve_dir() {
   die "Directory not found: $input"
 }
 
+resolve_path() {
+  local input="$1"
+
+  if [[ -z "$input" ]]; then
+    die "Path cannot be empty"
+  fi
+
+  python3 - "$REPO_ROOT" "$input" <<'PY'
+import os
+import sys
+
+root, target = sys.argv[1], sys.argv[2]
+
+if os.path.isabs(target):
+    print(os.path.normpath(target))
+else:
+    print(os.path.normpath(os.path.join(root, target)))
+PY
+}
+
 env_command() {
   local action="${1:-}";
   shift || true
 
   case "$action" in
-    sync)
+    sync|status|start)
       local ensure_start="true"
+      local status_only="false"
       local project_dir=""
+      local env_file=""
+
+      case "$action" in
+        status)
+          ensure_start="false"
+          status_only="true"
+          ;;
+        start)
+          ensure_start="true"
+          ;;
+      esac
+
       while [[ $# -gt 0 ]]; do
         case "$1" in
           --project-dir)
@@ -190,40 +210,64 @@ env_command() {
             project_dir="$(resolve_dir "$2")"
             shift 2
             ;;
+          --env-file)
+            [[ $# -lt 2 ]] && die "--env-file requires a path"
+            env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
           --status-only)
             ensure_start="false"
+            status_only="true"
             shift
             ;;
           --ensure-start)
             ensure_start="true"
+            status_only="false"
             shift
             ;;
           --help|-h)
             env_usage
             return 0
             ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments for 'airnub env $action': $*"
+            fi
+            ;;
           *)
-            die "Unknown option for 'airnub env sync': $1"
+            die "Unknown option for 'airnub env $action': $1"
             ;;
         esac
       done
 
       [[ -x "$DB_ENV_HELPER" ]] || die "db-env helper not found at $DB_ENV_HELPER"
 
+      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
+      local target_env_file="${env_file:-${effective_project_dir}/.env.local}"
       local -a cmd=("$DB_ENV_HELPER")
-      if [[ "$ensure_start" == "false" ]]; then
+
+      if [[ "$status_only" == "true" ]]; then
         cmd+=("--status-only")
       else
         cmd+=("--ensure-start")
       fi
 
-      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
+      if [[ -n "$env_file" ]]; then
+        cmd+=("--env-file" "$env_file")
+      fi
 
       if [[ -n "$project_dir" ]]; then
         cmd+=("--project-dir" "$project_dir")
       fi
 
-      SUPABASE_PROJECT_DIR="$effective_project_dir" "${cmd[@]}"
+      if SUPABASE_PROJECT_DIR="$effective_project_dir" "${cmd[@]}"; then
+        if [[ "$status_only" == "true" ]]; then
+          echo "[airnub] Refreshed Supabase env vars from running stack into $target_env_file."
+        else
+          echo "[airnub] Synced Supabase env vars into $target_env_file (stack started if necessary)."
+        fi
+      fi
       ;;
     --help|-h|"")
       env_usage
@@ -236,13 +280,42 @@ env_command() {
 
 run_shared_action() {
   local action="$1"
-  local project_dir="$2"
-  shift 2 || true
+  local ensure_env_mode="$2"
+  local project_dir="$3"
+  local skip_env_sync="$4"
+  local project_env_file="$5"
+  local project_ref="$6"
+  shift 6 || true
 
   [[ -x "$SHARED_SCRIPT" ]] || die "shared supabase helper not found at $SHARED_SCRIPT"
 
   local env_project_dir="${project_dir:-${SUPABASE_DIR}}"
-  PROJECT_DIR="$env_project_dir" "$SHARED_SCRIPT" "$action" "$@"
+  local -a env_prefix=("PROJECT_DIR=$env_project_dir")
+
+  if [[ -n "$project_env_file" ]]; then
+    env_prefix+=("PROJECT_ENV_FILE=$project_env_file")
+  fi
+
+  if [[ -n "$project_ref" ]]; then
+    env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
+  fi
+
+  if [[ "$skip_env_sync" == "true" ]]; then
+    env_prefix+=("SKIP_SHARED_ENV_SYNC=true")
+  fi
+
+  case "$ensure_env_mode" in
+    true|false)
+      env_prefix+=("SHARED_ENV_ENSURE_START=$ensure_env_mode")
+      ;;
+    auto)
+      ;;
+    *)
+      die "Unknown env sync mode: $ensure_env_mode"
+      ;;
+  esac
+
+  env "${env_prefix[@]}" "$SHARED_SCRIPT" "$action" "$@"
 }
 
 db_command() {
@@ -250,9 +323,31 @@ db_command() {
   shift || true
 
   case "$action" in
-    switch)
+    apply|switch|reset|status)
+      local supabase_action=""
+      local ensure_mode="auto"
       local project_dir=""
+      local project_env_file=""
+      local project_ref=""
+      local skip_env_sync="false"
       local -a cli_args=()
+
+      case "$action" in
+        apply)
+          supabase_action="push"
+          ;;
+        switch)
+          supabase_action="push"
+          echo "[airnub] 'db switch' is an alias for 'db apply'." >&2
+          ;;
+        reset)
+          supabase_action="reset"
+          ;;
+        status)
+          supabase_action="status"
+          ;;
+      esac
+
       while [[ $# -gt 0 ]]; do
         case "$1" in
           --project-dir)
@@ -260,8 +355,30 @@ db_command() {
             project_dir="$(resolve_dir "$2")"
             shift 2
             ;;
+          --project-env-file)
+            [[ $# -lt 2 ]] && die "--project-env-file requires a path"
+            project_env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
+          --project-ref)
+            [[ $# -lt 2 ]] && die "--project-ref requires a value"
+            project_ref="$2"
+            shift 2
+            ;;
+          --skip-env-sync)
+            skip_env_sync="true"
+            shift
+            ;;
+          --ensure-env-sync)
+            ensure_mode="true"
+            shift
+            ;;
+          --status-only-env-sync)
+            ensure_mode="false"
+            shift
+            ;;
           --help|-h)
-            db_switch_usage
+            db_usage
             return 0
             ;;
           --)
@@ -276,63 +393,20 @@ db_command() {
         esac
       done
 
-      run_shared_action push "$project_dir" "${cli_args[@]}"
-      ;;
-    reset)
-      local project_dir=""
-      local -a cli_args=()
-      while [[ $# -gt 0 ]]; do
-        case "$1" in
-          --project-dir)
-            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
-            project_dir="$(resolve_dir "$2")"
-            shift 2
+      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
+
+      if [[ "$ensure_mode" == "auto" ]]; then
+        case "$action" in
+          apply|switch|reset)
+            ensure_mode="true"
             ;;
-          --help|-h)
-            db_reset_usage
-            return 0
-            ;;
-          --)
-            shift
-            cli_args+=("$@")
-            break
-            ;;
-          *)
-            cli_args+=("$1")
-            shift
+          status)
+            ensure_mode="false"
             ;;
         esac
-      done
+      fi
 
-      run_shared_action reset "$project_dir" "${cli_args[@]}"
-      ;;
-    status)
-      local project_dir=""
-      local -a cli_args=()
-      while [[ $# -gt 0 ]]; do
-        case "$1" in
-          --project-dir)
-            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
-            project_dir="$(resolve_dir "$2")"
-            shift 2
-            ;;
-          --help|-h)
-            db_status_usage
-            return 0
-            ;;
-          --)
-            shift
-            cli_args+=("$@")
-            break
-            ;;
-          *)
-            cli_args+=("$1")
-            shift
-            ;;
-        esac
-      done
-
-      run_shared_action status "$project_dir" "${cli_args[@]}"
+      run_shared_action "$supabase_action" "$ensure_mode" "$effective_project_dir" "$skip_env_sync" "$project_env_file" "$project_ref" "${cli_args[@]}"
       ;;
     --help|-h|"")
       db_usage
@@ -397,7 +471,7 @@ project_command() {
       resolved_project="$(resolve_dir "$project_input")"
 
       env_command sync --project-dir "$resolved_project"
-      db_command switch --project-dir "$resolved_project"
+      db_command apply --project-dir "$resolved_project"
       if [[ "$skip_status" != "true" ]]; then
         db_command status --project-dir "$resolved_project"
       fi

@@ -79,7 +79,10 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
   ```bash
   ./airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
   ./airnub project current                            # see which project was activated last
+  ./airnub env status --project-dir ./million-dollar-maps
+  ./airnub db apply --project-dir ./million-dollar-maps
   ./airnub db reset --project-dir ./million-dollar-maps
+  ./airnub db status --project-dir ./million-dollar-maps
   ```
 
 * Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:

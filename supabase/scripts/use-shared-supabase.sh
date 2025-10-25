@@ -9,6 +9,8 @@ SUPABASE_ENV_HELPER="${SUPABASE_ROOT}/scripts/db-env-local.sh"
 SHARED_ENV_FILE="${SUPABASE_ROOT}/.env.local"
 PROJECT_DIR="${PROJECT_DIR:-${SUPABASE_ROOT}}"
 PROJECT_ENV_FILE="${PROJECT_ENV_FILE:-}"
+SKIP_SHARED_ENV_SYNC="${SKIP_SHARED_ENV_SYNC:-false}"
+SHARED_ENV_ENSURE_START="${SHARED_ENV_ENSURE_START:-auto}"
 
 error() {
   echo "[use-shared-supabase] $*" >&2
@@ -148,22 +150,43 @@ shift || true
 
 case "${COMMAND}" in
   push)
-    if ! sync_shared_env true; then
-      error "Continuing with push even though env sync failed."
+    local ensure_start="$SHARED_ENV_ENSURE_START"
+    [[ "$ensure_start" == "auto" ]] && ensure_start="true"
+
+    if [[ "$SKIP_SHARED_ENV_SYNC" != "true" ]]; then
+      if ! sync_shared_env "$ensure_start"; then
+        error "Continuing with push even though env sync failed."
+      fi
+    else
+      info "Skipping shared env refresh before push (SKIP_SHARED_ENV_SYNC=true)."
     fi
     echo "[use-shared-supabase] Applying migrations from ${PROJECT_DIR} via workspace ${WORKSPACE_ROOT} (project ref: ${PROJECT_REF})."
     (cd "${WORKSPACE_ROOT}" && supabase db push --workdir "${PROJECT_DIR}" --local "$@")
     ;;
   reset)
-    if ! sync_shared_env true; then
-      error "Continuing with reset even though env sync failed."
+    local ensure_start="$SHARED_ENV_ENSURE_START"
+    [[ "$ensure_start" == "auto" ]] && ensure_start="true"
+
+    if [[ "$SKIP_SHARED_ENV_SYNC" != "true" ]]; then
+      if ! sync_shared_env "$ensure_start"; then
+        error "Continuing with reset even though env sync failed."
+      fi
+    else
+      info "Skipping shared env refresh before reset (SKIP_SHARED_ENV_SYNC=true)."
     fi
     echo "[use-shared-supabase] WARNING: Resetting shared stack for ${PROJECT_DIR} via workspace ${WORKSPACE_ROOT}. This wipes existing data."
     (cd "${WORKSPACE_ROOT}" && supabase db reset --workdir "${PROJECT_DIR}" --local -y "$@")
     ;;
   status)
-    if ! sync_shared_env false; then
-      error "Status reported without refreshing shared env vars."
+    local ensure_start="$SHARED_ENV_ENSURE_START"
+    [[ "$ensure_start" == "auto" ]] && ensure_start="false"
+
+    if [[ "$SKIP_SHARED_ENV_SYNC" != "true" ]]; then
+      if ! sync_shared_env "$ensure_start"; then
+        error "Status reported without refreshing shared env vars."
+      fi
+    else
+      info "Skipping shared env refresh before status (SKIP_SHARED_ENV_SYNC=true)."
     fi
     echo "[use-shared-supabase] Checking shared stack status for ${PROJECT_DIR} via workspace ${WORKSPACE_ROOT} (project ref: ${PROJECT_REF})."
     (cd "${WORKSPACE_ROOT}" && supabase status -o env --workdir "${PROJECT_DIR}" "$@")
