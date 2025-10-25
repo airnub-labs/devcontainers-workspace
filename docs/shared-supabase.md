@@ -11,20 +11,6 @@ Why a shared stack?
 
 ---
 
-# Shared Supabase operations
-
-The Dev Container and Codespaces sessions share a single Supabase stack configured in [`supabase/config.toml`](../supabase/config.toml). Every project in `/workspaces` should target that stack instead of starting its own instance.
-
-This document explains how the meta workspace provides a single, shared Supabase stack (and a Redis sidecar) for every project mounted under `/workspaces`.
-
-Why a shared stack?
-
-* Run one Supabase + Redis instance instead of many. This reduces CPU/memory usage, avoids port collisions, and speeds up switching between projects.
-* Centralized credentials and env-syncing mean you can apply migrations from any project without reconfiguring hosts or ports.
-* Works equally well locally and in GitHub Codespaces because the Dev Container exposes the same shared ports and env files.
-
----
-
 ## Ports and services
 
 The Supabase CLI spins up multiple services when you run `supabase start`. The meta workspace exposes these on fixed ports so every project can connect to the same endpoints:

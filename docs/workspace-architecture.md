@@ -2,10 +2,6 @@
 
 This repository acts as a "meta" workspace so you can develop multiple Airnub Labs projects inside a single Dev Container (locally or in GitHub Codespaces). Instead of juggling many containers or mismatched Supabase ports, every project points at the same shared runtime.
 
-# Workspace architecture
-
-This repository acts as a "meta" workspace so you can develop multiple Airnub Labs projects inside a single Dev Container (locally or in GitHub Codespaces). Instead of juggling many containers or mismatched Supabase ports, every project points at the same shared runtime.
-
 ---
 
 ## Why a meta workspace?
