@@ -77,6 +77,7 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 * Prefer the repository's CLI wrapper for day-to-day tasks (available globally as `airnub` once the Dev Container setup completes):
 
   ```bash
+  airnub use                                # reuse the last project (or default supabase/)
   airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
   airnub project current                            # see which project was activated last
   airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
@@ -89,6 +90,7 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 
   When the devcontainer clone helper runs for the first time it seeds `./.airnub-current-project` with the first cloned repo
   (and falls back to `./supabase` if nothing was cloned yet) so new contributors land on a sensible default for the shared stack.
+  Run `airnub use` without arguments any time to reuse that remembered selection (or the default `supabase/`).
   Older workspaces that already have `supabase/.airnub-current-project` get migrated automatically the next time you use the CLI.
 
 * Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:

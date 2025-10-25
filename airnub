@@ -94,13 +94,14 @@ USAGE
 
 project_use_usage() {
   cat <<'USAGE'
-Usage: airnub project use [options] <project-dir>
+Usage: airnub project use [options] [<project-dir>]
 
 Options:
   --skip-status        Skip the final `supabase status` confirmation step.
 
 Examples:
   airnub project use ./million-dollar-maps
+  airnub use                     # reuse the last project (or default supabase/)
   airnub use ./million-dollar-maps
 USAGE
 }
@@ -282,16 +283,27 @@ ensure_current_project_marker() {
   return 1
 }
 
+relative_to_repo() {
+  local path="$1"
+
+  if [[ "$path" == "$REPO_ROOT" ]]; then
+    printf '.'
+    return
+  fi
+
+  if [[ "$path" == "$REPO_ROOT"/* ]]; then
+    printf './%s' "${path#$REPO_ROOT/}"
+    return
+  fi
+
+  printf '%s' "$path"
+}
+
 remember_project() {
   local project_dir="$1"
-  local output="$project_dir"
+  local output
 
-  if [[ "$project_dir" == "$REPO_ROOT" ]]; then
-    output="."
-  elif [[ "$project_dir" == "$REPO_ROOT"/* ]]; then
-    local relative="${project_dir#$REPO_ROOT/}"
-    output="./${relative}"
-  fi
+  output="$(relative_to_repo "$project_dir")"
 
   ensure_current_project_marker || true
   mkdir -p "$(dirname "$CURRENT_PROJECT_FILE")"
@@ -712,12 +724,27 @@ project_command() {
         esac
       done
 
-      if [[ -z "$project_input" ]]; then
-        die "Project directory is required. See 'airnub project use --help'."
+      local resolved_project=""
+      local resolved_via=""
+
+      if [[ -n "$project_input" ]]; then
+        resolved_project="$(resolve_dir "$project_input")"
+      else
+        if resolved_project="$(get_current_project_dir 2>/dev/null)"; then
+          resolved_via="remembered"
+        elif [[ -d "$SUPABASE_DIR" ]]; then
+          resolved_project="$(resolve_dir "$SUPABASE_DIR")"
+          resolved_via="default"
+        else
+          die "Project directory is required and no default could be determined. See 'airnub project use --help'."
+        fi
       fi
 
-      local resolved_project
-      resolved_project="$(resolve_dir "$project_input")"
+      if [[ "$resolved_via" == "remembered" ]]; then
+        echo "[airnub] Using remembered project: $(relative_to_repo "$resolved_project")."
+      elif [[ "$resolved_via" == "default" ]]; then
+        echo "[airnub] No project supplied; defaulting to $(relative_to_repo "$resolved_project")."
+      fi
 
       env_command sync --project-dir "$resolved_project"
       db_command apply --project-dir "$resolved_project"
