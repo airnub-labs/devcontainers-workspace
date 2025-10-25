@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR"
+SUPABASE_DIR="${SUPABASE_DIR:-${REPO_ROOT}/supabase}"
+DB_ENV_HELPER="${DB_ENV_HELPER:-${SUPABASE_DIR}/scripts/db-env-local.sh}"
+SHARED_SCRIPT="${SHARED_SCRIPT:-${SUPABASE_DIR}/scripts/use-shared-supabase.sh}"
+
+usage() {
+  cat <<'USAGE'
+Usage: airnub <command> [subcommand] [options]
+
+Commands:
+  env sync        Sync Supabase environment variables to a project .env.local.
+  db reset        Reset the shared Supabase database for a project (destructive).
+
+Global options:
+  -h, --help      Show this help message.
+
+Use "airnub <command> --help" for more information on a command.
+USAGE
+}
+
+env_usage() {
+  cat <<'USAGE'
+Usage: airnub env sync [options]
+
+Options:
+  --project-dir DIR   Supabase project directory (default: supabase/).
+  --status-only       Only refresh env vars if Supabase is already running.
+  --ensure-start      Start Supabase if it is not running (default).
+USAGE
+}
+
+db_usage() {
+  cat <<'USAGE'
+Usage: airnub db reset [options] [-- <supabase args>]
+
+Options:
+  --project-dir DIR   Supabase project directory (default: supabase/).
+
+All arguments after "--" are passed directly to the Supabase CLI.
+USAGE
+}
+
+die() {
+  echo "[airnub] $*" >&2
+  exit 1
+}
+
+resolve_dir() {
+  local input="$1"
+
+  if [[ -z "$input" ]]; then
+    die "Project directory path is empty"
+  fi
+
+  if [[ "$input" == /* ]]; then
+    [[ -d "$input" ]] || die "Directory not found: $input"
+    (cd "$input" && pwd)
+    return
+  fi
+
+  if [[ -d "$input" ]]; then
+    (cd "$input" && pwd)
+    return
+  fi
+
+  if [[ -d "${REPO_ROOT}/$input" ]]; then
+    (cd "${REPO_ROOT}/$input" && pwd)
+    return
+  fi
+
+  die "Directory not found: $input"
+}
+
+env_command() {
+  local action="${1:-}";
+  shift || true
+
+  case "$action" in
+    sync)
+      local ensure_start="true"
+      local project_dir=""
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --status-only)
+            ensure_start="false"
+            shift
+            ;;
+          --ensure-start)
+            ensure_start="true"
+            shift
+            ;;
+          --help|-h)
+            env_usage
+            return 0
+            ;;
+          *)
+            die "Unknown option for 'airnub env sync': $1"
+            ;;
+        esac
+      done
+
+      [[ -x "$DB_ENV_HELPER" ]] || die "db-env helper not found at $DB_ENV_HELPER"
+
+      local -a cmd=("$DB_ENV_HELPER")
+      if [[ "$ensure_start" == "false" ]]; then
+        cmd+=("--status-only")
+      else
+        cmd+=("--ensure-start")
+      fi
+
+      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
+
+      if [[ -n "$project_dir" ]]; then
+        cmd+=("--project-dir" "$project_dir")
+      fi
+
+      SUPABASE_PROJECT_DIR="$effective_project_dir" "${cmd[@]}"
+      ;;
+    --help|-h|"")
+      env_usage
+      ;;
+    *)
+      die "Unknown env subcommand: ${action}"
+      ;;
+  esac
+}
+
+db_command() {
+  local action="${1:-}";
+  shift || true
+
+  case "$action" in
+    reset)
+      local project_dir=""
+      local -a cli_args=()
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --help|-h)
+            db_usage
+            return 0
+            ;;
+          --)
+            shift
+            cli_args+=("$@")
+            break
+            ;;
+          *)
+            cli_args+=("$1")
+            shift
+            ;;
+        esac
+      done
+
+      [[ -x "$SHARED_SCRIPT" ]] || die "shared supabase helper not found at $SHARED_SCRIPT"
+
+      local env_project_dir="${project_dir:-${SUPABASE_DIR}}"
+      PROJECT_DIR="$env_project_dir" "$SHARED_SCRIPT" reset "${cli_args[@]}"
+      ;;
+    --help|-h|"")
+      db_usage
+      ;;
+    *)
+      die "Unknown db subcommand: ${action}"
+      ;;
+  esac
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  local command="$1"
+  shift
+
+  case "$command" in
+    env)
+      env_command "$@"
+      ;;
+    db)
+      db_command "$@"
+      ;;
+    --help|-h)
+      usage
+      ;;
+    *)
+      die "Unknown command: $command"
+      ;;
+  esac
+}
+
+main "$@"
