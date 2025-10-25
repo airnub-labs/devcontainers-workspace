@@ -16,10 +16,12 @@ Commands:
   env sync            Write Supabase env vars to a project .env.local file.
   env status          Refresh env vars only if the stack is already running.
   env start           Ensure the stack is running and emit env vars.
+  env reset           Remove the generated env file for a project.
   db apply            Apply migrations against the shared Supabase stack.
   db reset            Reset the shared Supabase stack for a project (destructive).
   db status           Show the shared Supabase stack status for a project.
   project use         Sync env vars, run migrations, and show status for a project.
+  project setup       Prime a project's .env.local from .env.example and Supabase vars.
   project current     Display the last project used with `project use`.
   use                 Shortcut for `project use`.
 
@@ -38,6 +40,7 @@ Subcommands:
   sync                Write env vars, starting Supabase if needed (default behaviour).
   status              Only refresh env vars from a running Supabase stack.
   start               Ensure Supabase is running and then write env vars.
+  reset               Remove the generated env file for a project.
 
 Options:
   --project-dir DIR   Supabase project directory (default: supabase/).
@@ -46,10 +49,11 @@ Options:
   --ensure-start      Force starting Supabase before syncing env vars.
   -h, --help          Show this help message.
 
-Examples:
+  Examples:
   airnub env sync --project-dir apps/my-app
   airnub env status --env-file ./apps/my-app/.env.shared
   airnub env start  # alias for `env sync --ensure-start`
+  airnub env reset --project-dir apps/my-app
 USAGE
 }
 
@@ -81,6 +85,7 @@ Usage: airnub project <subcommand> [options]
 
 Subcommands:
   use                 Sync env vars, apply migrations, and show status for a project.
+  setup               Seed .env.local from .env.example (or append missing keys) and sync Supabase vars.
   current             Show the most recent project selected with `project use`.
 
 Run "airnub project <subcommand> --help" for more details.
@@ -97,6 +102,22 @@ Options:
 Examples:
   airnub project use ./million-dollar-maps
   airnub use ./million-dollar-maps
+USAGE
+}
+
+project_setup_usage() {
+  cat <<'USAGE'
+Usage: airnub project setup [options] [<project-dir>]
+
+Options:
+  --project-dir DIR   Explicit project directory (overrides remembered selection).
+  --skip-env-sync     Skip the Supabase env sync step (only manage .env files).
+  --help, -h          Show this help message.
+
+Without --project-dir, the command uses the project last selected via
+`airnub project use`. It copies <project>/.env.example to <project>/.env.local
+when the destination does not exist, appends any missing keys from the example,
+then runs `airnub env sync` to refresh Supabase credentials.
 USAGE
 }
 
@@ -134,6 +155,35 @@ show_current_project() {
   else
     echo "No project has been selected yet. Run 'airnub project use <dir>' first."
   fi
+}
+
+get_current_project_dir() {
+  if [[ ! -f "$CURRENT_PROJECT_FILE" ]]; then
+    return 1
+  fi
+
+  local stored
+  stored="$(<"$CURRENT_PROJECT_FILE")"
+  stored="${stored//$'\r'/}"
+  stored="${stored//$'\n'/}"
+
+  if [[ -z "$stored" ]]; then
+    return 1
+  fi
+
+  if [[ "$stored" == "." ]]; then
+    printf '%s\n' "$REPO_ROOT"
+    return 0
+  fi
+
+  if [[ "$stored" == /* ]]; then
+    resolve_dir "$stored"
+    return 0
+  fi
+
+  local relative="$stored"
+  relative="${relative#./}"
+  resolve_dir "$REPO_ROOT/$relative"
 }
 
 resolve_dir() {
@@ -267,6 +317,48 @@ env_command() {
         else
           echo "[airnub] Synced Supabase env vars into $target_env_file (stack started if necessary)."
         fi
+      fi
+      ;;
+    reset)
+      local project_dir=""
+      local env_file=""
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --env-file)
+            [[ $# -lt 2 ]] && die "--env-file requires a path"
+            env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
+          --help|-h)
+            env_usage
+            return 0
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments for 'airnub env reset': $*"
+            fi
+            ;;
+          *)
+            die "Unknown option for 'airnub env reset': $1"
+            ;;
+        esac
+      done
+
+      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
+      local target_env_file="${env_file:-${effective_project_dir}/.env.local}"
+
+      if [[ -f "$target_env_file" ]]; then
+        rm -f "$target_env_file"
+        echo "[airnub] Removed $target_env_file."
+      else
+        echo "[airnub] No env file to remove at $target_env_file."
       fi
       ;;
     --help|-h|"")
@@ -478,6 +570,127 @@ project_command() {
 
       remember_project "$resolved_project"
       show_current_project
+      ;;
+    setup)
+      local project_input=""
+      local skip_env_sync="false"
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            if [[ -n "$project_input" ]]; then
+              die "Project directory already provided: $project_input"
+            fi
+            project_input="$2"
+            shift 2
+            ;;
+          --skip-env-sync)
+            skip_env_sync="true"
+            shift
+            ;;
+          --help|-h)
+            project_setup_usage
+            return 0
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments after '--': $*"
+            fi
+            ;;
+          --*)
+            die "Unknown option for 'airnub project setup': $1"
+            ;;
+          *)
+            if [[ -n "$project_input" ]]; then
+              die "Multiple project directories provided: '$project_input' and '$1'"
+            fi
+            project_input="$1"
+            shift
+            ;;
+        esac
+      done
+
+      local resolved_project=""
+      if [[ -n "$project_input" ]]; then
+        resolved_project="$(resolve_dir "$project_input")"
+      else
+        if ! resolved_project="$(get_current_project_dir)"; then
+          die "No current project recorded. Use 'airnub project use <dir>' or supply --project-dir."
+        fi
+      fi
+
+      local env_example="$resolved_project/.env.example"
+      local env_local="$resolved_project/.env.local"
+
+      if [[ -f "$env_example" ]]; then
+        if [[ ! -f "$env_local" ]]; then
+          cp "$env_example" "$env_local"
+          echo "[airnub] Created $env_local from $env_example."
+        else
+          local appended_keys
+          appended_keys="$(python3 - "$env_local" "$env_example" <<'PY'
+import os
+import sys
+
+dest, example = sys.argv[1:3]
+
+def load_keys(path):
+    keys = {}
+    if not os.path.exists(path):
+        return keys
+    with open(path, 'r', encoding='utf-8') as fh:
+        for line in fh:
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+            if '=' not in line:
+                continue
+            key = line.split('=', 1)[0].strip()
+            if key:
+                keys.setdefault(key, line.rstrip('\n'))
+    return keys
+
+existing = load_keys(dest)
+example_keys = load_keys(example)
+
+missing = [k for k in example_keys.keys() if k not in existing]
+
+if not missing:
+    sys.exit(0)
+
+needs_newline = False
+if os.path.exists(dest) and os.path.getsize(dest) > 0:
+    with open(dest, 'rb') as fh:
+        fh.seek(-1, os.SEEK_END)
+        needs_newline = fh.read(1) != b'\n'
+
+with open(dest, 'a', encoding='utf-8') as fh:
+    if needs_newline:
+        fh.write('\n')
+    for key in missing:
+        fh.write(example_keys[key])
+        fh.write('\n')
+
+print('Added keys: ' + ', '.join(missing))
+PY
+)"
+          if [[ -n "$appended_keys" ]]; then
+            echo "[airnub] ${appended_keys}"
+          else
+            echo "[airnub] .env.local already contains keys from $env_example."
+          fi
+        fi
+      else
+        echo "[airnub] No .env.example found in $resolved_project; skipping example sync."
+      fi
+
+      if [[ "$skip_env_sync" != "true" ]]; then
+        env_command sync --project-dir "$resolved_project"
+      else
+        echo "[airnub] Skipped Supabase env sync (per --skip-env-sync)."
+      fi
       ;;
     current)
       if [[ $# -gt 0 ]]; then

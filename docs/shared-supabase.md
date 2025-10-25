@@ -54,7 +54,9 @@ From the workspace root, use the bundled CLI to sync credentials, apply migratio
 ```bash
 ./airnub use ./million-dollar-maps                        # env sync + migrations + status in one step
 ./airnub project current                                  # show which project was activated last
+./airnub project setup --project-dir ./million-dollar-maps # copy .env.example, append missing keys, sync Supabase env vars
 ./airnub env status --project-dir ./million-dollar-maps    # refresh env vars from a running stack
+./airnub env reset --project-dir ./million-dollar-maps     # remove the generated Supabase env file
 ./airnub db apply --project-dir ./million-dollar-maps      # supabase db push --local
 ./airnub db reset --project-dir ./million-dollar-maps      # supabase db reset --local -y
 ./airnub db status --project-dir ./million-dollar-maps     # supabase status -o env
@@ -62,13 +64,16 @@ From the workspace root, use the bundled CLI to sync credentials, apply migratio
 
 The CLI follows a consistent naming pattern:
 
-* `env` commands manage `.env.local` files (`sync`, `status`, `start`) and expose `--project-dir`, `--env-file`, `--ensure-start`, and `--status-only` for fine-grained control.
+* `env` commands manage `.env.local` files (`sync`, `status`, `start`, `reset`) and expose `--project-dir`, `--env-file`, `--ensure-start`, and `--status-only` for fine-grained control.
 * `db` commands (`apply`, `reset`, `status`) wrap the shared Supabase stack. Use `--project-env-file`, `--project-ref`, `--skip-env-sync`, `--ensure-env-sync`, or `--status-only-env-sync` to match different workflows, and pass additional Supabase CLI flags after `--`.
 * `project use` (and the `use` alias) chain the env + db commands, remember your selection, and support `--skip-status` when you want a faster handoff.
+* `project setup` seeds `.env.local` from `.env.example`, appends missing keys without overwriting existing values, and (by default) refreshes Supabase credentials using the last remembered project.
 
 All subcommands accept relative or absolute paths, forward extra arguments after `--` to the Supabase CLI, and surface the same behaviour as the helper scripts described later in this guide.
 
 `airnub use` is the beginner-friendly path: it resolves the project directory, syncs `.env.local`, runs `supabase db push`, then prints `supabase status` so you can immediately confirm which project is wired to the shared stack. The command also records the selection in `supabase/.airnub-current-project`, which powers `airnub project current` for quick checks when you return to the workspace later. Add `--skip-status` if you prefer to omit the status call.
+
+Need to prep a project’s env files after switching? Run `airnub project setup` on the remembered project (or pass `--project-dir`) to copy `.env.example` to `.env.local` when missing, append any new keys from the example, and refresh Supabase credentials in one step.
 
 ### Manual Supabase CLI workflow
 
