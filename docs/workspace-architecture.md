@@ -45,6 +45,16 @@ Open this meta workspace when you:
 
 Because all repos live side-by-side under `/workspaces`, git operations work exactly as if you cloned them locally—no submodules required.
 
+### How the shared stack improves local performance
+
+Running a single Supabase + Redis stack provides these practical benefits for local development:
+
+* Lower resource usage: one database instance consumes far less memory/CPU than many parallel stacks.
+* Faster context switching: switching active repos doesn't require spinning up a fresh Supabase/Redis instance each time.
+* Predictable configuration: fixed ports and a single `supabase/.env.local` remove the need to hunt for per-repo ports or credentials.
+
+If you have a machine with limited resources or frequently work across repos, the meta workspace reduces friction and improves iteration speed.
+
 ---
 
 ## Clone automation
