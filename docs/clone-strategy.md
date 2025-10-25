@@ -32,7 +32,7 @@ This document explains **how the meta workspace clones project repos** in a sing
 
 ## Where things live
 
-```
+```text
 <workspace root>
   .devcontainer/
     devcontainer.json                # declares Codespaces repo permissions

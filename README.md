@@ -1,4 +1,5 @@
 # vscode-meta-workspace-internal
+
 > One dev container, many projects — with a shared Redis and **one** local Supabase stack. Works locally and in **GitHub Codespaces**.
 
 This repo gives you a ready-to-go workspace for Airnub Labs projects. Open a single VS Code window and the Dev Container boots a workspace that mounts sibling repos and exposes a single, shared Supabase + Redis runtime.
@@ -21,7 +22,7 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 
 1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.
 2. In the Dev Container terminal, list the mounted repos with `ls /workspaces`.
-3. Start the shared services once per session: `supabase start` (Studio: http://localhost:54323, API: http://localhost:54321). This single stack serves all projects in `/workspaces` so you don't need a separate Supabase instance per repo.
+3. Start the shared services once per session: `supabase start` (Studio: [http://localhost:54323](http://localhost:54323), API: [http://localhost:54321](http://localhost:54321)). This single stack serves all projects in `/workspaces` so you don't need a separate Supabase instance per repo.
 4. Work in a project folder (for example `cd /workspaces/million-dollar-maps`) and run that project’s migrations against the shared stack.
 
 ### Option B — GitHub Codespaces
@@ -39,13 +40,11 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 * Services run with the project ref defined in [`supabase/config.toml`](./supabase/config.toml) — by default `airnub-labs`.
 * Run migrations with the Supabase CLI from inside the project directory, always targeting the shared ref:
 
-  ```bash
-  supabase db push --project-ref airnub-labs --local
-  ```
+```bash
+supabase db push --project-ref airnub-labs --local
+```
 
 * Copy `supabase/scripts/use-shared-supabase.sh` into your project (or call it directly) to sync env vars, apply migrations, reset, or check status with a single command.
-
-Full instructions for automation, env sync, and helper usage live in the documentation below. See the "Troubleshooting & performance" section in `docs/shared-supabase.md` if you hit port collisions, heavy resource usage, or stale credentials.
 
 ---
 

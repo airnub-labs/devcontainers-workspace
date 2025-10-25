@@ -11,38 +11,39 @@ Why a shared stack?
 
 ---
 
+# Shared Supabase operations
+
+The Dev Container and Codespaces sessions share a single Supabase stack configured in [`supabase/config.toml`](../supabase/config.toml). Every project in `/workspaces` should target that stack instead of starting its own instance.
+
+This document explains how the meta workspace provides a single, shared Supabase stack (and a Redis sidecar) for every project mounted under `/workspaces`.
+
+Why a shared stack?
+
+* Run one Supabase + Redis instance instead of many. This reduces CPU/memory usage, avoids port collisions, and speeds up switching between projects.
+* Centralized credentials and env-syncing mean you can apply migrations from any project without reconfiguring hosts or ports.
+* Works equally well locally and in GitHub Codespaces because the Dev Container exposes the same shared ports and env files.
+
+---
+
 ## Ports and services
 
-Supabase CLI spins up multiple services when you run `supabase start`:
 The Supabase CLI spins up multiple services when you run `supabase start`. The meta workspace exposes these on fixed ports so every project can connect to the same endpoints:
 
 | Service | Port | Notes |
 | ------- | ---- | ----- |
 | API | `54321` | REST/Realtime API used by apps. |
 | Postgres | `54322` | Database access used by the CLI during migrations. |
-| Studio | `54323` | Web UI for inspecting data. |
+| Studio | `54323` | Web UI for inspecting data: [http://localhost:54323](http://localhost:54323). |
 | Inbucket | `54324` | Email testing inbox. |
 | Storage | `54326` | Object storage API. |
 | Analytics (Logflare) | `54327` | Supabase analytics/logging endpoint. |
 
 A Redis sidecar is available at `6379` (defined in `.devcontainer/docker-compose.yml`). Because these ports are fixed and shared, you avoid the complexity of tracking different ports for each project.
 
-| Service | Port | Notes |
-| ------- | ---- | ----- |
-| API | `54321` | REST/Realtime API exposed to local apps. |
-| Postgres | `54322` | Direct database access (used by the CLI during migrations). |
-| Studio | `54323` | Web UI at http://localhost:54323 for inspecting data. |
-| Inbucket | `54324` | Email testing inbox. |
-| Storage | `54326` | Object storage API. |
-| Analytics (Logflare) | `54327` | Supabase analytics/logging endpoint. |
-
-A Redis sidecar is available at port `6379` (defined in `docker-compose.yml`).
-
 ---
 
 ## Starting and stopping the stack
 
-Run these commands inside the Dev Container (or Codespace) terminal:
 ### Start/stop (quick)
 
 Run these commands inside the Dev Container (or Codespace) terminal:
@@ -55,15 +56,6 @@ supabase stop    # stop the stack when you are finished
 The first command also generates/updates `supabase/.env.local` with environment variables for the shared project. Helper scripts use that file to sync credentials into each project.
 
 If you restart the container, re-run `supabase start` once per session so services and env vars are current.
-
-```bash
-supabase start   # launch all services and write fresh credentials to supabase/.env.local
-supabase stop    # stop the stack when you are finished
-```
-
-The first command also generates/updates `supabase/.env.local` with environment variables for the shared project. Commit that file if you want teammates to inherit the baseline values; the helper scripts read from it to sync credentials into each project.
-
-If you restart the container, re-run `supabase start` once per session to ensure the services and env vars are current.
 
 ---
 
@@ -120,11 +112,11 @@ You can override the target env file by exporting `PROJECT_ENV_FILE` before invo
 
 If you run into problems when using the shared stack, these quick checks solve most issues:
 
-- Port collisions: ensure you don't have another local Supabase instance running (search for `supabase` containers with `docker ps`). Stop them or run `supabase stop` in the meta workspace.
-- Stale credentials: re-run `./supabase/scripts/db-env-local.sh --ensure-start` in the Dev Container to refresh `supabase/.env.local` and then run `./scripts/use-shared-supabase.sh status` from your project to sync.
-- App server collisions: stop any local app processes (for example, a leftover `npm run dev`) before switching projects to avoid reusing forwarded ports like `3000`.
-- High memory/CPU: if your machine struggles, allocate more resources to Docker or run fewer heavy services simultaneously (e.g., stop analytics sidecar if not needed).
-- Logs: `supabase logs` (in the container) and `docker compose logs supabase` are helpful for diagnosing service failures.
+* Port collisions: ensure you don't have another local Supabase instance running (search for `supabase` containers with `docker ps`). Stop them or run `supabase stop` in the meta workspace.
+* Stale credentials: re-run `./supabase/scripts/db-env-local.sh --ensure-start` in the Dev Container to refresh `supabase/.env.local` and then run `./scripts/use-shared-supabase.sh status` from your project to sync.
+* App server collisions: stop any local app processes (for example, a leftover `npm run dev`) before switching projects to avoid reusing forwarded ports like `3000`.
+* High memory/CPU: if your machine struggles, allocate more resources to Docker or run fewer heavy services simultaneously (e.g., stop analytics sidecar if not needed).
+* Logs: `supabase logs` (in the container) and `docker compose logs supabase` are helpful for diagnosing service failures.
 
 If you need an isolated Supabase instance for a single repo (rare), use that project's `.devcontainer` and a local Supabase run — but prefer the shared stack for day-to-day cross-repo development.
 
