@@ -101,6 +101,7 @@
         "[typescript]": {
           "editor.defaultFormatter": "denoland.vscode-deno"
         },
+        "workbench.activityBar.location": "top",
         "workbench.startupEditor": "readme"
       },
       "commands": [
