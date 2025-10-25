@@ -47,20 +47,26 @@ If you restart the container, re-run `supabase start -o env` once per session so
 
 ## Running migrations from a project
 
-1. `cd /workspaces/<project>`.
-2. Use the Supabase CLI with the shared project ref:
+1. `cd /workspaces/airnub-labs` (the workspace root).
+2. Run the Supabase CLI and point it at the project directory with `--workdir`:
 
    ```bash
-   supabase db push --project-ref airnub-labs --local
+   supabase db push --workdir ./<project-name> --local
+   ```
+
+   For example, to push migrations for `million-dollar-maps`:
+
+   ```bash
+   supabase db push --workdir ./million-dollar-maps --local
    ```
 
    *Replace `push` with `reset` to perform a destructive reset:*
 
    ```bash
-   supabase db reset --project-ref airnub-labs --local -y
+   supabase db reset --workdir ./million-dollar-maps --local -y
    ```
 
-Why the extra flag? The CLI normally infers a project ref based on the current directory name. Without `--project-ref airnub-labs` (or `SUPABASE_PROJECT_REF=airnub-labs`), it looks for containers named after the repo and fails. The shared ref is declared once in `supabase/config.toml` and reused across projects.
+Why `--workdir`? The Supabase CLI infers its configuration from the working directory. By running the command from the shared workspace root and specifying each project’s folder, the CLI uses that project’s migrations while still targeting the shared stack defined in `supabase/config.toml`.
 
 ---
 
@@ -81,9 +87,9 @@ Copy or symlink this script into each project (for example `scripts/use-shared-s
 Available subcommands:
 
 ```bash
-./scripts/use-shared-supabase.sh push    # supabase db push --project-ref airnub-labs --local
-./scripts/use-shared-supabase.sh reset   # supabase db reset --project-ref airnub-labs --local -y
-./scripts/use-shared-supabase.sh status  # supabase status -o env --project-ref airnub-labs
+./scripts/use-shared-supabase.sh push    # supabase db push --workdir "$(pwd)" --local
+./scripts/use-shared-supabase.sh reset   # supabase db reset --workdir "$(pwd)" --local -y
+./scripts/use-shared-supabase.sh status  # supabase status -o env --workdir "$(pwd)"
 ```
 
 What it does on every run:

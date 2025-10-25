@@ -74,10 +74,10 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 ## Shared Supabase workflow (at a glance)
 
 * Services run with the project ref defined in [`supabase/config.toml`](./supabase/config.toml) — by default `airnub-labs`.
-* Run migrations with the Supabase CLI from inside the project directory, always targeting the shared ref:
+* Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:
 
 ```bash
-supabase db push --project-ref airnub-labs --local
+supabase db push --workdir ./<project-name> --local
 ```
 
 * Copy `supabase/scripts/use-shared-supabase.sh` into your project (or call it directly) to sync env vars, apply migrations, reset, or check status with a single command.
