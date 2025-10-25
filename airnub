@@ -12,11 +12,13 @@ usage() {
 Usage: airnub <command> [subcommand] [options]
 
 Commands:
-  env sync        Sync Supabase environment variables to a project .env.local.
-  db reset        Reset the shared Supabase database for a project (destructive).
+  env sync          Sync Supabase environment variables to a project .env.local.
+  db switch         Apply migrations so the shared Supabase stack matches a project.
+  db reset          Reset the shared Supabase database for a project (destructive).
+  db status         Show the shared Supabase stack status for a project.
 
 Global options:
-  -h, --help      Show this help message.
+  -h, --help        Show this help message.
 
 Use "airnub <command> --help" for more information on a command.
 USAGE
@@ -35,12 +37,50 @@ USAGE
 
 db_usage() {
   cat <<'USAGE'
-Usage: airnub db reset [options] [-- <supabase args>]
+Usage: airnub db <subcommand> [options] [-- <supabase args>]
+
+Subcommands:
+  switch              Apply migrations for the shared Supabase stack.
+  reset               Reset the shared Supabase stack (destructive).
+  status              Show shared Supabase stack details.
 
 Options:
   --project-dir DIR   Supabase project directory (default: supabase/).
 
-All arguments after "--" are passed directly to the Supabase CLI.
+All arguments after "--" are passed directly to the Supabase CLI for the selected subcommand.
+USAGE
+}
+
+db_switch_usage() {
+  cat <<'USAGE'
+Usage: airnub db switch [options] [-- <supabase args>]
+
+Options:
+  --project-dir DIR   Supabase project directory whose migrations should run (default: supabase/).
+
+All arguments after "--" are forwarded to 'supabase db push'.
+USAGE
+}
+
+db_reset_usage() {
+  cat <<'USAGE'
+Usage: airnub db reset [options] [-- <supabase args>]
+
+Options:
+  --project-dir DIR   Supabase project directory to reset (default: supabase/).
+
+All arguments after "--" are forwarded to 'supabase db reset'.
+USAGE
+}
+
+db_status_usage() {
+  cat <<'USAGE'
+Usage: airnub db status [options] [-- <supabase args>]
+
+Options:
+  --project-dir DIR   Supabase project directory to inspect (default: supabase/).
+
+All arguments after "--" are forwarded to 'supabase status'.
 USAGE
 }
 
@@ -134,12 +174,23 @@ env_command() {
   esac
 }
 
+run_shared_action() {
+  local action="$1"
+  local project_dir="$2"
+  shift 2 || true
+
+  [[ -x "$SHARED_SCRIPT" ]] || die "shared supabase helper not found at $SHARED_SCRIPT"
+
+  local env_project_dir="${project_dir:-${SUPABASE_DIR}}"
+  PROJECT_DIR="$env_project_dir" "$SHARED_SCRIPT" "$action" "$@"
+}
+
 db_command() {
   local action="${1:-}";
   shift || true
 
   case "$action" in
-    reset)
+    switch)
       local project_dir=""
       local -a cli_args=()
       while [[ $# -gt 0 ]]; do
@@ -150,7 +201,7 @@ db_command() {
             shift 2
             ;;
           --help|-h)
-            db_usage
+            db_switch_usage
             return 0
             ;;
           --)
@@ -165,10 +216,63 @@ db_command() {
         esac
       done
 
-      [[ -x "$SHARED_SCRIPT" ]] || die "shared supabase helper not found at $SHARED_SCRIPT"
+      run_shared_action push "$project_dir" "${cli_args[@]}"
+      ;;
+    reset)
+      local project_dir=""
+      local -a cli_args=()
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --help|-h)
+            db_reset_usage
+            return 0
+            ;;
+          --)
+            shift
+            cli_args+=("$@")
+            break
+            ;;
+          *)
+            cli_args+=("$1")
+            shift
+            ;;
+        esac
+      done
 
-      local env_project_dir="${project_dir:-${SUPABASE_DIR}}"
-      PROJECT_DIR="$env_project_dir" "$SHARED_SCRIPT" reset "${cli_args[@]}"
+      run_shared_action reset "$project_dir" "${cli_args[@]}"
+      ;;
+    status)
+      local project_dir=""
+      local -a cli_args=()
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --help|-h)
+            db_status_usage
+            return 0
+            ;;
+          --)
+            shift
+            cli_args+=("$@")
+            break
+            ;;
+          *)
+            cli_args+=("$1")
+            shift
+            ;;
+        esac
+      done
+
+      run_shared_action status "$project_dir" "${cli_args[@]}"
       ;;
     --help|-h|"")
       db_usage
