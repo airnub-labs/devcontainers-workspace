@@ -106,7 +106,11 @@
       },
       "commands": [
         "workbench.action.terminal.new",
-        "markdown.showPreview"
+        "markdown.showPreview",
+        "workbench.view.extension.codexViewContainer",
+        "workbench.action.moveViewContainerToSecondarySidebar",
+        "workbench.view.extension.geminiChat",
+        "workbench.action.moveViewContainerToSecondarySidebar"
       ],
       "extensions": [
         "ms-azuretools.vscode-docker",
