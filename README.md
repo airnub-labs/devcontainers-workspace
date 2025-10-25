@@ -74,6 +74,14 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 ## Shared Supabase workflow (at a glance)
 
 * Services run with the project ref defined in [`supabase/config.toml`](./supabase/config.toml) — by default `airnub-labs`.
+* Prefer the repository's CLI wrapper for day-to-day tasks:
+
+  ```bash
+  ./airnub env sync --project-dir ./million-dollar-maps
+  ./airnub db switch --project-dir ./million-dollar-maps
+  ./airnub db status --project-dir ./million-dollar-maps
+  ```
+
 * Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:
 
 ```bash

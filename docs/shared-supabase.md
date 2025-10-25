@@ -47,6 +47,21 @@ If you restart the container, re-run `supabase start -o env` once per session so
 
 ## Running migrations from a project
 
+### One-command workflow with the `airnub` CLI
+
+From the workspace root, use the bundled CLI to sync credentials, apply migrations to the shared stack, or inspect its status without remembering Supabase flags:
+
+```bash
+./airnub env sync --project-dir ./million-dollar-maps      # refresh .env.local for the project
+./airnub db switch --project-dir ./million-dollar-maps     # apply migrations to the shared stack
+./airnub db reset --project-dir ./million-dollar-maps      # destructive reset (non-interactive)
+./airnub db status --project-dir ./million-dollar-maps     # check shared stack status
+```
+
+All subcommands accept relative or absolute paths, forward extra arguments after `--` to the Supabase CLI, and surface the same behaviour as the helper scripts described later in this guide.
+
+### Manual Supabase CLI workflow
+
 1. `cd /workspaces/airnub-labs` (the workspace root).
 2. Run the Supabase CLI and point it at the project directory with `--workdir`:
 
@@ -72,7 +87,7 @@ Why `--workdir`? The Supabase CLI infers its configuration from the working dire
 
 ## Helper scripts
 
-Two scripts in `supabase/scripts/` streamline Supabase operations:
+The executable [`./airnub`](../airnub) lives at the repository root and wraps two scripts in `supabase/scripts/` that streamline Supabase operations. You can call those scripts directly when you need lower-level access or want to integrate them into other automation.
 
 ### `db-env-local.sh`
 
