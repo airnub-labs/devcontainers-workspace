@@ -101,12 +101,13 @@
         "[typescript]": {
           "editor.defaultFormatter": "denoland.vscode-deno"
         },
-        "workbench.startupEditor": "readme"
+        "workbench.activityBar.location": "top",
+        "workbench.startupEditor": "readme",
+        "workbench.views.defaultViewContainerLocations": {
+          "workbench.view.extension.codexViewContainer": "secondarySideBar",
+          "workbench.view.extension.geminiChat": "secondarySideBar"
+        }
       },
-      "commands": [
-        "workbench.action.terminal.new",
-        "markdown.showPreview"
-      ],
       "extensions": [
         "ms-azuretools.vscode-docker",
         "denoland.vscode-deno",
