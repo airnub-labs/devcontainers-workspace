@@ -74,17 +74,17 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 ## Shared Supabase workflow (at a glance)
 
 * Services run with the project ref defined in [`supabase/config.toml`](./supabase/config.toml) — by default `airnub-labs`.
-* Prefer the repository's CLI wrapper for day-to-day tasks:
+* Prefer the repository's CLI wrapper for day-to-day tasks (available globally as `airnub` once the Dev Container setup completes):
 
   ```bash
-  ./airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
-  ./airnub project current                            # see which project was activated last
-  ./airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
-  ./airnub env status --project-dir ./million-dollar-maps
-  ./airnub env reset --project-dir ./million-dollar-maps      # remove the generated Supabase env file
-  ./airnub db apply --project-dir ./million-dollar-maps
-  ./airnub db reset --project-dir ./million-dollar-maps
-  ./airnub db status --project-dir ./million-dollar-maps
+  airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
+  airnub project current                            # see which project was activated last
+  airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
+  airnub env status --project-dir ./million-dollar-maps
+  airnub env reset --project-dir ./million-dollar-maps      # remove the generated Supabase env file
+  airnub db apply --project-dir ./million-dollar-maps
+  airnub db reset --project-dir ./million-dollar-maps
+  airnub db status --project-dir ./million-dollar-maps
   ```
 
   When the devcontainer clone helper runs for the first time it seeds `./.airnub-current-project` with the first cloned repo
@@ -97,7 +97,7 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
 supabase db push --workdir ./<project-name> --local
 ```
 
-* Legacy tooling that still invokes `supabase/scripts/use-shared-supabase.sh` now delegates to the `airnub` CLI, so existing scripts keep working while `./airnub db ...` remains the source of truth.
+* Legacy tooling that still invokes `supabase/scripts/use-shared-supabase.sh` now delegates to the `airnub` CLI, so existing scripts keep working while `airnub db ...` remains the source of truth (you can still run `./airnub` directly if you prefer explicit paths).
 
 ---
 

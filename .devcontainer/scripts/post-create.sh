@@ -185,6 +185,37 @@ if [[ -d "$python_user_bin" ]]; then
   persist_path_prefix "$python_user_bin" "Added by devcontainer post-create to expose Python user base binaries"
 fi
 
+# Ensure the airnub CLI is directly available on PATH
+ensure_airnub_cli_on_path() {
+  local cli_path="$ROOT/airnub"
+  local dest_dir="$HOME/.local/bin"
+  local dest="$dest_dir/airnub"
+
+  if [[ ! -x "$cli_path" ]]; then
+    log "airnub CLI not found at $cli_path; skipping PATH symlink."
+    return 0
+  fi
+
+  mkdir -p "$dest_dir"
+
+  if [[ -L "$dest" ]]; then
+    local current_target
+    current_target="$(readlink "$dest" || true)"
+    if [[ "$current_target" == "$cli_path" ]]; then
+      log "airnub CLI already linked at $dest."
+      return 0
+    fi
+  elif [[ -e "$dest" ]]; then
+    log "A different executable already exists at $dest; leaving it in place."
+    return 0
+  fi
+
+  ln -sfn "$cli_path" "$dest"
+  log "airnub CLI linked at $dest and available on PATH."
+}
+
+ensure_airnub_cli_on_path
+
 # -----------------------------
 # Clone additional repos declared in devcontainer.json.
 # Non-fatal if missing.
