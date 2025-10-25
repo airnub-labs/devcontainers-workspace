@@ -5,7 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 SUPABASE_DIR="${SUPABASE_DIR:-${REPO_ROOT}/supabase}"
 DB_ENV_HELPER="${DB_ENV_HELPER:-${SUPABASE_DIR}/scripts/db-env-local.sh}"
-SHARED_SCRIPT="${SHARED_SCRIPT:-${SUPABASE_DIR}/scripts/use-shared-supabase.sh}"
 CURRENT_PROJECT_FILE="${CURRENT_PROJECT_FILE:-${SUPABASE_DIR}/.airnub-current-project}"
 
 usage() {
@@ -132,6 +131,139 @@ USAGE
 die() {
   echo "[airnub] $*" >&2
   exit 1
+}
+
+warn() {
+  echo "[airnub] $*" >&2
+}
+
+ensure_supabase_cli() {
+  if ! command -v supabase >/dev/null 2>&1; then
+    die "Supabase CLI not found on PATH. Install it inside the workspace container."
+  fi
+}
+
+shared_env_file() {
+  printf '%s\n' "${SUPABASE_DIR}/.env.local"
+}
+
+get_shared_project_ref() {
+  if [[ -n "${1:-}" ]]; then
+    printf '%s\n' "$1"
+    return
+  fi
+
+  local config="${SUPABASE_DIR}/config.toml"
+  if [[ -f "$config" ]]; then
+    awk -F '"' '/^project_id/ {print $2; exit}' "$config" 2>/dev/null || true
+  fi
+}
+
+merge_shared_env_into_project() {
+  local destination="$1"
+  local source
+  source="$(shared_env_file)"
+
+  if [[ ! -f "$source" ]]; then
+    warn "Shared Supabase env file missing at $source."
+    return 1
+  fi
+
+  mkdir -p "$(dirname "$destination")"
+
+  local tmp_env
+  tmp_env="$(mktemp)"
+
+  cp "$source" "$tmp_env"
+
+  if [[ -s "$tmp_env" && $(tail -c1 "$tmp_env" 2>/dev/null) != $'\n' ]]; then
+    echo >>"$tmp_env"
+  fi
+
+  declare -A shared_keys=()
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    local key
+    key="${line%%=*}"
+    key="${key%%[[:space:]]*}"
+    if [[ -n "$key" ]]; then
+      shared_keys["$key"]=1
+    fi
+  done <"$source"
+
+  local legacy_keys=(
+    SUPABASE_ANON_KEY
+    SUPABASE_SERVICE_ROLE_KEY
+  )
+
+  for legacy_key in "${legacy_keys[@]}"; do
+    shared_keys["$legacy_key"]=1
+  done
+
+  if [[ -f "$destination" ]]; then
+    local -a custom_lines=()
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      if [[ "$line" =~ ^[[:space:]]*$ ]]; then
+        custom_lines+=("$line")
+        continue
+      fi
+
+      if [[ "$line" =~ ^[[:space:]]*# ]]; then
+        custom_lines+=("$line")
+        continue
+      fi
+
+      local key
+      key="${line%%=*}"
+      key="${key%%[[:space:]]*}"
+
+      if [[ -n "$key" && -n "${shared_keys[$key]+x}" ]]; then
+        continue
+      fi
+
+      custom_lines+=("$line")
+    done <"$destination"
+
+    if ((${#custom_lines[@]} > 0)); then
+      echo >>"$tmp_env"
+      echo "# Project-specific environment variables (preserved)" >>"$tmp_env"
+      for line in "${custom_lines[@]}"; do
+        echo "$line" >>"$tmp_env"
+      done
+    fi
+  fi
+
+  mv "$tmp_env" "$destination"
+  chmod 600 "$destination" 2>/dev/null || true
+  echo "[airnub] Synced Supabase env vars to $destination (custom entries preserved)."
+  return 0
+}
+
+sync_shared_env_into_project() {
+  local ensure_mode="$1"
+  local project_env_file="$2"
+
+  if [[ -z "$project_env_file" ]]; then
+    warn "Project env file path is empty; cannot sync Supabase credentials."
+    return 1
+  fi
+
+  if [[ ! -x "$DB_ENV_HELPER" ]]; then
+    warn "db-env helper not found at $DB_ENV_HELPER; skipping shared env refresh."
+  else
+    if ! SUPABASE_PROJECT_DIR="$SUPABASE_DIR" "$DB_ENV_HELPER" --status-only >/dev/null 2>&1; then
+      if [[ "$ensure_mode" == "true" ]]; then
+        if ! SUPABASE_PROJECT_DIR="$SUPABASE_DIR" "$DB_ENV_HELPER" --ensure-start >/dev/null 2>&1; then
+          warn "Could not refresh Supabase env vars via db-env helper."
+        fi
+      else
+        warn "Supabase stack does not appear to be running; env vars may be stale."
+      fi
+    fi
+  fi
+
+  merge_shared_env_into_project "$project_env_file"
 }
 
 remember_project() {
@@ -370,75 +502,18 @@ env_command() {
   esac
 }
 
-run_shared_action() {
-  local action="$1"
-  local ensure_env_mode="$2"
-  local project_dir="$3"
-  local skip_env_sync="$4"
-  local project_env_file="$5"
-  local project_ref="$6"
-  shift 6 || true
-
-  [[ -x "$SHARED_SCRIPT" ]] || die "shared supabase helper not found at $SHARED_SCRIPT"
-
-  local env_project_dir="${project_dir:-${SUPABASE_DIR}}"
-  local -a env_prefix=("PROJECT_DIR=$env_project_dir")
-
-  if [[ -n "$project_env_file" ]]; then
-    env_prefix+=("PROJECT_ENV_FILE=$project_env_file")
-  fi
-
-  if [[ -n "$project_ref" ]]; then
-    env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
-  fi
-
-  if [[ "$skip_env_sync" == "true" ]]; then
-    env_prefix+=("SKIP_SHARED_ENV_SYNC=true")
-  fi
-
-  case "$ensure_env_mode" in
-    true|false)
-      env_prefix+=("SHARED_ENV_ENSURE_START=$ensure_env_mode")
-      ;;
-    auto)
-      ;;
-    *)
-      die "Unknown env sync mode: $ensure_env_mode"
-      ;;
-  esac
-
-  env "${env_prefix[@]}" "$SHARED_SCRIPT" "$action" "$@"
-}
-
 db_command() {
   local action="${1:-}";
   shift || true
 
   case "$action" in
     apply|switch|reset|status)
-      local supabase_action=""
       local ensure_mode="auto"
       local project_dir=""
       local project_env_file=""
       local project_ref=""
       local skip_env_sync="false"
       local -a cli_args=()
-
-      case "$action" in
-        apply)
-          supabase_action="push"
-          ;;
-        switch)
-          supabase_action="push"
-          echo "[airnub] 'db switch' is an alias for 'db apply'." >&2
-          ;;
-        reset)
-          supabase_action="reset"
-          ;;
-        status)
-          supabase_action="status"
-          ;;
-      esac
 
       while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -498,7 +573,66 @@ db_command() {
         esac
       fi
 
-      run_shared_action "$supabase_action" "$ensure_mode" "$effective_project_dir" "$skip_env_sync" "$project_env_file" "$project_ref" "${cli_args[@]}"
+      ensure_supabase_cli
+
+      local target_env_file="$project_env_file"
+      if [[ -z "$target_env_file" ]]; then
+        target_env_file="$effective_project_dir/.env.local"
+      fi
+
+      if [[ "$skip_env_sync" != "true" ]]; then
+        if ! sync_shared_env_into_project "$ensure_mode" "$target_env_file"; then
+          warn "Continuing with '$action' even though env sync failed."
+        fi
+      else
+        echo "[airnub] Skipping shared env refresh before $action (--skip-env-sync)."
+      fi
+
+      local workspace_root="$REPO_ROOT"
+      local -a supabase_cmd=("supabase")
+      local ref_for_log
+      ref_for_log="$(get_shared_project_ref "$project_ref")"
+
+      case "$action" in
+        apply|switch)
+          echo "[airnub] Applying migrations from $effective_project_dir via workspace $workspace_root${ref_for_log:+ (project ref: $ref_for_log)}."
+          supabase_cmd+=(db push --workdir "$effective_project_dir" --local)
+          ;;
+        reset)
+          echo "[airnub] WARNING: Resetting shared stack for $effective_project_dir via workspace $workspace_root. This wipes existing data."
+          supabase_cmd+=(db reset --workdir "$effective_project_dir" --local)
+          ;;
+        status)
+          echo "[airnub] Checking shared stack status for $effective_project_dir via workspace $workspace_root${ref_for_log:+ (project ref: $ref_for_log)}."
+          supabase_cmd+=(status -o env --workdir "$effective_project_dir")
+          ;;
+      esac
+
+      if [[ "$action" == "switch" ]]; then
+        echo "[airnub] 'db switch' is an alias for 'db apply'." >&2
+      fi
+
+      local -a env_prefix=()
+      if [[ -n "$project_ref" ]]; then
+        env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
+      fi
+
+      if [[ "$action" == "reset" ]]; then
+        local has_force=false
+        for arg in "${cli_args[@]}"; do
+          if [[ "$arg" == "-y" || "$arg" == "--no-confirm" ]]; then
+            has_force=true
+            break
+          fi
+        done
+        if [[ "$has_force" != "true" ]]; then
+          supabase_cmd+=(-y)
+        fi
+      fi
+
+      supabase_cmd+=("${cli_args[@]}")
+
+      (cd "$workspace_root" && env "${env_prefix[@]}" "${supabase_cmd[@]}")
       ;;
     --help|-h|"")
       db_usage

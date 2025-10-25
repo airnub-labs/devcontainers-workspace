@@ -104,7 +104,7 @@ Why `--workdir`? The Supabase CLI infers its configuration from the working dire
 
 ## Helper scripts
 
-The executable [`./airnub`](../airnub) lives at the repository root and wraps two scripts in `supabase/scripts/` that streamline Supabase operations. You can call those scripts directly when you need lower-level access or want to integrate them into other automation.
+The executable [`./airnub`](../airnub) lives at the repository root and orchestrates the scripts in `supabase/scripts/` so developers have a single entry point for shared Supabase work. You can still call the individual scripts directly when you need lower-level access or are migrating older tooling, but the CLI is the source of truth.
 
 ### `db-env-local.sh`
 
@@ -112,32 +112,26 @@ The executable [`./airnub`](../airnub) lives at the repository root and wraps tw
 * Accepts `--status-only` to skip starting the stack, `--ensure-start` to allow starting it, `--project-dir` to target a different Supabase config directory, and `--env-file` to write to a custom location.
 * Used internally by other scripts to keep credentials fresh.
 
-### `use-shared-supabase.sh`
+### `use-shared-supabase.sh` (compatibility shim)
 
-Copy or symlink this script into each project (for example `scripts/use-shared-supabase.sh`). It wraps the Supabase CLI and keeps `.env.local` files aligned.
+Existing projects that already reference `supabase/scripts/use-shared-supabase.sh` can keep their workflow unchanged. The script now delegates to `./airnub db ...`, so you get the CLI’s consistent behaviour (env refresh, `.env.local` merging, Supabase invocations) without duplicating logic.
 
-Available subcommands:
+Equivalent calls:
 
 ```bash
-./scripts/use-shared-supabase.sh push    # supabase db push --workdir "$(pwd)" --local
-./scripts/use-shared-supabase.sh reset   # supabase db reset --workdir "$(pwd)" --local -y
-./scripts/use-shared-supabase.sh status  # supabase status -o env --workdir "$(pwd)"
+./scripts/use-shared-supabase.sh push    # -> airnub db apply --project-dir "$(pwd)"
+./scripts/use-shared-supabase.sh reset   # -> airnub db reset --project-dir "$(pwd)"
+./scripts/use-shared-supabase.sh status  # -> airnub db status --project-dir "$(pwd)"
 ```
 
-What it does on every run:
-
-1. Reads the shared `project_id` from `supabase/config.toml` (or `SUPABASE_PROJECT_REF` if already set).
-2. Calls `db-env-local.sh` to ensure `supabase/.env.local` exists and contains up-to-date credentials.
-3. Copies those credentials into the project’s `.env.local` while preserving any project-specific variables and pruning deprecated Supabase keys (`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
-
-You can override the target env file by exporting `PROJECT_ENV_FILE` or using the CLI's `--project-env-file` flag. Set `SUPABASE_PROJECT_REF` to point at a different Supabase project, `SKIP_SHARED_ENV_SYNC=true` to bypass env refreshes, and `SHARED_ENV_ENSURE_START=false` when you only want to read env vars from a running stack.
+Environment variables such as `PROJECT_DIR`, `PROJECT_ENV_FILE`, `SUPABASE_PROJECT_REF`, `SKIP_SHARED_ENV_SYNC`, and `SHARED_ENV_ENSURE_START` are translated into the corresponding `airnub db` flags. New automation should prefer calling `./airnub db ...` directly.
 
 ## Troubleshooting & performance tips
 
 If you run into problems when using the shared stack, these quick checks solve most issues:
 
 * Port collisions: ensure you don't have another local Supabase instance running (search for `supabase` containers with `docker ps`). Stop them or run `supabase stop` in the meta workspace.
-* Stale credentials: re-run `./supabase/scripts/db-env-local.sh --ensure-start` in the Dev Container to refresh `supabase/.env.local` and then run `./scripts/use-shared-supabase.sh status` from your project to sync.
+* Stale credentials: re-run `./supabase/scripts/db-env-local.sh --ensure-start` in the Dev Container to refresh `supabase/.env.local` and then run `./airnub db status` (or the compatibility script) from your project to sync.
 * App server collisions: stop any local app processes (for example, a leftover `npm run dev`) before switching projects to avoid reusing forwarded ports like `3000`.
 * High memory/CPU: if your machine struggles, allocate more resources to Docker or run fewer heavy services simultaneously (e.g., stop analytics sidecar if not needed).
 * Logs: `supabase logs` (in the container) and `docker compose logs supabase` are helpful for diagnosing service failures.
@@ -149,6 +143,6 @@ If you need an isolated Supabase instance for a single repo (rare), use that pro
 ## Best practices
 
 * **One stack for all repos.** Apply a project’s migrations, then switch directories and apply the next project’s migrations when needed.
-* **Check status if something feels off.** `./scripts/use-shared-supabase.sh status` confirms whether the services are up and refreshes env vars without starting the stack.
+* **Check status if something feels off.** `./airnub db status` (or the compatibility script) confirms whether the services are up and refreshes env vars without starting the stack.
 * **Stop stale servers.** Shut down any running app processes from the previous project before switching to avoid port collisions.
 * **Commit env scaffolding, not secrets.** If you decide to track the shared `supabase/.env.local`, use it only for bootstrap values. The helper script preserves any additional project-specific secrets stored in each project’s `.env.local`.
