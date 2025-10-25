@@ -141,6 +141,94 @@ else
 fi
 
 # -----------------------------
+# Gemini CLI install
+# -----------------------------
+if ! command -v gemini >/dev/null 2>&1; then
+  if command -v npm >/dev/null 2>&1; then
+    log "Installing Gemini CLI via npm..."
+    gemini_log="$(mktemp)"
+    if ! npm install -g @google/gemini-cli >"$gemini_log" 2>&1; then
+      log "Gemini CLI install failed; continuing without it."
+      log "Details: $(tail -n 20 "$gemini_log" 2>/dev/null || echo 'see installer output')"
+    else
+      log "Gemini CLI installation complete."
+    fi
+    rm -f "$gemini_log"
+  else
+    log "npm not available; skipping Gemini CLI installation."
+  fi
+else
+  log "Gemini CLI already installed; skipping."
+fi
+
+# Ensure npm global bin directory is on PATH for future shells
+if command -v npm >/dev/null 2>&1; then
+  npm_prefix="$(npm config get prefix 2>/dev/null | tail -n 1)"
+  if [[ -z "$npm_prefix" ]]; then
+    npm_prefix="$HOME/.npm-global"
+  fi
+  npm_bin="$npm_prefix/bin"
+  if [[ -d "$npm_bin" ]]; then
+    case ":$PATH:" in
+      *":$npm_bin:"*) ;;
+      *) export PATH="$npm_bin:$PATH" ;;
+    esac
+    shell_profile="$HOME/.profile"
+    if [[ ! -e "$shell_profile" ]]; then
+      touch "$shell_profile" 2>/dev/null || true
+    fi
+    if [[ -w "$shell_profile" ]] && ! grep -Fq "$npm_bin" "$shell_profile" 2>/dev/null; then
+      {
+        echo ""
+        echo "# Added by devcontainer post-create to expose npm global binaries"
+        echo "export PATH=\"$npm_bin:\$PATH\""
+      } >> "$shell_profile"
+    fi
+  fi
+fi
+
+# -----------------------------
+# Codex CLI install
+# -----------------------------
+if ! command -v codex >/dev/null 2>&1; then
+  if command -v python3 >/dev/null 2>&1; then
+    log "Installing Codex CLI via pip..."
+    codex_log="$(mktemp)"
+    if ! python3 -m pip install --user --upgrade codex-cli >"$codex_log" 2>&1; then
+      log "Codex CLI install failed; continuing without it."
+      log "Details: $(tail -n 20 "$codex_log" 2>/dev/null || echo 'see installer output')"
+    else
+      log "Codex CLI installation complete."
+    fi
+    rm -f "$codex_log"
+  else
+    log "python3 not available; skipping Codex CLI installation."
+  fi
+else
+  log "Codex CLI already installed; skipping."
+fi
+
+# Ensure local Python user bin directory is on PATH for current and future shells
+python_user_bin="${PIP_USER_BIN:-$HOME/.local/bin}"
+if [[ -d "$python_user_bin" ]]; then
+  case ":$PATH:" in
+    *":$python_user_bin:"*) ;;
+    *) export PATH="$python_user_bin:$PATH" ;;
+  esac
+  shell_profile="$HOME/.profile"
+  if [[ ! -e "$shell_profile" ]]; then
+    touch "$shell_profile" 2>/dev/null || true
+  fi
+  if [[ -w "$shell_profile" ]] && ! grep -Fq "$python_user_bin" "$shell_profile" 2>/dev/null; then
+    {
+      echo ""
+      echo "# Added by devcontainer post-create to expose Python user base binaries"
+      echo "export PATH=\"$python_user_bin:\$PATH\""
+    } >> "$shell_profile"
+  fi
+fi
+
+# -----------------------------
 # Clone additional repos declared in devcontainer.json.
 # Non-fatal if missing.
 # -----------------------------
