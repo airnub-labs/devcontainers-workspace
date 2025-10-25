@@ -100,8 +100,13 @@
         ],
         "[typescript]": {
           "editor.defaultFormatter": "denoland.vscode-deno"
-        }
+        },
+        "workbench.startupEditor": "readme"
       },
+      "commands": [
+        "workbench.action.terminal.new",
+        "markdown.showPreview"
+      ],
       "extensions": [
         "ms-azuretools.vscode-docker",
         "denoland.vscode-deno",
