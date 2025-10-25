@@ -31,6 +31,7 @@
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
     6379,
+    1455,
     54321,
     54322,
     54323,
@@ -40,6 +41,9 @@
   "portsAttributes": {
     "6379": {
       "label": "Redis"
+    },
+    "1455": {
+      "label": "ChatGPT Auth Callback"
     },
     "54321": {
       "label": "Supabase API"
