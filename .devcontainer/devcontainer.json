@@ -110,11 +110,15 @@
         "Redis.redis-for-vscode",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
+        "deque-systems.vscode-axe-linter",
+        "DavidAnson.vscode-markdownlint",
         "bradlc.vscode-tailwindcss",
         "github.vscode-github-actions",
         "GitHub.vscode-pull-request-github",
         "GitHub.copilot-chat",
-        "openai.chatgpt"
+        "openai.chatgpt",
+        "google.geminicodeassist"
+        // "google.gemini-cli-vscode-ide-companion"
       ]
     }
   }
