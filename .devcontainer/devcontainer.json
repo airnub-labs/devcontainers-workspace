@@ -102,16 +102,12 @@
           "editor.defaultFormatter": "denoland.vscode-deno"
         },
         "workbench.activityBar.location": "top",
-        "workbench.startupEditor": "readme"
+        "workbench.startupEditor": "readme",
+        "workbench.views.defaultViewContainerLocations": {
+          "workbench.view.extension.codexViewContainer": "secondarySideBar",
+          "workbench.view.extension.geminiChat": "secondarySideBar"
+        }
       },
-      "commands": [
-        "workbench.action.terminal.new",
-        "markdown.showPreview",
-        "workbench.view.extension.codexViewContainer",
-        "workbench.action.moveViewContainerToSecondarySidebar",
-        "workbench.view.extension.geminiChat",
-        "workbench.action.moveViewContainerToSecondarySidebar"
-      ],
       "extensions": [
         "ms-azuretools.vscode-docker",
         "denoland.vscode-deno",
