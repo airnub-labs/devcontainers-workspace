@@ -105,7 +105,7 @@
       },
       "commands": [
         "workbench.action.terminal.new",
-        "markdown.showPreviewToSide"
+        "markdown.showPreview"
       ],
       "extensions": [
         "ms-azuretools.vscode-docker",
