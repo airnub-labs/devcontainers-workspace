@@ -89,9 +89,40 @@ supabase start
 
 ```bash
 cd /workspaces/million-dollar-maps
-# choose the command you use in this repo
-supabase db push          # or: supabase db reset --local
+# choose the command you use in this repo and point it at the shared ref
+supabase db push --project-ref airnub-labs --local
+# or, for a destructive reset (auto-confirmed):
+supabase db reset --project-ref airnub-labs --local -y
 ```
+
+> The Supabase CLI infers a “project ref” from your current directory. Without the `--project-ref airnub-labs` flag (or `SUPABASE_PROJECT_REF=airnub-labs` env var), it looks for containers named after the project folder (e.g. `supabase_db_million-dollar-maps`) and fails. Always target the shared ref declared in this workspace’s `supabase/config.toml`.
+
+### Helper script per project
+
+Copy (or symlink) `supabase/scripts/use-shared-supabase.sh` into each project repo so teammates have an obvious entry point when they open that project directly. Example for a repo named `million-dollar-maps` living alongside this workspace repo:
+
+```bash
+cd /workspaces/million-dollar-maps
+mkdir -p scripts
+cp /workspaces/vscode-meta-workspace-internal/supabase/scripts/use-shared-supabase.sh scripts/use-shared-supabase.sh
+```
+
+From that project you can then run:
+
+```bash
+# Apply migrations to the shared stack
+./scripts/use-shared-supabase.sh push
+
+# Or perform the destructive reset with the -y flag baked in
+./scripts/use-shared-supabase.sh reset
+
+# Check whether the shared stack is up
+./scripts/use-shared-supabase.sh status
+```
+
+> The helper script reads the shared `project_id` from `supabase/config.toml`, exports `SUPABASE_PROJECT_REF`, and forwards the appropriate flags (including `-y` for `reset`) so it always talks to the shared containers.
+>
+> Every run also refreshes the workspace Supabase `.env.local` and merges those values into the project’s root `.env.local`, preserving any custom project-specific keys so they are never overwritten. That keeps local API keys/storage buckets aligned with the shared stack while retaining per-project secrets.
 
 > This applies *that repo’s* schema to the shared local stack. Switch projects by applying **their** migrations next.
 
@@ -156,9 +187,12 @@ supabase stop
 
 # Apply a project’s DB changes
 cd /workspaces/<project>
-supabase db push
+supabase db push --project-ref airnub-labs --local
 # or
-supabase db reset --local
+supabase db reset --project-ref airnub-labs --local -y
+
+# Shortcut (after copying helper script into the project)
+./scripts/use-shared-supabase.sh push
 ```
 
 ---
