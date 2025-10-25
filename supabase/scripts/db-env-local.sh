@@ -50,6 +50,50 @@ supabase_env_init() {
   return 0
 }
 
+supabase_env_format_env_file() {
+  local input_file="$1"
+  local output_file="$2"
+
+  local tmp_formatted
+  tmp_formatted="$(mktemp)"
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Trim leading whitespace without using external tools.
+    local trimmed="${line#${line%%[!$' \t']*}}"
+
+    # Skip empty lines entirely.
+    if [[ -z "$trimmed" ]]; then
+      continue
+    fi
+
+    # Preserve already well-formed env assignments.
+    if [[ "$trimmed" == *=* && "$trimmed" != *": "* ]]; then
+      printf '%s\n' "$trimmed" >>"$tmp_formatted"
+      continue
+    fi
+
+    # Convert "Label: value" pairs to SUPABASE_* env vars.
+    if [[ "$trimmed" == *":"* ]]; then
+      local key="${trimmed%%:*}"
+      local value="${trimmed#*:}"
+      value="${value#${value%%[!$' \t']*}}"
+
+      key="${key//[^[:alnum:]]/_}"
+      key="${key^^}"
+      key="SUPABASE_${key}"
+
+      printf '%s=%s\n' "$key" "$value" >>"$tmp_formatted"
+      continue
+    fi
+
+    # Fallback: keep the line as a comment for debugging context.
+    printf '# %s\n' "$trimmed" >>"$tmp_formatted"
+  done <"$input_file"
+
+  mv "$tmp_formatted" "$output_file"
+  rm -f "$input_file"
+}
+
 supabase_env_run_command() {
   local command="$1"
   local destination="$2"
@@ -66,7 +110,7 @@ supabase_env_run_command() {
 
   if (cd "$SUPABASE_PROJECT_DIR" && supabase "$command" -o env >"$tmp_env" 2>"$tmp_err"); then
     if [[ -s "$tmp_env" ]]; then
-      mv "$tmp_env" "$destination"
+      supabase_env_format_env_file "$tmp_env" "$destination"
       rm -f "$tmp_err"
       chmod 600 "$destination" 2>/dev/null || true
       return 0
