@@ -12,7 +12,8 @@
       "installPnpm": true
     },
     "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12"
+      "version": "3.12",
+      "installJupyterlab": true
     },
     "ghcr.io/devcontainers/features/nvidia-cuda:2": {
       "installCudnn": true
