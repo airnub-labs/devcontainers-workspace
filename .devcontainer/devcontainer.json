@@ -103,18 +103,18 @@
         }
       },
       "extensions": [
-        "denoland.vscode-deno",
         "ms-azuretools.vscode-docker",
+        "denoland.vscode-deno",
+        "Supabase.vscode-supabase-extension",
         "ms-playwright.playwright",
+        "Redis.redis-for-vscode",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "streetsidesoftware.code-spell-checker",
         "bradlc.vscode-tailwindcss",
-        "openai.chatgpt",
-        "Supabase.vscode-supabase-extension",
         "github.vscode-github-actions",
         "GitHub.vscode-pull-request-github",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "openai.chatgpt"
       ]
     }
   }
