@@ -13,7 +13,7 @@ Why a shared stack?
 
 ## Ports and services
 
-The Supabase CLI spins up multiple services when you run `supabase start`. The meta workspace exposes these on fixed ports so every project can connect to the same endpoints:
+The Supabase CLI spins up multiple services when you run `supabase start -o env`. The meta workspace exposes these on fixed ports so every project can connect to the same endpoints:
 
 | Service | Port | Notes |
 | ------- | ---- | ----- |
@@ -35,13 +35,13 @@ A Redis sidecar is available at `6379` (defined in `.devcontainer/docker-compose
 Run these commands inside the Dev Container (or Codespace) terminal:
 
 ```bash
-supabase start   # launch all services and write fresh credentials to supabase/.env.local
-supabase stop    # stop the stack when you are finished
+supabase start -o env   # launch all services and write fresh credentials to supabase/.env.local
+supabase stop           # stop the stack when you are finished
 ```
 
 The first command also generates/updates `supabase/.env.local` with environment variables for the shared project. Helper scripts use that file to sync credentials into each project.
 
-If you restart the container, re-run `supabase start` once per session so services and env vars are current.
+If you restart the container, re-run `supabase start -o env` once per session so services and env vars are current.
 
 ---
 
