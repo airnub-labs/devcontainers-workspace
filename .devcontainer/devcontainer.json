@@ -31,6 +31,7 @@
     6080,
     6081,
     6379,
+    9222,
     54321,
     54322,
     54323,
@@ -50,6 +51,11 @@
     "6379": {
       "label": "Redis",
       "onAutoForward": "silent"
+    },
+    "9222": {
+      "label": "Chromium DevTools",
+      "onAutoForward": "silent",
+      "visibility": "public"
     },
     "54321": {
       "label": "Supabase API",
