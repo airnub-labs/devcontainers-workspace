@@ -81,17 +81,21 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
   airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
   airnub project current                            # see which project was activated last
   airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
-  airnub env status --project-dir ./million-dollar-maps
-  airnub env reset --project-dir ./million-dollar-maps      # remove the generated Supabase env file
+  airnub db env diff                                     # compare Supabase CLI env output with supabase/.env.local
+  airnub db env sync --ensure-start                      # refresh supabase/.env.local (start services if needed)
+  airnub db env clean                                    # remove the shared supabase/.env.local file
+  airnub project env diff --project-dir ./million-dollar-maps   # compare project env with shared Supabase vars
+  airnub project env sync --project-dir ./million-dollar-maps   # merge shared Supabase vars into the project env file
+  airnub project env clean --project-dir ./million-dollar-maps  # remove the project's generated env file
   airnub db apply --project-dir ./million-dollar-maps
   airnub db reset --project-dir ./million-dollar-maps
   airnub db status --project-dir ./million-dollar-maps
+  airnub project clean                                      # forget the remembered project selection
   ```
 
   When the devcontainer clone helper runs for the first time it seeds `./.airnub-current-project` with the first cloned repo
   (and falls back to `./supabase` if nothing was cloned yet) so new contributors land on a sensible default for the shared stack.
   Run `airnub use` without arguments any time to reuse that remembered selection (or the default `supabase/`).
-  Older workspaces that already have `supabase/.airnub-current-project` get migrated automatically the next time you use the CLI.
 
 * Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:
 
