@@ -18,7 +18,15 @@ timestamp() {
 }
 
 initial_message="[$(timestamp)] Dev Container entrypoint ready (PID $$, user $(id -un)/$(id -u):$(id -g))."
-echo "$initial_message" >>"$LOG_FILE"
+
+# Emit the bootstrap message to STDOUT immediately so Docker logs (and Docker
+# Desktop's stack view) pick it up even before we start tailing files. We also
+# append it to the primary log file so the message is preserved for anyone who
+# inspects the file later.
+if [[ -n "$LOG_FILE" ]]; then
+  printf '%s\n' "$initial_message" >>"$LOG_FILE"
+fi
+printf '%s\n' "$initial_message"
 
 mapfile -t follow_targets < <(
   if [[ -n "$FOLLOW_TARGETS_RAW" ]]; then
@@ -38,5 +46,6 @@ for target in "${follow_targets[@]}"; do
   fi
 done
 
-# Tail all targets and keep the container alive.
-exec tail -F "${follow_targets[@]}"
+# Tail all targets (starting from the end of each file so we do not duplicate
+# the initial bootstrap message emitted above) and keep the container alive.
+exec tail -n 0 -F "${follow_targets[@]}"
