@@ -9,7 +9,7 @@ This document summarizes the activity recorded in the most recent `postCreateCom
 - System package indices refreshed; window-management utilities (`wmctrl`, `libxdo3`, `xdotool`) installed alongside `x11-utils` for `xrandr`/`xdpyinfo` diagnostics.
 - Google Chrome is now ensured during post-create (falling back to `google-chrome-stable` when no Chromium-based browser is present).
 - Workspace repositories cloned into `/airnub-labs`, including `airnub-labs/million-dollar-maps` (ignored by the meta-workspace Git).
-- A managed Chrome/Chromium classroom policy is written to `/etc/opt/chrome/policies/managed/classroom.json` (and mirrored to `/etc/chromium/policies/managed/` when Chromium exists) to allow only localhost/loopback origins, `*.github.dev`, and Chrome/DevTools pages while blocking all extensions and leaving DevTools enabled.
+- A managed Chrome/Chromium classroom policy is written to `/etc/opt/chrome/policies/managed/classroom.json` (and mirrored to `/etc/chromium/policies/managed/` when Chromium exists) to allow only loopback hosts plus the GitHub/vscode.dev domains used by Codespaces (including `github.dev`, `vscode.dev`, `*.github.dev`, `*.app.github.dev`, and `*.githubpreview.dev`) while blocking all extensions and leaving DevTools enabled.
 - The post-start script now ships a noVNC landing page that auto-connects, auto-reconnects, requests remote resize, and exposes an audio bridge when available.
 - Supabase start-up now authenticates to Amazon ECR Public when AWS credentials are present, ensuring image pulls are less likely to rate-limit.
 - Audio bridge prerequisites (`pulseaudio`, `ffmpeg`) are installed on-demand.
