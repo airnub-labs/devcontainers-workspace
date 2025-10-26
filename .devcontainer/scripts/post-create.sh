@@ -10,7 +10,7 @@ fi
 LOG_DIR="${DEVCONTAINER_LOG_DIR:-/var/log/devcontainer}"
 LOG_FILE="${DEVCONTAINER_LOG_FILE:-$LOG_DIR/devcontainer.log}"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
-touch "$LOG_FILE" 2>/dev/null || true
+: > "$LOG_FILE" 2>/dev/null || true
 
 log() {
   local message="[post-create] $*"
@@ -20,83 +20,49 @@ log() {
   fi
 }
 
+# sudo is not guaranteed in containers; guard its use
 SUDO=""
 if command -v sudo >/dev/null 2>&1; then
   SUDO="sudo"
 fi
 
 append_shell_snippet() {
-  local file="$1"
-  local marker="$2"
-  local snippet="$3"
-
-  if [[ ! -e "$file" ]]; then
-    touch "$file" 2>/dev/null || true
-  fi
-
+  local file="$1"; local marker="$2"; local snippet="$3"
+  [[ -e "$file" ]] || touch "$file" 2>/dev/null || true
   if [[ -w "$file" ]] && ! grep -Fq "$marker" "$file" 2>/dev/null; then
     {
-      printf '\n'
-      printf '# %s\n' "$marker"
-      printf '%s\n' "$snippet"
-    } >> "$file"
+      printf '\n'; printf '# %s\n' "$marker"; printf '%s\n' "$snippet";
+    } >>"$file"
   fi
 }
 
 persist_path_prefix() {
-  local target_path="$1"
-  local marker="$2"
-  local file
-  local -a shell_files=(
-    "$HOME/.profile"
-    "$HOME/.bash_profile"
-    "$HOME/.bashrc"
-    "$HOME/.zprofile"
-    "$HOME/.zshrc"
-  )
-
+  local target_path="$1"; local marker="$2"; local file
+  local -a shell_files=( "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.zprofile" "$HOME/.zshrc" )
   for file in "${shell_files[@]}"; do
     append_shell_snippet "$file" "$marker" "export PATH=\"$target_path:\$PATH\""
   done
 }
 
 persist_env_var() {
-  local var_name="$1"
-  local value="$2"
-  local marker="$3"
-  local file
-  local -a shell_files=(
-    "$HOME/.profile"
-    "$HOME/.bash_profile"
-    "$HOME/.bashrc"
-    "$HOME/.zprofile"
-    "$HOME/.zshrc"
-  )
-
+  local var_name="$1"; local value="$2"; local marker="$3"; local file
+  local -a shell_files=( "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.zprofile" "$HOME/.zshrc" )
   for file in "${shell_files[@]}"; do
     append_shell_snippet "$file" "$marker" "export $var_name=\"$value\""
   done
 }
 
 # -----------------------------
-# pnpm bootstrap (unchanged)
+# pnpm bootstrap (user-level)
 # -----------------------------
 
 determine_pnpm_version() {
-  if [[ -n "${PNPM_VERSION:-}" ]]; then
-    echo "$PNPM_VERSION"
-    return 0
-  fi
-
+  if [[ -n "${PNPM_VERSION:-}" ]]; then echo "$PNPM_VERSION"; return 0; fi
   if [[ -f "$ROOT/package.json" && -x "$(command -v node || true)" ]]; then
     local from_package
     from_package="$(node -p "(() => { try { const pkg = require('$ROOT/package.json'); return pkg.packageManager || ''; } catch { return ''; } })()" 2>/dev/null || true)"
-    if [[ "$from_package" == pnpm@* ]]; then
-      echo "${from_package#pnpm@}"
-      return 0
-    fi
+    if [[ "$from_package" == pnpm@* ]]; then echo "${from_package#pnpm@}"; return 0; fi
   fi
-
   echo "10.17.1"
 }
 
@@ -104,24 +70,17 @@ ensure_pnpm() {
   export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
   mkdir -p "$PNPM_HOME"
-  case ":$PATH:" in
-    *":$PNPM_HOME:"*) ;;
-    *) export PATH="$PNPM_HOME:$PATH" ;;
-  esac
-
+  case ":$PATH:" in *":$PNPM_HOME:"*) ;; *) export PATH="$PNPM_HOME:$PATH" ;; esac
   if ! command -v pnpm >/dev/null 2>&1; then
     if ! command -v corepack >/dev/null 2>&1; then
       log "ERROR: corepack not found. Install Node with Corepack enabled."
       exit 1
     fi
-
     corepack enable || true
-    local want_pnpm
-    want_pnpm="$(determine_pnpm_version)"
+    local want_pnpm; want_pnpm="$(determine_pnpm_version)"
     log "Preparing pnpm@${want_pnpm} via corepack (non-interactive)..."
     corepack prepare "pnpm@${want_pnpm}" --activate
   fi
-
   pnpm config set global-bin-dir "$PNPM_HOME" >/dev/null 2>&1 || true
 }
 
@@ -129,24 +88,15 @@ log "Ensuring pnpm is available and configured..."
 ensure_pnpm
 
 # -----------------------------
-# NEW: Safe PNPM store configuration (works in Dev Containers & Codespaces)
+# Safe PNPM store configuration (user-level; persists across shells)
 # -----------------------------
-# Use a container-local store (default: $HOME/.pnpm-store) or respect PNPM_STORE_PATH if provided.
 STORE="${PNPM_STORE_PATH:-"$HOME/.pnpm-store"}"
 log "Configuring pnpm store at: $STORE"
-
-# Create and ensure ownership (covers named volumes that default to root-owned)
 mkdir -p "$STORE"
-if command -v sudo >/dev/null 2>&1; then
-  sudo chown -R "$(id -u)":"$(id -g)" "$STORE" || true
-fi
-
-# Persist the store path so future pnpm runs use it by default
+if [[ -n "$SUDO" ]]; then $SUDO chown -R "$(id -u)":"$(id -g)" "$STORE" || true; fi
 pnpm config set store-dir "$STORE" >/dev/null 2>&1 || true
-
-# Best-effort cleanup if a legacy store exists on the bind mount
 if [[ -d "/workspaces/.pnpm-store" ]]; then
-  log "Removing legacy /workspaces/.pnpm-store to avoid mount-related copy/link issues..."
+  log "Removing legacy /workspaces/.pnpm-store to avoid mount-related link issues..."
   rm -rf /workspaces/.pnpm-store || true
 fi
 
@@ -154,78 +104,24 @@ fi
 # Install workspace deps (uses safe store)
 # -----------------------------
 if [[ -f "$ROOT/package.json" ]]; then
-  log "Installing workspace dependencies with pnpm (using store: $STORE)..."
+  log "Installing workspace dependencies with pnpm (store: $STORE)..."
   (cd "$ROOT" && pnpm install --store-dir="$STORE")
 else
   log "No package.json found; skipping pnpm install."
 fi
 
 # -----------------------------
-# Supabase CLI install (unchanged)
+# Tool CLIs (user-level, toggleable via dedicated scripts)
 # -----------------------------
-log "Installing Supabase CLI..."
-"$HERE/install-supabase-cli.sh"
+log "Installing Supabase CLI..."; "$HERE/install-supabase-cli.sh"
+log "Installing Deno CLI...";     "$HERE/install-deno-cli.sh"
+log "Installing Codex CLI...";    "$HERE/install-codex-cli.sh"
+log "Installing Gemini CLI...";   "$HERE/install-gemini-cli.sh"
+log "Installing Claude CLI...";   "$HERE/install-claude-cli.sh"
 
-# -----------------------------
-# CLI installs (invoke dedicated scripts so they can be toggled easily)
-# -----------------------------
-log "Installing Deno CLI..."
-"$HERE/install-deno-cli.sh"
-
-log "Installing Codex CLI..."
-"$HERE/install-codex-cli.sh"
-
-log "Installing Gemini CLI..."
-"$HERE/install-gemini-cli.sh"
-
-log "Installing Claude CLI..."
-"$HERE/install-claude-cli.sh"
-
-# --- X11 window tools for Fluxbox/Chrome fullscreen control ---
-if command -v apt-get >/dev/null 2>&1; then
-  # Only install what’s missing, then clean apt cache
-  MISSING=""
-  for pkg in wmctrl xdotool x11-utils; do
-    dpkg -s "$pkg" >/dev/null 2>&1 || MISSING="$MISSING $pkg"
-  done
-
-  if [ -n "$MISSING" ]; then
-    $SUDO apt-get update -y
-    $SUDO apt-get install -y --no-install-recommends $MISSING
-    $SUDO rm -rf /var/lib/apt/lists/*
-  fi
-fi
-
-ensure_browser_available() {
-  if command -v google-chrome >/dev/null 2>&1 ||
-     command -v chromium >/dev/null 2>&1 ||
-     command -v chromium-browser >/dev/null 2>&1; then
-    log "Chromium-based browser already installed."
-    return 0
-  fi
-
-  if ! command -v apt-get >/dev/null 2>&1; then
-    log "apt-get unavailable; cannot install google-chrome-stable automatically."
-    return 0
-  fi
-
-  log "Installing google-chrome-stable because no Chromium-based browser was found..."
-  $SUDO apt-get update -y
-  if ! $SUDO apt-get install -y --no-install-recommends google-chrome-stable; then
-    log "Failed to install google-chrome-stable; continuing without a browser."
-    return 0
-  fi
-  $SUDO rm -rf /var/lib/apt/lists/*
-}
-
-ensure_browser_available
-
-# Ensure pnpm global bin directory is on PATH for future shells
+# Ensure pnpm global bin is on PATH for future shells
 if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then
-  case ":$PATH:" in
-    *":$PNPM_HOME:"*) ;;
-    *) export PATH="$PNPM_HOME:$PATH" ;;
-  esac
+  case ":$PATH:" in *":$PNPM_HOME:"*) ;; *) export PATH="$PNPM_HOME:$PATH" ;; esac
   persist_env_var "PNPM_HOME" "$PNPM_HOME" "Added by devcontainer post-create to configure pnpm home"
   persist_path_prefix "$PNPM_HOME" "Added by devcontainer post-create to expose pnpm global binaries"
 fi
@@ -233,124 +129,44 @@ fi
 # Ensure local Python user bin directory is on PATH for current and future shells
 python_user_bin="${PIP_USER_BIN:-$HOME/.local/bin}"
 if [[ -d "$python_user_bin" ]]; then
-  case ":$PATH:" in
-    *":$python_user_bin:"*) ;;
-    *) export PATH="$python_user_bin:$PATH" ;;
-  esac
+  case ":$PATH:" in *":$python_user_bin:"*) ;; *) export PATH="$python_user_bin:$PATH" ;; esac
   persist_path_prefix "$python_user_bin" "Added by devcontainer post-create to expose Python user base binaries"
 fi
 
-# Ensure the airnub CLI is directly available on PATH
+# Ensure the airnub CLI is directly available on PATH (symlink)
 ensure_airnub_cli_on_path() {
-  local cli_path="$ROOT/airnub"
-  local dest_dir="$HOME/.local/bin"
-  local dest="$dest_dir/airnub"
-
-  if [[ ! -x "$cli_path" ]]; then
-    log "airnub CLI not found at $cli_path; skipping PATH symlink."
-    return 0
-  fi
-
+  local cli_path="$ROOT/airnub"; local dest_dir="$HOME/.local/bin"; local dest="$dest_dir/airnub"
+  if [[ ! -x "$cli_path" ]]; then log "airnub CLI not found at $cli_path; skipping PATH symlink."; return 0; fi
   mkdir -p "$dest_dir"
-
   if [[ -L "$dest" ]]; then
-    local current_target
-    current_target="$(readlink "$dest" || true)"
-    if [[ "$current_target" == "$cli_path" ]]; then
-      log "airnub CLI already linked at $dest."
-      return 0
-    fi
+    local current_target; current_target="$(readlink "$dest" || true)"
+    if [[ "$current_target" == "$cli_path" ]]; then log "airnub CLI already linked at $dest."; return 0; fi
   elif [[ -e "$dest" ]]; then
-    log "A different executable already exists at $dest; leaving it in place."
-    return 0
+    log "A different executable already exists at $dest; leaving it in place."; return 0
   fi
-
-  ln -sfn "$cli_path" "$dest"
-  log "airnub CLI linked at $dest and available on PATH."
+  ln -sfn "$cli_path" "$dest"; log "airnub CLI linked at $dest and available on PATH."
 }
-
 ensure_airnub_cli_on_path
 
 # -----------------------------
-# Clone additional repos declared in devcontainer.json.
-# Non-fatal if missing.
+# Clone additional repos declared in devcontainer.json (non-fatal)
 # -----------------------------
 if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
-  # Ensure jq for JSON parsing if available via apt-get
   if ! command -v jq >/dev/null 2>&1; then
-    if command -v apt-get >/dev/null 2>&1; then
-      log "jq not found; installing via apt-get..."
-      apt-get update -y && apt-get install -y jq || log "jq install failed; clone step may fail"
-    else
-      log "jq not found and apt-get unavailable; clone step may fail"
-    fi
+    log "WARNING: jq not found (expected via image). Clone step may fail."
   fi
-
   log "Cloning repositories declared in devcontainer.json..."
-  ALLOW_WILDCARD=0 \
-  WORKSPACE_ROOT="$ROOT" \
-  bash "$HERE/clone-from-devcontainer-repos.sh" || log "Clone step skipped or failed (non-fatal)"
+  ALLOW_WILDCARD=0 WORKSPACE_ROOT="$ROOT" bash "$HERE/clone-from-devcontainer-repos.sh" \
+    || log "Clone step skipped or failed (non-fatal)"
 else
   log "clone-from-devcontainer-repos.sh not found; skipping clone step"
 fi
 
-# Chrome/Chromium classroom policy (allowlist)
-
-if command -v google-chrome >/dev/null 2>&1 || [ -d /etc/opt/chrome ]; then
-  if [ -n "$SUDO" ]; then
-    $SUDO install -d -m 0755 /etc/opt/chrome/policies/managed
-  else
-    install -d -m 0755 /etc/opt/chrome/policies/managed
-  fi
-  if [ -n "$SUDO" ]; then
-    $SUDO tee /etc/opt/chrome/policies/managed/classroom.json >/dev/null <<'JSON'
-{
-  "DeveloperToolsAvailability": 1,
-  "ExtensionDeveloperModeSettings": 1,
-  "ShowHomeButton": true,
-  "ShowDownloadButton": true,
-  "ShowDownloadsToolbarButton": true,
-  "ExtensionInstallBlocklist": ["*"],
-  "ExtensionSettings": {
-    "*": { "installation_mode": "blocked" },
-    "fmkadmapgofadopljbjfkapdkoienihi": {
-      "installation_mode": "force_installed",
-      "update_url": "https://clients2.google.com/service/update2/crx",
-      "toolbar_pin": "force_pinned"
-    }
-  }
-}
-JSON
-  else
-    tee /etc/opt/chrome/policies/managed/classroom.json >/dev/null <<'JSON'
-{
-  "DeveloperToolsAvailability": 1,
-  "ExtensionDeveloperModeSettings": 1,
-  "ShowHomeButton": true,
-  "ShowDownloadButton": true,
-  "ShowDownloadsToolbarButton": true,  
-  "ExtensionInstallBlocklist": ["*"],
-  "ExtensionSettings": {
-    "*": { "installation_mode": "blocked" },
-    "fmkadmapgofadopljbjfkapdkoienihi": {
-      "installation_mode": "force_installed",
-      "update_url": "https://clients2.google.com/service/update2/crx",
-      "toolbar_pin": "force_pinned"
-    }
-  }
-}
-JSON
-  fi
-fi
-
-if command -v chromium >/dev/null 2>&1 || [ -d /etc/chromium ]; then
-  if [ -n "$SUDO" ]; then
-    $SUDO install -d -m 0755 /etc/chromium/policies/managed
-    $SUDO cp /etc/opt/chrome/policies/managed/classroom.json /etc/chromium/policies/managed/classroom.json 2>/dev/null || true
-  else
-    install -d -m 0755 /etc/chromium/policies/managed
-    cp /etc/opt/chrome/policies/managed/classroom.json /etc/chromium/policies/managed/classroom.json 2>/dev/null || true
-  fi
+# --- Informational (no apt here; system bits live in Dockerfile now) ---
+if command -v google-chrome >/dev/null 2>&1; then
+  log "Chromium-based browser detected: $(google-chrome --version || true)"
+else
+  log "No Chrome found in PATH (expected if removed from image)."
 fi
 
 log "post-create complete."
