@@ -358,9 +358,13 @@ setup_novnc_audio() {
   fi
 
   if [[ -z "${XDG_RUNTIME_DIR:-}" ]]; then
-    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-    mkdir -p "$XDG_RUNTIME_DIR"
-    chmod 700 "$XDG_RUNTIME_DIR" >/dev/null 2>&1 || true
+    local runtime_dir="/run/user/$(id -u)"
+    if ! mkdir -p "$runtime_dir" 2>/dev/null; then
+      runtime_dir="/tmp/xdg-runtime-$(id -u)"
+      mkdir -p "$runtime_dir"
+    fi
+    chmod 700 "$runtime_dir" >/dev/null 2>&1 || true
+    export XDG_RUNTIME_DIR="$runtime_dir"
   fi
 
   "$pulse_bin" --check >/dev/null 2>&1 || "$pulse_bin" --start >/dev/null 2>&1 || true
