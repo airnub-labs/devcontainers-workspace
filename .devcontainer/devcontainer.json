@@ -120,7 +120,8 @@
           "workbench.view.extension.codexViewContainer": "secondarySideBar",
           "workbench.view.extension.geminiChat": "secondarySideBar",
           "workbench.view.extension.claudeCode": "secondarySideBar"
-        }
+        },
+        "chat.mcp.gallery.enabled": true
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
