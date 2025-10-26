@@ -20,7 +20,6 @@ REPO_ROOT="$SCRIPT_DIR"
 SUPABASE_DIR="${SUPABASE_DIR:-${REPO_ROOT}/supabase}"
 DB_ENV_HELPER="${DB_ENV_HELPER:-${SUPABASE_DIR}/scripts/db-env-local.sh}"
 CURRENT_PROJECT_FILE="${CURRENT_PROJECT_FILE:-${REPO_ROOT}/.airnub-current-project}"
-LEGACY_PROJECT_FILE="${LEGACY_PROJECT_FILE:-${SUPABASE_DIR}/.airnub-current-project}"
 
 usage() {
   cat <<'USAGE'
@@ -159,6 +158,44 @@ ensure_supabase_cli() {
   fi
 }
 
+run_db_env_helper() {
+  local behavior="$1"
+  local project_dir="${2:-}"
+  local env_file="${3:-}"
+
+  if [[ ! -x "$DB_ENV_HELPER" ]]; then
+    return 1
+  fi
+
+  local resolved_dir="$project_dir"
+  if [[ -z "$resolved_dir" ]]; then
+    resolved_dir="$SUPABASE_DIR"
+  fi
+
+  local -a helper_cmd=("$DB_ENV_HELPER")
+  case "$behavior" in
+    status-only)
+      helper_cmd+=(--status-only)
+      ;;
+    ensure-start)
+      helper_cmd+=(--ensure-start)
+      ;;
+    *)
+      die "Unknown db-env helper mode: $behavior"
+      ;;
+  esac
+
+  if [[ -n "$env_file" ]]; then
+    helper_cmd+=(--env-file "$env_file")
+  fi
+
+  if [[ -n "$project_dir" ]]; then
+    helper_cmd+=(--project-dir "$project_dir")
+  fi
+
+  SUPABASE_PROJECT_DIR="$resolved_dir" "${helper_cmd[@]}"
+}
+
 shared_env_file() {
   printf '%s\n' "${SUPABASE_DIR}/.env.local"
 }
@@ -268,9 +305,9 @@ sync_shared_env_into_project() {
   if [[ ! -x "$DB_ENV_HELPER" ]]; then
     warn "db-env helper not found at $DB_ENV_HELPER; skipping shared env refresh."
   else
-    if ! SUPABASE_PROJECT_DIR="$SUPABASE_DIR" "$DB_ENV_HELPER" --status-only >/dev/null 2>&1; then
+    if ! run_db_env_helper status-only "$SUPABASE_DIR" >/dev/null 2>&1; then
       if [[ "$ensure_mode" == "true" ]]; then
-        if ! SUPABASE_PROJECT_DIR="$SUPABASE_DIR" "$DB_ENV_HELPER" --ensure-start >/dev/null 2>&1; then
+        if ! run_db_env_helper ensure-start "$SUPABASE_DIR" >/dev/null 2>&1; then
           warn "Could not refresh Supabase env vars via db-env helper."
         fi
       else
@@ -280,21 +317,6 @@ sync_shared_env_into_project() {
   fi
 
   merge_shared_env_into_project "$project_env_file"
-}
-
-ensure_current_project_marker() {
-  if [[ -f "$CURRENT_PROJECT_FILE" ]]; then
-    return 0
-  fi
-
-  if [[ -n "${LEGACY_PROJECT_FILE:-}" && "$LEGACY_PROJECT_FILE" != "$CURRENT_PROJECT_FILE" && -f "$LEGACY_PROJECT_FILE" ]]; then
-    mkdir -p "$(dirname "$CURRENT_PROJECT_FILE")"
-    cp "$LEGACY_PROJECT_FILE" "$CURRENT_PROJECT_FILE"
-    rm -f "$LEGACY_PROJECT_FILE"
-    return 0
-  fi
-
-  return 1
 }
 
 relative_to_repo() {
@@ -319,17 +341,11 @@ remember_project() {
 
   output="$(relative_to_repo "$project_dir")"
 
-  ensure_current_project_marker || true
   mkdir -p "$(dirname "$CURRENT_PROJECT_FILE")"
   printf '%s\n' "$output" >"$CURRENT_PROJECT_FILE"
-
-  if [[ -n "${LEGACY_PROJECT_FILE:-}" && "$LEGACY_PROJECT_FILE" != "$CURRENT_PROJECT_FILE" ]]; then
-    rm -f "$LEGACY_PROJECT_FILE"
-  fi
 }
 
 show_current_project() {
-  ensure_current_project_marker || true
   if [[ -f "$CURRENT_PROJECT_FILE" ]]; then
     printf 'Last project used: %s\n' "$(<"$CURRENT_PROJECT_FILE")"
   else
@@ -338,7 +354,6 @@ show_current_project() {
 }
 
 get_current_project_dir() {
-  ensure_current_project_marker || true
   if [[ ! -f "$CURRENT_PROJECT_FILE" ]]; then
     return 1
   fi
@@ -419,20 +434,18 @@ env_command() {
 
   case "$action" in
     sync|status|start)
-      local ensure_start="true"
-      local status_only="false"
-      local project_dir=""
-      local env_file=""
-
+      local helper_mode
       case "$action" in
         status)
-          ensure_start="false"
-          status_only="true"
+          helper_mode="status-only"
           ;;
-        start)
-          ensure_start="true"
+        *)
+          helper_mode="ensure-start"
           ;;
       esac
+
+      local project_dir=""
+      local env_file=""
 
       while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -447,13 +460,11 @@ env_command() {
             shift 2
             ;;
           --status-only)
-            ensure_start="false"
-            status_only="true"
+            helper_mode="status-only"
             shift
             ;;
           --ensure-start)
-            ensure_start="true"
-            status_only="false"
+            helper_mode="ensure-start"
             shift
             ;;
           --help|-h)
@@ -476,28 +487,15 @@ env_command() {
 
       local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
       local target_env_file="${env_file:-${effective_project_dir}/.env.local}"
-      local -a cmd=("$DB_ENV_HELPER")
 
-      if [[ "$status_only" == "true" ]]; then
-        cmd+=("--status-only")
+      if ! run_db_env_helper "$helper_mode" "$effective_project_dir" "$env_file"; then
+        die "Failed to capture Supabase env vars via $DB_ENV_HELPER"
+      fi
+
+      if [[ "$helper_mode" == "status-only" ]]; then
+        echo "[airnub] Refreshed Supabase env vars from running stack into $target_env_file."
       else
-        cmd+=("--ensure-start")
-      fi
-
-      if [[ -n "$env_file" ]]; then
-        cmd+=("--env-file" "$env_file")
-      fi
-
-      if [[ -n "$project_dir" ]]; then
-        cmd+=("--project-dir" "$project_dir")
-      fi
-
-      if SUPABASE_PROJECT_DIR="$effective_project_dir" "${cmd[@]}"; then
-        if [[ "$status_only" == "true" ]]; then
-          echo "[airnub] Refreshed Supabase env vars from running stack into $target_env_file."
-        else
-          echo "[airnub] Synced Supabase env vars into $target_env_file (stack started if necessary)."
-        fi
+        echo "[airnub] Synced Supabase env vars into $target_env_file (stack started if necessary)."
       fi
       ;;
     reset)

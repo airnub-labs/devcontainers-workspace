@@ -74,7 +74,7 @@ All subcommands accept relative or absolute paths, forward extra arguments after
 
 `airnub use` is the beginner-friendly path: it resolves the project directory, syncs `.env.local`, runs `supabase db push`, then prints `supabase status` so you can immediately confirm which project is wired to the shared stack. Run it without arguments to reuse the last project (or the default `supabase/`). The command also records the selection in `./.airnub-current-project`, which powers `airnub project current` for quick checks when you return to the workspace later. Add `--skip-status` if you prefer to omit the status call.
 
-On a freshly provisioned workspace the clone helper initializes `./.airnub-current-project` using the first repository it cloned (or `./supabase` when no repos exist yet), so the CLI remembers a useful default even before you run `airnub use`. If you previously used the Supabase-scoped marker (`supabase/.airnub-current-project`), the CLI quietly migrates it to the new root-level location the next time you run a command.
+On a freshly provisioned workspace the clone helper initializes `./.airnub-current-project` using the first repository it cloned (or `./supabase` when no repos exist yet), so the CLI remembers a useful default even before you run `airnub use`. The CLI now records selections exclusively in this root-level marker and ignores the deprecated Supabase-scoped file.
 
 Need to prep a project’s env files after switching? Run `airnub project setup` on the remembered project (or pass `--project-dir`) to copy `.env.example` to `.env.local` when missing, append any new keys from the example, and refresh Supabase credentials in one step.
 
