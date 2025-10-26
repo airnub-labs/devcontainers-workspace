@@ -29,6 +29,10 @@ if [ ! -d "$NOVNC_ROOT" ]; then
   cp -a /usr/share/novnc/* "$NOVNC_ROOT/"
 fi
 
+if command -v apply-chrome-policy.sh >/dev/null 2>&1; then
+  apply-chrome-policy.sh || echo "[gui] Chrome policy application failed (continuing)"
+fi
+
 # Redirect index.html to vnc.html with desired params
 cat >"$NOVNC_ROOT/index.html" <<EOF
 <!doctype html><meta charset="utf-8">

@@ -41,6 +41,7 @@ ENV CHROME_BIN=/usr/bin/google-chrome \
 COPY .devcontainer/gui/scripts/start-desktop.sh /usr/local/bin/start-desktop.sh
 COPY .devcontainer/gui/scripts/novnc-audio-bridge.sh /usr/local/bin/novnc-audio-bridge.sh
 COPY .devcontainer/gui/scripts/fluxbox-setup.sh /usr/local/bin/fluxbox-setup.sh
+COPY .devcontainer/gui/scripts/apply-chrome-policy.sh /usr/local/bin/apply-chrome-policy.sh
 RUN chmod +x /usr/local/bin/*.sh
 
 EXPOSE 6080
