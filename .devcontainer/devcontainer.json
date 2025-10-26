@@ -44,8 +44,7 @@
       "visibility": "private"
     },
     "6081": {
-      "label": "Desktop audio",
-      "protocol": "http",
+      "label": "noVNC audio (OGG/Opus)",
       "onAutoForward": "silent"
     },
     "6379": {

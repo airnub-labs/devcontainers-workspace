@@ -1,25 +1,58 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Launch Xvfb (virtual display)
+# ----------------- Config via envs -----------------
+: "${NOVNC_AUTOCONNECT:=1}"
+: "${NOVNC_RESIZE:=scale}"       # scale | downscale | remote | off
+: "${NOVNC_RECONNECT:=1}"
+: "${NOVNC_VIEW_ONLY:=0}"
+: "${APP_URL:=about:blank}"
+: "${NOVNC_AUDIO_ENABLE:=0}"     # 1 to enable audio bridge
+: "${NOVNC_AUDIO_PORT:=6081}"    # used if audio is enabled
+
+export DISPLAY=${DISPLAY:-:99}
+
+# --------------- Virtual desktop & WM ---------------
 Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &
 sleep 0.5
-
-# Lightweight WM so Chrome can fullscreen etc.
 fluxbox &
 
-# Expose the display over VNC
+# ------------------- VNC server ---------------------
 x11vnc -forever -shared -rfbport 5900 -display :99 -nopw -quiet &
 
-# noVNC: serve VNC over WebSockets on :6080
-websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5900 &
+# --------- Prepare noVNC root with redirect --------
+NOVNC_ROOT=/opt/novnc
+if [ ! -d "$NOVNC_ROOT" ]; then
+  mkdir -p "$NOVNC_ROOT"
+  cp -a /usr/share/novnc/* "$NOVNC_ROOT/"
+fi
 
-# Optional: open a URL in Chrome inside the desktop (defaults to blank)
-${CHROME_BIN:-google-chrome} \
+# Redirect index.html to vnc.html with desired params
+cat >"$NOVNC_ROOT/index.html" <<EOF
+<!doctype html><meta charset="utf-8">
+<title>noVNC</title>
+<meta http-equiv="refresh"
+  content="0; URL=./vnc.html?autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}">
+<script>location.replace('./vnc.html?autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}');</script>
+EOF
+
+# (Optional) setup Fluxbox defaults/menu/startup (no-ops if it fails)
+fluxbox-setup.sh || true
+
+# (Optional) audio bridge (adds <script> to vnc.html)
+if [ "${NOVNC_AUDIO_ENABLE}" = "1" ]; then
+  NOVNC_AUDIO_PORT_EFFECTIVE="${NOVNC_AUDIO_PORT}" \
+  novnc-audio-bridge.sh "$NOVNC_ROOT" || echo "[gui] audio bridge skipped"
+fi
+
+# ---------------- websockify/noVNC ------------------
+websockify --web="$NOVNC_ROOT" 0.0.0.0:6080 localhost:5900 &
+
+# ------------------ Launch Chrome -------------------
+"${CHROME_BIN:-google-chrome}" \
   --no-first-run --no-default-browser-check \
   --no-sandbox --disable-dev-shm-usage --disable-gpu \
-  --window-size=1600,900 \
-  "${APP_URL:-about:blank}" &
+  --start-fullscreen \
+  "${APP_URL}" &
 
-# Wait on the first background job to exit
 wait -n

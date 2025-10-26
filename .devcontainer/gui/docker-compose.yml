@@ -11,6 +11,10 @@ services:
     environment:
       # Let the desktop reach your app running in the devcontainer
       APP_URL: "http://localhost:3000"    # with network_mode: service:devcontainer
+      NOVNC_AUTOCONNECT: "1"
+      NOVNC_RESIZE: "scale"
+      NOVNC_AUDIO_ENABLE: "1"      # turn on audio bridge
+      NOVNC_AUDIO_PORT: "6081"      
     network_mode: "service:devcontainer"  # share net namespace — localhost maps to devcontainer
     depends_on:
       - devcontainer
