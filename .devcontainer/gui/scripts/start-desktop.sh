@@ -12,6 +12,8 @@ set -euo pipefail
 
 export DISPLAY=${DISPLAY:-:99}
 
+CDP_PORT="${CDP_PORT:-9222}"
+
 # --------------- Virtual desktop & WM ---------------
 Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &
 sleep 0.5
@@ -53,6 +55,8 @@ websockify --web="$NOVNC_ROOT" 0.0.0.0:6080 localhost:5900 &
   --no-first-run --no-default-browser-check \
   --no-sandbox --disable-dev-shm-usage --disable-gpu \
   --start-fullscreen \
-  "${APP_URL}" &
+  --remote-debugging-address=0.0.0.0 \
+  --remote-debugging-port="${CDP_PORT}" \  
+  "${APP_URL:-about:blank}" &
 
 wait -n

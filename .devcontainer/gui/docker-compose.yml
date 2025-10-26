@@ -14,12 +14,13 @@ services:
       NOVNC_AUTOCONNECT: "1"
       NOVNC_RESIZE: "scale"
       NOVNC_AUDIO_ENABLE: "1"      # turn on audio bridge
-      NOVNC_AUDIO_PORT: "6081"      
+      NOVNC_AUDIO_PORT: "6081"
+      CDP_PORT: 9222      
     network_mode: "service:devcontainer"  # share net namespace — localhost maps to devcontainer
     depends_on:
       - devcontainer
     healthcheck:
-      test: ["CMD", "bash", "-lc", "curl -fsS http://127.0.0.1:6080/vnc.html >/dev/null"]
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:6080/vnc.html >/dev/null && curl -sf http://127.0.0.1:9222/json/version >/dev/null || exit 1"]
       interval: 10s
       timeout: 3s
-      retries: 12
+      retries: 30

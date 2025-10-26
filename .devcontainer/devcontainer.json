@@ -41,22 +41,20 @@
   "portsAttributes": {
     "6080": {
       "label": "noVNC desktop",
-      "onAutoForward": "openBrowser",
-      "visibility": "private"
+      "onAutoForward": "notify"
     },
     "6081": {
       "label": "noVNC audio (OGG/Opus)",
-      "onAutoForward": "silent"
+      "onAutoForward": "notify"
     },
     "6379": {
       "label": "Redis",
       "onAutoForward": "silent"
     },
     "9222": {
-      "label": "Chromium DevTools",
-      "onAutoForward": "silent",
-      "visibility": "public"
-    },
+      "label": "Chrome DevTools (CDP)",
+      "onAutoForward": "notify"
+    },    
     "54321": {
       "label": "Supabase API",
       "onAutoForward": "silent"
