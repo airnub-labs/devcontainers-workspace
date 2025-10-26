@@ -1,34 +1,37 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG DEFAULT_TZ=Europe/Dublin
-ARG DEFAULT_LOCALE=en_IE.UTF-8
-ARG DEFAULT_LANGUAGE=en_IE:en
+ARG DEFAULT_TZ="Europe/Dublin"
+ARG DEFAULT_LOCALE="en_IE.UTF-8"
+ARG DEFAULT_LANGUAGE="en_IE:en"
 
-# Base + TZ/locale + X11 + noVNC + audio tools
+# Base deps + TZ/locale + X11/WM + noVNC + audio + utils + fonts
 RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg \
-    tzdata locales \
-    xvfb x11vnc fluxbox novnc websockify \
-    xterm ffmpeg pulseaudio-utils \
-    wmctrl xdotool x11-utils jq; \
-  ln -fs "/usr/share/zoneinfo/${DEFAULT_TZ}" /etc/localtime; \
-  dpkg-reconfigure -f noninteractive tzdata; \
-  sed -i "s/^# \(${DEFAULT_LOCALE//\//\/} \)UTF-8/\1UTF-8/" /etc/locale.gen || true; \
-  grep -q "^${DEFAULT_LOCALE} UTF-8$" /etc/locale.gen || echo "${DEFAULT_LOCALE} UTF-8" >> /etc/locale.gen; \
-  locale-gen; \
-  update-locale LANG="${DEFAULT_LOCALE}" LC_ALL="${DEFAULT_LOCALE}" LANGUAGE="${DEFAULT_LANGUAGE}"
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg \
+      tzdata locales \
+      xvfb x11vnc fluxbox novnc websockify \
+      xterm ffmpeg pulseaudio-utils \
+      wmctrl xdotool x11-utils jq \
+      fonts-liberation fonts-noto-color-emoji; \
+    # Timezone & locale
+    ln -fs "/usr/share/zoneinfo/${DEFAULT_TZ}" /etc/localtime; \
+    dpkg-reconfigure -f noninteractive tzdata; \
+    sed -i "s/^# \(${DEFAULT_LOCALE//\//\/} \)UTF-8/\1UTF-8/" /etc/locale.gen || true; \
+    grep -q "^${DEFAULT_LOCALE} UTF-8$" /etc/locale.gen || echo "${DEFAULT_LOCALE} UTF-8" >> /etc/locale.gen; \
+    locale-gen; \
+    update-locale LANG="${DEFAULT_LOCALE}" LC_ALL="${DEFAULT_LOCALE}" LANGUAGE="${DEFAULT_LANGUAGE}"; \
+    rm -rf /var/lib/apt/lists/*
 
-# Chrome (signed-by)
+# Google Chrome (signed-by keyring)
 RUN set -eux; \
-  mkdir -p /etc/apt/keyrings; \
-  curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg; \
-  echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends google-chrome-stable; \
-  rm -rf /var/lib/apt/lists/*
+    mkdir -p /etc/apt/keyrings; \
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg; \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends google-chrome-stable; \
+    rm -rf /var/lib/apt/lists/*
 
 ENV CHROME_BIN=/usr/bin/google-chrome \
     DISPLAY=:99 \
@@ -37,14 +40,13 @@ ENV CHROME_BIN=/usr/bin/google-chrome \
     LC_ALL=${DEFAULT_LOCALE} \
     LANGUAGE=${DEFAULT_LANGUAGE}
 
-# Copy GUI scripts
+# Scripts used by the desktop entrypoint
 COPY .devcontainer/gui/scripts/start-desktop.sh /usr/local/bin/start-desktop.sh
 COPY .devcontainer/gui/scripts/novnc-audio-bridge.sh /usr/local/bin/novnc-audio-bridge.sh
 COPY .devcontainer/gui/scripts/fluxbox-setup.sh /usr/local/bin/fluxbox-setup.sh
 COPY .devcontainer/gui/scripts/apply-chrome-policy.sh /usr/local/bin/apply-chrome-policy.sh
 RUN chmod +x /usr/local/bin/*.sh
 
-EXPOSE 6080
-EXPOSE 6081
+EXPOSE 6080 6081 9222
 
 CMD ["/usr/local/bin/start-desktop.sh"]
