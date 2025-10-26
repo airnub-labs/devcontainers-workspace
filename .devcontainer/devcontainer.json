@@ -1,7 +1,8 @@
 {
   "name": "airnub-labs",
   "dockerComposeFile": [
-    "./docker-compose.yml"
+    "./docker-compose.yml",
+    "./docker-compose.novnc.yml"
   ],
   "service": "devcontainer",
   "workspaceFolder": "/airnub-labs",
@@ -13,8 +14,7 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
-    },
-    "ghcr.io/devcontainers/features/desktop-lite:1": {}
+    }
   },
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",
@@ -39,9 +39,9 @@
   ],
   "portsAttributes": {
     "6080": {
-      "label": "Desktop",
-      "protocol": "http",
-      "onAutoForward": "openPreview"
+      "label": "noVNC desktop",
+      "onAutoForward": "openBrowser",
+      "visibility": "private"
     },
     "6081": {
       "label": "Desktop audio",
