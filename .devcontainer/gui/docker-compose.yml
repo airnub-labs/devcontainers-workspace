@@ -1,8 +1,8 @@
 services:
   novnc-desktop:
     build:
-      context: ..
-      dockerfile: .devcontainer/gui/Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
         DEFAULT_TZ: "Europe/Dublin"       # override as needed
         DEFAULT_LOCALE: "en_IE.UTF-8"
