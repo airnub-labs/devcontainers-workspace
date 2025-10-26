@@ -7,7 +7,8 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
-    command: sleep infinity
+    command:
+      - /airnub-labs/.devcontainer/scripts/devcontainer-log-entrypoint.sh
     init: true
     volumes:
       - ..:${WORKSPACE_CONTAINER_ROOT:-/airnub-labs}:cached

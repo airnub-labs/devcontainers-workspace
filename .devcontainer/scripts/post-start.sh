@@ -12,6 +12,11 @@ DEVCONTAINER_COMPOSE_FILE="${DEVCONTAINER_COMPOSE_FILE:-$REPO_ROOT/.devcontainer
 WORKSPACE_STACK_NAME="${WORKSPACE_STACK_NAME:-${AIRNUB_WORKSPACE_NAME:-airnub-labs}}"
 DEVCONTAINER_PROJECT_NAME="${DEVCONTAINER_PROJECT_NAME:-$WORKSPACE_STACK_NAME}"
 
+LOG_DIR="${DEVCONTAINER_LOG_DIR:-/var/log/devcontainer}"
+LOG_FILE="${DEVCONTAINER_LOG_FILE:-$LOG_DIR/devcontainer.log}"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+touch "$LOG_FILE" 2>/dev/null || true
+
 # Ensure docker compose sees the resolved workspace identifiers when the
 # devcontainer invokes it (e.g. for the Redis sidecar) by exporting them into
 # the environment before shelling out. When not explicitly overridden we also
@@ -24,7 +29,13 @@ if [[ -z "${WORKSPACE_CONTAINER_ROOT:-}" ]]; then
 fi
 export WORKSPACE_CONTAINER_ROOT
 
-log() { echo "[post-start] $*"; }
+log() {
+  local message="[post-start] $*"
+  echo "$message"
+  if [[ -n "${LOG_FILE:-}" ]]; then
+    echo "$message" >>"$LOG_FILE" 2>/dev/null || true
+  fi
+}
 
 NOVNC_AUDIO_PORT_EFFECTIVE="${NOVNC_AUDIO_PORT:-6081}"
 
@@ -140,7 +151,10 @@ ensure_supabase_stack() {
   fi
 
   log "Supabase stack not running; starting via '$start_display'..."
-  if (cd "$supabase_dir" && supabase start "${supabase_start_args[@]}"); then
+  if (
+    cd "$supabase_dir" &&
+    supabase start "${supabase_start_args[@]}" 2>&1 | tee -a "$LOG_FILE"
+  ); then
     log "Supabase stack started successfully."
     return 0
   fi

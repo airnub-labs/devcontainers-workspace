@@ -7,7 +7,18 @@ if ! ROOT="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null)"; then
   ROOT="$(cd "$HERE/.." && pwd)"
 fi
 
-log() { echo "[post-create] $*"; }
+LOG_DIR="${DEVCONTAINER_LOG_DIR:-/var/log/devcontainer}"
+LOG_FILE="${DEVCONTAINER_LOG_FILE:-$LOG_DIR/devcontainer.log}"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+touch "$LOG_FILE" 2>/dev/null || true
+
+log() {
+  local message="[post-create] $*"
+  echo "$message"
+  if [[ -n "${LOG_FILE:-}" ]]; then
+    echo "$message" >>"$LOG_FILE" 2>/dev/null || true
+  fi
+}
 
 SUDO=""
 if command -v sudo >/dev/null 2>&1; then

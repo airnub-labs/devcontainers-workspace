@@ -18,7 +18,9 @@
   },
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",
-    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store"
+    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store",
+    "DEVCONTAINER_LOG_DIR": "/var/log/devcontainer",
+    "DEVCONTAINER_LOG_FILE": "/var/log/devcontainer/devcontainer.log"
   },
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
