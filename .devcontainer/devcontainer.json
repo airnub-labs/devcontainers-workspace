@@ -119,7 +119,8 @@
         "openai.chatgpt",
         "google.geminicodeassist",
         "google.gemini-cli-vscode-ide-companion",
-        "anthropic.claude-code"
+        "anthropic.claude-code",
+        "ms-windows-ai-studio.windows-ai-studio"
       ]
     }
   }
