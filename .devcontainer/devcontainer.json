@@ -38,27 +38,31 @@
     "6080": {
       "label": "Desktop",
       "protocol": "http",
-      "onAutoForward": "openPreview"
+      "onAutoForward": "openBrowser"
     },
     "6379": {
-      "label": "Redis"
+      "label": "Redis",
+      "onAutoForward": "silent"
     },
     "54321": {
-      "label": "Supabase API"
+      "label": "Supabase API",
+      "onAutoForward": "silent"
     },
     "54322": {
-      "label": "Supabase Postgres"
+      "label": "Supabase Postgres",
+      "onAutoForward": "silent"
     },
     "54323": {
       "label": "Supabase Studio",
-      "protocol": "http",
-      "onAutoForward": "openPreview"
+      "onAutoForward": "notify"
     },
     "54324": {
-      "label": "Supabase Inbucket"
+      "label": "Supabase Inbucket",
+      "onAutoForward": "silent"
     },
     "54327": {
-      "label": "Supabase Logflare"
+      "label": "Supabase Logflare",
+      "onAutoForward": "silent"
     }
   },
   "customizations": {
