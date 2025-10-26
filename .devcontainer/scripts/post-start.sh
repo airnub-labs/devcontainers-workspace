@@ -2,20 +2,28 @@
 set -euo pipefail
 [[ "${DEBUG:-false}" == "true" ]] && set -x
 
+# Log non‑zero exits to the devcontainer log
+trap 'ec=$?; if [[ $ec -ne 0 ]]; then echo "[post-start] error: exited with code $ec"; fi' EXIT
+
+# ---------------------------------------------------------------------------
+# Resolve paths
+# ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
 SUPABASE_PROJECT_DIR="${SUPABASE_PROJECT_DIR:-$REPO_ROOT/supabase}"
 SUPABASE_CONFIG_PATH="${SUPABASE_CONFIG_PATH:-$SUPABASE_PROJECT_DIR/config.toml}"
-DEVCONTAINER_COMPOSE_FILE="${DEVCONTAINER_COMPOSE_FILE:-$REPO_ROOT/.devcontainer/docker-compose.yml}"
 WORKSPACE_STACK_NAME="${WORKSPACE_STACK_NAME:-${AIRNUB_WORKSPACE_NAME:-airnub-labs}}"
 DEVCONTAINER_PROJECT_NAME="${DEVCONTAINER_PROJECT_NAME:-$WORKSPACE_STACK_NAME}"
 
 LOG_DIR="${DEVCONTAINER_LOG_DIR:-/var/log/devcontainer}"
 LOG_FILE="${DEVCONTAINER_LOG_FILE:-$LOG_DIR/devcontainer.log}"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
-touch "$LOG_FILE" 2>/dev/null || true
+: >"$LOG_FILE" 2>/dev/null || true
 
 export WORKSPACE_STACK_NAME
 export DEVCONTAINER_PROJECT_NAME
@@ -24,12 +32,40 @@ if [[ -z "${WORKSPACE_CONTAINER_ROOT:-}" ]]; then
 fi
 export WORKSPACE_CONTAINER_ROOT
 
+# Optional sudo prefix (not guaranteed in containers)
+SUDO=""
+if command -v sudo >/dev/null 2>&1; then SUDO="sudo"; fi
+
 log() {
   local message="[post-start] $*"
   echo "$message"
   if [[ -n "${LOG_FILE:-}" ]]; then
     echo "$message" >>"$LOG_FILE" 2>/dev/null || true
   fi
+}
+
+# ---------------------------------------------------------------------------
+# Docker & Supabase detection
+# ---------------------------------------------------------------------------
+
+# Make Docker wait tunable via env
+DOCKER_WAIT_ATTEMPTS="${DOCKER_WAIT_ATTEMPTS:-40}"
+DOCKER_WAIT_SLEEP_SECS="${DOCKER_WAIT_SLEEP_SECS:-2}"
+
+authenticate_ecr_public_registry() {
+  if [[ "$docker_ready" != "true" ]]; then return 0; fi
+  if ! command -v aws >/dev/null 2>&1; then
+    log "AWS CLI not available; skipping Amazon ECR Public authentication."
+    return 0
+  fi
+  log "Authenticating to Amazon ECR Public registry to raise pull rate limits..."
+  if aws ecr-public get-login-password --region us-east-1 \
+    | docker login --username AWS --password-stdin public.ecr.aws >/dev/null 2>&1; then
+    log "Amazon ECR Public authentication succeeded."
+    return 0
+  fi
+  log "Amazon ECR Public authentication failed; Supabase image pulls may be rate limited."
+  return 1
 }
 
 wait_for_docker_daemon() {
@@ -54,7 +90,7 @@ supabase_project_available=false
 
 if command -v docker >/dev/null 2>&1; then
   docker_cli_present=true
-  if wait_for_docker_daemon 40 2; then
+  if wait_for_docker_daemon "$DOCKER_WAIT_ATTEMPTS" "$DOCKER_WAIT_SLEEP_SECS"; then
     docker_ready=true
   else
     log "Docker daemon did not become ready; Docker-dependent services will be skipped."
@@ -84,12 +120,12 @@ ensure_supabase_stack() {
   local supabase_start_args=()
 
   if [[ -n "${SUPABASE_START_ARGS:-}" ]]; then
-    # shellcheck disable=SC2206
+    # shellcheck disable=SC2206  # Intentional word splitting for user-provided args
     supabase_start_args+=(${SUPABASE_START_ARGS})
   fi
   if [[ -n "${SUPABASE_START_EXCLUDES:-}" ]]; then
     local exclude
-    # shellcheck disable=SC2086
+    # shellcheck disable=SC2086  # Honour user input
     for exclude in ${SUPABASE_START_EXCLUDES}; do
       supabase_start_args+=(-x "$exclude")
     done
@@ -123,6 +159,7 @@ ensure_inner_redis() {
   local container_image="redis:7-alpine"
   local host_port="6379"
 
+  # Identify if another container already binds the desired host port
   local port_owner
   port_owner="$(
     docker ps --format '{{.Names}} {{.Ports}}' |
@@ -169,6 +206,13 @@ ensure_inner_redis() {
   return 1
 }
 
+# ---------------------------------------------------------------------------
+# Actions
+# ---------------------------------------------------------------------------
+if [[ "$docker_ready" == "true" ]]; then
+  authenticate_ecr_public_registry || true
+fi
+
 if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   supabase_env_helper="$SUPABASE_PROJECT_DIR/scripts/db-env-local.sh"
   if ensure_supabase_stack; then
@@ -214,13 +258,12 @@ fi
 # ---------------------------------------------------------------------------
 # OPTIONAL: Repo clone support (non-breaking)
 # ---------------------------------------------------------------------------
-
 WORKSPACE_ROOT_DEFAULT="$(dirname "$REPO_ROOT")"
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$WORKSPACE_ROOT_DEFAULT}"
 
 WS_FILE="$(find "$REPO_ROOT" -maxdepth 1 -name "*.code-workspace" | head -n 1 || true)"
 if [[ -z "$WS_FILE" ]]; then
-  ws_basename="${WORKSPACE_CODE_WORKSPACE_BASENAME:-$WORKSPACE_STACK_NAME}"   # (fixed: no 'local' here)
+  ws_basename="${WORKSPACE_CODE_WORKSPACE_BASENAME:-$WORKSPACE_STACK_NAME}"
   WS_FILE="$REPO_ROOT/${ws_basename}.code-workspace"
 fi
 
@@ -228,7 +271,8 @@ ensure_jq() {
   if command -v jq >/dev/null 2>&1; then return 0; fi
   if command -v apt-get >/dev/null 2>&1; then
     log "jq not found; installing via apt-get..."
-    apt-get update -y && apt-get install -y jq || log "jq install failed; proceeding without it"
+    $SUDO apt-get update -y && $SUDO apt-get install -y jq \
+      || log "jq install failed; proceeding without it"
   else
     log "jq not available and apt-get missing; workspace checks limited"
   fi
