@@ -256,4 +256,59 @@ else
   log "clone-from-devcontainer-repos.sh not found; skipping clone step"
 fi
 
+# Chrome/Chromium classroom policy (allowlist)
+SUDO=""
+if command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+fi
+
+if command -v google-chrome >/dev/null 2>&1 || [ -d /etc/opt/chrome ]; then
+  if [ -n "$SUDO" ]; then
+    $SUDO install -d -m 0755 /etc/opt/chrome/policies/managed
+  else
+    install -d -m 0755 /etc/opt/chrome/policies/managed
+  fi
+  if [ -n "$SUDO" ]; then
+    $SUDO tee /etc/opt/chrome/policies/managed/classroom.json >/dev/null <<'JSON'
+{
+  "URLBlocklist": ["*"],
+  "URLAllowlist": [
+    "http://localhost/*",
+    "https://127.0.0.1/*",
+    "https://[::1]/*",
+    "https://*.github.dev/*",
+    "https://github.com/*"
+  ],
+  "DeveloperToolsAvailability": 1,
+  "ExtensionInstallBlocklist": ["*"]
+}
+JSON
+  else
+    tee /etc/opt/chrome/policies/managed/classroom.json >/dev/null <<'JSON'
+{
+  "URLBlocklist": ["*"],
+  "URLAllowlist": [
+    "http://localhost/*",
+    "https://127.0.0.1/*",
+    "https://[::1]/*",
+    "https://*.github.dev/*",
+    "https://github.com/*"
+  ],
+  "DeveloperToolsAvailability": 1,
+  "ExtensionInstallBlocklist": ["*"]
+}
+JSON
+  fi
+fi
+
+if command -v chromium >/dev/null 2>&1 || [ -d /etc/chromium ]; then
+  if [ -n "$SUDO" ]; then
+    $SUDO install -d -m 0755 /etc/chromium/policies/managed
+    $SUDO cp /etc/opt/chrome/policies/managed/classroom.json /etc/chromium/policies/managed/classroom.json 2>/dev/null || true
+  else
+    install -d -m 0755 /etc/chromium/policies/managed
+    cp /etc/opt/chrome/policies/managed/classroom.json /etc/chromium/policies/managed/classroom.json 2>/dev/null || true
+  fi
+fi
+
 log "post-create complete."

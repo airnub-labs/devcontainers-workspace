@@ -480,7 +480,7 @@ setup_fluxbox_desktop() {
   mkdir -p "$fb_dir"
 
   if [ -d /usr/share/novnc ]; then
-    local redirect_url="vnc.html?autoconnect=true&reconnect=true&reconnect_delay=5000&resize=remote&path=websockify&encrypt=0&audio_port=${audio_port}"
+    local redirect_url="vnc.html?autoconnect=1&reconnect=1&reconnect_delay=3000&resize=remote&path=websockify&audio_port=${audio_port}"
     local tmpfile="$(mktemp)"
     cat >"$tmpfile" <<EOF
 <!doctype html>
@@ -566,6 +566,12 @@ fi
 wait $fbpid
 STARTUP
   chmod +x "$fb_dir/startup"
+
+  if ! grep -q '^session.screen0.allowRemoteActions:' "$fb_dir/init" 2>/dev/null; then
+    echo 'session.screen0.allowRemoteActions: true' >>"$fb_dir/init"
+  fi
+
+  pkill -USR2 fluxbox 2>/dev/null || true
 
   if command -v fluxbox-remote >/dev/null 2>&1; then
     fluxbox-remote reconfigure >/dev/null 2>&1 || true
