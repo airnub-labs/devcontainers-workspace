@@ -1,4 +1,6 @@
-name: airnub-labs
+# Resolve WORKSPACE_STACK_NAME (or the legacy AIRNUB_WORKSPACE_NAME) before
+# invoking docker compose. When unset, docker compose falls back to airnub-labs.
+name: ${WORKSPACE_STACK_NAME:-airnub-labs}
 
 services:
   devcontainer:
@@ -8,7 +10,7 @@ services:
     command: sleep infinity
     init: true
     volumes:
-      - ..:/airnub-labs:cached
+      - ..:${WORKSPACE_CONTAINER_ROOT:-/airnub-labs}:cached
 
   redis:
     image: redis:7-alpine
