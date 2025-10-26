@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y curl gnupg && \
     > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    google-chrome-stable xterm && \
+    google-chrome-stable xterm ffmpeg pulseaudio-utils && \
     rm -rf /var/lib/apt/lists/*
 
 # (optional) make Chrome discoverable to tools that look for CHROME_BIN
