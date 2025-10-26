@@ -19,6 +19,10 @@
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",
     "PNPM_STORE_PATH": "/home/vscode/.pnpm-store",
+    "CHROME_CDP_URL": "http://127.0.0.1:9222",
+    "CHROME_HEADLESS": "false",
+    "CHROME_ISOLATED": "false",
+    "CHROME_CHANNEL": "stable"    
   },
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
@@ -138,7 +142,26 @@
         "google.gemini-cli-vscode-ide-companion",
         "anthropic.claude-code",
         "ms-windows-ai-studio.windows-ai-studio"
-      ]
+      ],
+      "mcp": {
+        "servers": {
+          "chrome-devtools": {
+            "command": "npx",
+            "args": [
+              "-y",
+              "chrome-devtools-mcp@latest",
+              "--browserUrl", "${localEnv:CHROME_CDP_URL}",
+              "--headless", "${localEnv:CHROME_HEADLESS:false}",
+              "--isolated", "${localEnv:CHROME_ISOLATED:false}",
+              "--channel", "${localEnv:CHROME_CHANNEL:stable}"
+            ]
+          },
+          "playwright": {
+            "command": "npx",
+            "args": ["--yes", "@playwright/mcp@latest"]
+          }          
+        }
+      }
     }
   }
 }

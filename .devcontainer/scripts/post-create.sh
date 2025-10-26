@@ -162,4 +162,8 @@ else
   log "clone-from-devcontainer-repos.sh not found; skipping clone step"
 fi
 
+# Warm the npx cache for the MCP servers (non-fatal)
+( npx -y chrome-devtools-mcp@latest --help >/dev/null 2>&1 || true )
+( npx --yes @playwright/mcp@latest --version >/dev/null 2>&1 || true )
+
 log "post-create complete."
