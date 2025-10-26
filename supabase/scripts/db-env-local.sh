@@ -47,6 +47,23 @@ supabase_env_init() {
     return 1
   fi
 
+  if [[ -z "${SUPABASE_PROJECT_REF:-}" ]]; then
+    local env_ref="${SHARED_SUPABASE_PROJECT_REF:-${AIRNUB_SUPABASE_PROJECT_REF:-}}"
+    if [[ -n "$env_ref" ]]; then
+      SUPABASE_PROJECT_REF="$env_ref"
+    else
+      local config_ref
+      config_ref="$(awk -F '"' '/^project_id/ {print $2; exit}' "$SUPABASE_PROJECT_DIR/config.toml" 2>/dev/null || true)"
+      if [[ -n "$config_ref" ]]; then
+        SUPABASE_PROJECT_REF="$config_ref"
+      fi
+    fi
+  fi
+
+  if [[ -n "${SUPABASE_PROJECT_REF:-}" ]]; then
+    export SUPABASE_PROJECT_REF
+  fi
+
   return 0
 }
 

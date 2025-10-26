@@ -9,7 +9,20 @@ cd "${REPO_ROOT}"
 SUPABASE_PROJECT_DIR="${SUPABASE_PROJECT_DIR:-$REPO_ROOT/supabase}"
 SUPABASE_CONFIG_PATH="${SUPABASE_CONFIG_PATH:-$SUPABASE_PROJECT_DIR/config.toml}"
 DEVCONTAINER_COMPOSE_FILE="${DEVCONTAINER_COMPOSE_FILE:-$REPO_ROOT/.devcontainer/docker-compose.yml}"
-DEVCONTAINER_PROJECT_NAME="${DEVCONTAINER_PROJECT_NAME:-airnub-labs}"
+WORKSPACE_STACK_NAME="${WORKSPACE_STACK_NAME:-${AIRNUB_WORKSPACE_NAME:-airnub-labs}}"
+DEVCONTAINER_PROJECT_NAME="${DEVCONTAINER_PROJECT_NAME:-$WORKSPACE_STACK_NAME}"
+
+# Ensure docker compose sees the resolved workspace identifiers when the
+# devcontainer invokes it (e.g. for the Redis sidecar) by exporting them into
+# the environment before shelling out. When not explicitly overridden we also
+# derive a sensible container workspace root that mirrors the stack name.
+export WORKSPACE_STACK_NAME
+export DEVCONTAINER_PROJECT_NAME
+
+if [[ -z "${WORKSPACE_CONTAINER_ROOT:-}" ]]; then
+  WORKSPACE_CONTAINER_ROOT="/airnub-labs"
+fi
+export WORKSPACE_CONTAINER_ROOT
 
 log() { echo "[post-start] $*"; }
 
@@ -156,7 +169,10 @@ WORKSPACE_ROOT="${WORKSPACE_ROOT:-$WORKSPACE_ROOT_DEFAULT}"
 
 # Try to locate a .code-workspace file next to this meta repo
 WS_FILE="$(find "$REPO_ROOT" -maxdepth 1 -name "*.code-workspace" | head -n 1 || true)"
-[[ -n "$WS_FILE" ]] || WS_FILE="$REPO_ROOT/airnub-labs.code-workspace"
+if [[ -z "$WS_FILE" ]]; then
+  local_ws_basename="${WORKSPACE_CODE_WORKSPACE_BASENAME:-$WORKSPACE_STACK_NAME}"
+  WS_FILE="$REPO_ROOT/${local_ws_basename}.code-workspace"
+fi
 
 # Best-effort jq install if needed
 ensure_jq() {

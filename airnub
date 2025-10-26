@@ -236,7 +236,15 @@ run_db_env_helper() {
     helper_cmd+=(--project-dir "$project_dir")
   fi
 
-  SUPABASE_PROJECT_DIR="$resolved_dir" "${helper_cmd[@]}"
+  local resolved_ref
+  resolved_ref="$(get_shared_project_ref)"
+
+  local -a helper_env=("SUPABASE_PROJECT_DIR=$resolved_dir")
+  if [[ -n "$resolved_ref" ]]; then
+    helper_env+=("SUPABASE_PROJECT_REF=$resolved_ref")
+  fi
+
+  env "${helper_env[@]}" "${helper_cmd[@]}"
 }
 
 shared_env_file() {
@@ -244,9 +252,16 @@ shared_env_file() {
 }
 
 get_shared_project_ref() {
-  if [[ -n "${1:-}" ]]; then
-    printf '%s\n' "$1"
-    return
+  local explicit="${1:-}"
+  if [[ -n "$explicit" ]]; then
+    printf '%s\n' "$explicit"
+    return 0
+  fi
+
+  local env_ref="${SHARED_SUPABASE_PROJECT_REF:-${AIRNUB_SUPABASE_PROJECT_REF:-}}"
+  if [[ -n "$env_ref" ]]; then
+    printf '%s\n' "$env_ref"
+    return 0
   fi
 
   local config="${SUPABASE_DIR}/config.toml"
@@ -584,8 +599,10 @@ db_env_command() {
 
       local -a supabase_cmd=("supabase" "status" "--workdir" "$effective_project_dir" "-o" "env")
       local -a env_prefix=()
-      if [[ -n "$project_ref" ]]; then
-        env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
+      local resolved_project_ref
+      resolved_project_ref="$(get_shared_project_ref "$project_ref")"
+      if [[ -n "$resolved_project_ref" ]]; then
+        env_prefix+=("SUPABASE_PROJECT_REF=$resolved_project_ref")
       fi
 
       if ! (cd "$REPO_ROOT" && env "${env_prefix[@]}" "${supabase_cmd[@]}") >"$supabase_tmp"; then
@@ -1059,8 +1076,10 @@ db_command() {
       fi
 
       local -a env_prefix=()
-      if [[ -n "$project_ref" ]]; then
-        env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
+      local resolved_project_ref
+      resolved_project_ref="$(get_shared_project_ref "$project_ref")"
+      if [[ -n "$resolved_project_ref" ]]; then
+        env_prefix+=("SUPABASE_PROJECT_REF=$resolved_project_ref")
       fi
 
       if [[ "$action" == "reset" ]]; then
