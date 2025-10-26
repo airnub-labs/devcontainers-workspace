@@ -8,7 +8,9 @@ services:
       context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
-        INSTALL_NOVNC: "true"
+        "DEFAULT_TZ": "Europe/Dublin"
+        "DEFAULT_LOCALE": "en_IE.UTF-8"
+        "INSTALL_NOVNC": "true"
     command:
       - /airnub-labs/.devcontainer/scripts/devcontainer-log-entrypoint.sh
     init: true
