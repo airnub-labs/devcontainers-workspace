@@ -27,15 +27,16 @@ Usage: airnub <command> [subcommand] [options]
 
 Commands:
   env sync            Write Supabase env vars to a project .env.local file.
-  env status          Refresh env vars only if the stack is already running.
+  env status          Show the Supabase stack status without touching env files.
   env start           Ensure the stack is running and emit env vars.
-  env reset           Remove the generated env file for a project.
+  env clean           Remove the generated env file for a project.
   db apply            Apply migrations against the shared Supabase stack.
   db reset            Reset the shared Supabase stack for a project (destructive).
   db status           Show the shared Supabase stack status for a project.
   project use         Sync env vars, run migrations, and show status for a project.
   project setup       Prime a project's .env.local from .env.example and Supabase vars.
   project current     Display the last project used with `project use`.
+  project clean       Clear the remembered project selection.
   use                 Shortcut for `project use`.
 
 Global options:
@@ -51,22 +52,23 @@ Usage: airnub env <subcommand> [options]
 
 Subcommands:
   sync                Write env vars, starting Supabase if needed (default behaviour).
-  status              Only refresh env vars from a running Supabase stack.
+  status              Show Supabase status information without writing env vars.
   start               Ensure Supabase is running and then write env vars.
-  reset               Remove the generated env file for a project.
+  clean               Remove the generated env file for a project.
 
 Options:
   --project-dir DIR   Supabase project directory (default: supabase/).
   --env-file PATH     Destination for env vars (default: <project>/.env.local).
-  --status-only       Equivalent to the `status` subcommand.
-  --ensure-start      Force starting Supabase before syncing env vars.
+  --status-only       (sync) Only refresh env vars if Supabase is already running.
+  --ensure-start      (sync) Force starting Supabase before syncing env vars.
+  --project-ref REF   (status) Override the Supabase project ref used for CLI calls.
   -h, --help          Show this help message.
 
   Examples:
   airnub env sync --project-dir apps/my-app
-  airnub env status --env-file ./apps/my-app/.env.shared
+  airnub env status --project-dir apps/my-app
   airnub env start  # alias for `env sync --ensure-start`
-  airnub env reset --project-dir apps/my-app
+  airnub env clean --project-dir apps/my-app
 USAGE
 }
 
@@ -100,6 +102,7 @@ Subcommands:
   use                 Sync env vars, apply migrations, and show status for a project.
   setup               Seed .env.local from .env.example (or append missing keys) and sync Supabase vars.
   current             Show the most recent project selected with `project use`.
+  clean               Forget the remembered project selection.
 
 Run "airnub project <subcommand> --help" for more details.
 USAGE
@@ -140,6 +143,15 @@ project_current_usage() {
 Usage: airnub project current
 
 Shows the project directory that was last activated with `airnub project use`.
+USAGE
+}
+
+project_clean_usage() {
+  cat <<'USAGE'
+Usage: airnub project clean
+
+Clears the remembered project selection so the next `airnub project use`
+invocation requires an explicit directory (or falls back to defaults).
 USAGE
 }
 
@@ -428,24 +440,104 @@ else:
 PY
 }
 
+parse_env_sync_like_args() {
+  local default_mode="$1"
+  local allow_status_override="$2"
+  local action_label="$3"
+  shift 3 || true
+
+  ENV_HELPER_MODE="$default_mode"
+  ENV_PROJECT_DIR=""
+  ENV_ENV_FILE=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --project-dir)
+        [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+        ENV_PROJECT_DIR="$(resolve_dir "$2")"
+        shift 2
+        ;;
+      --env-file)
+        [[ $# -lt 2 ]] && die "--env-file requires a path"
+        ENV_ENV_FILE="$(resolve_path "$2")"
+        shift 2
+        ;;
+      --status-only)
+        if [[ "$allow_status_override" != "true" ]]; then
+          die "--status-only is not available for 'airnub env ${action_label}'"
+        fi
+        ENV_HELPER_MODE="status-only"
+        shift
+        ;;
+      --ensure-start)
+        ENV_HELPER_MODE="ensure-start"
+        shift
+        ;;
+      --help|-h)
+        env_usage
+        return 1
+        ;;
+      --)
+        shift
+        if [[ $# -gt 0 ]]; then
+          die "Unexpected extra arguments for 'airnub env ${action_label}': $*"
+        fi
+        ;;
+      *)
+        die "Unknown option for 'airnub env ${action_label}': $1"
+        ;;
+    esac
+  done
+
+  ENV_EFFECTIVE_PROJECT_DIR="${ENV_PROJECT_DIR:-${SUPABASE_DIR}}"
+  if [[ -n "$ENV_ENV_FILE" ]]; then
+    ENV_TARGET_ENV_FILE="$ENV_ENV_FILE"
+  else
+    ENV_TARGET_ENV_FILE="$ENV_EFFECTIVE_PROJECT_DIR/.env.local"
+  fi
+
+  return 0
+}
+
 env_command() {
   local action="${1:-}";
   shift || true
 
   case "$action" in
-    sync|status|start)
-      local helper_mode
-      case "$action" in
-        status)
-          helper_mode="status-only"
-          ;;
-        *)
-          helper_mode="ensure-start"
-          ;;
-      esac
+    sync)
+      if ! parse_env_sync_like_args ensure-start true "sync" "$@"; then
+        return 0
+      fi
 
+      [[ -x "$DB_ENV_HELPER" ]] || die "db-env helper not found at $DB_ENV_HELPER"
+
+      if ! run_db_env_helper "$ENV_HELPER_MODE" "$ENV_EFFECTIVE_PROJECT_DIR" "$ENV_ENV_FILE"; then
+        die "Failed to capture Supabase env vars via $DB_ENV_HELPER"
+      fi
+
+      if [[ "$ENV_HELPER_MODE" == "status-only" ]]; then
+        echo "[airnub] Refreshed Supabase env vars from running stack into $ENV_TARGET_ENV_FILE."
+      else
+        echo "[airnub] Synced Supabase env vars into $ENV_TARGET_ENV_FILE (stack started if necessary)."
+      fi
+      ;;
+    start)
+      if ! parse_env_sync_like_args ensure-start false "start" "$@"; then
+        return 0
+      fi
+
+      [[ -x "$DB_ENV_HELPER" ]] || die "db-env helper not found at $DB_ENV_HELPER"
+
+      if ! run_db_env_helper ensure-start "$ENV_EFFECTIVE_PROJECT_DIR" "$ENV_ENV_FILE"; then
+        die "Failed to start Supabase services via $DB_ENV_HELPER"
+      fi
+
+      echo "[airnub] Ensured Supabase stack is running and synced env vars into $ENV_TARGET_ENV_FILE."
+      ;;
+    status)
       local project_dir=""
-      local env_file=""
+      local project_ref=""
+      local -a cli_args=()
 
       while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -454,18 +546,10 @@ env_command() {
             project_dir="$(resolve_dir "$2")"
             shift 2
             ;;
-          --env-file)
-            [[ $# -lt 2 ]] && die "--env-file requires a path"
-            env_file="$(resolve_path "$2")"
+          --project-ref)
+            [[ $# -lt 2 ]] && die "--project-ref requires a value"
+            project_ref="$2"
             shift 2
-            ;;
-          --status-only)
-            helper_mode="status-only"
-            shift
-            ;;
-          --ensure-start)
-            helper_mode="ensure-start"
-            shift
             ;;
           --help|-h)
             env_usage
@@ -473,32 +557,30 @@ env_command() {
             ;;
           --)
             shift
-            if [[ $# -gt 0 ]]; then
-              die "Unexpected extra arguments for 'airnub env $action': $*"
-            fi
+            cli_args+=("$@")
+            break
             ;;
           *)
-            die "Unknown option for 'airnub env $action': $1"
+            die "Unknown option for 'airnub env status': $1"
             ;;
         esac
       done
 
-      [[ -x "$DB_ENV_HELPER" ]] || die "db-env helper not found at $DB_ENV_HELPER"
+      ensure_supabase_cli
 
       local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
-      local target_env_file="${env_file:-${effective_project_dir}/.env.local}"
+      local workspace_root="$REPO_ROOT"
+      local -a supabase_cmd=("supabase" "status" "--workdir" "$effective_project_dir")
+      supabase_cmd+=("${cli_args[@]}")
 
-      if ! run_db_env_helper "$helper_mode" "$effective_project_dir" "$env_file"; then
-        die "Failed to capture Supabase env vars via $DB_ENV_HELPER"
+      local -a env_prefix=()
+      if [[ -n "$project_ref" ]]; then
+        env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
       fi
 
-      if [[ "$helper_mode" == "status-only" ]]; then
-        echo "[airnub] Refreshed Supabase env vars from running stack into $target_env_file."
-      else
-        echo "[airnub] Synced Supabase env vars into $target_env_file (stack started if necessary)."
-      fi
+      (cd "$workspace_root" && env "${env_prefix[@]}" "${supabase_cmd[@]}")
       ;;
-    reset)
+    clean)
       local project_dir=""
       local env_file=""
 
@@ -521,11 +603,11 @@ env_command() {
           --)
             shift
             if [[ $# -gt 0 ]]; then
-              die "Unexpected extra arguments for 'airnub env reset': $*"
+              die "Unexpected extra arguments for 'airnub env clean': $*"
             fi
             ;;
           *)
-            die "Unknown option for 'airnub env reset': $1"
+            die "Unknown option for 'airnub env clean': $1"
             ;;
         esac
       done
@@ -627,9 +709,18 @@ db_command() {
         target_env_file="$effective_project_dir/.env.local"
       fi
 
+      local should_sync_env="true"
+      if [[ "$action" == "status" && "$ensure_mode" == "false" ]]; then
+        should_sync_env="false"
+      fi
+
       if [[ "$skip_env_sync" != "true" ]]; then
-        if ! sync_shared_env_into_project "$ensure_mode" "$target_env_file"; then
-          warn "Continuing with '$action' even though env sync failed."
+        if [[ "$should_sync_env" == "true" ]]; then
+          if ! sync_shared_env_into_project "$ensure_mode" "$target_env_file"; then
+            warn "Continuing with '$action' even though env sync failed."
+          fi
+        elif [[ "$action" == "status" ]]; then
+          echo "[airnub] Skipping env file refresh for status; run 'airnub env sync' if you need updated credentials."
         fi
       else
         echo "[airnub] Skipping shared env refresh before $action (--skip-env-sync)."
@@ -651,7 +742,7 @@ db_command() {
           ;;
         status)
           echo "[airnub] Checking shared stack status for $effective_project_dir via workspace $workspace_root${ref_for_log:+ (project ref: $ref_for_log)}."
-          supabase_cmd+=(status -o env --workdir "$effective_project_dir")
+          supabase_cmd+=(status --workdir "$effective_project_dir")
           ;;
       esac
 
@@ -886,6 +977,29 @@ PY
         env_command sync --project-dir "$resolved_project"
       else
         echo "[airnub] Skipped Supabase env sync (per --skip-env-sync)."
+      fi
+      ;;
+    clean)
+      if [[ $# -gt 0 ]]; then
+        case "$1" in
+          --help|-h)
+            project_clean_usage
+            return 0
+            ;;
+          --*)
+            die "Unknown option for 'airnub project clean': $1"
+            ;;
+          *)
+            die "Unexpected argument for 'airnub project clean': $1"
+            ;;
+        esac
+      fi
+
+      if [[ -f "$CURRENT_PROJECT_FILE" ]]; then
+        rm -f "$CURRENT_PROJECT_FILE"
+        echo "[airnub] Cleared remembered project selection."
+      else
+        echo "[airnub] No remembered project selection to remove."
       fi
       ;;
     current)

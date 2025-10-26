@@ -81,11 +81,12 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
   airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
   airnub project current                            # see which project was activated last
   airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
-  airnub env status --project-dir ./million-dollar-maps
-  airnub env reset --project-dir ./million-dollar-maps      # remove the generated Supabase env file
+  airnub env status --project-dir ./million-dollar-maps      # show Supabase status without rewriting env files
+  airnub env clean --project-dir ./million-dollar-maps       # remove the generated Supabase env file
   airnub db apply --project-dir ./million-dollar-maps
   airnub db reset --project-dir ./million-dollar-maps
   airnub db status --project-dir ./million-dollar-maps
+  airnub project clean                                      # forget the remembered project selection
   ```
 
   When the devcontainer clone helper runs for the first time it seeds `./.airnub-current-project` with the first cloned repo
