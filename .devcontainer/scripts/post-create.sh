@@ -309,6 +309,7 @@ if command -v google-chrome >/dev/null 2>&1 || [ -d /etc/opt/chrome ]; then
   "ExtensionDeveloperModeSettings": 1,
   "ShowHomeButton": true,
   "ShowDownloadButton": true,
+  "ShowDownloadsToolbarButton": true,
   "ExtensionInstallBlocklist": ["*"],
   "ExtensionSettings": {
     "*": { "installation_mode": "blocked" },
@@ -327,6 +328,7 @@ JSON
   "ExtensionDeveloperModeSettings": 1,
   "ShowHomeButton": true,
   "ShowDownloadButton": true,
+  "ShowDownloadsToolbarButton": true,  
   "ExtensionInstallBlocklist": ["*"],
   "ExtensionSettings": {
     "*": { "installation_mode": "blocked" },
