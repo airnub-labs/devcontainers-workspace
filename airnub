@@ -26,13 +26,15 @@ usage() {
 Usage: airnub <command> [subcommand] [options]
 
 Commands:
-  env sync            Write Supabase env vars to a project .env.local file.
-  env status          Show the Supabase stack status without touching env files.
-  env start           Ensure the stack is running and emit env vars.
-  env clean           Remove the generated env file for a project.
+  db env diff         Compare Supabase CLI env output with supabase/.env.local.
+  db env sync         Refresh supabase/.env.local (starting the stack if needed).
+  db env clean        Remove the generated supabase/.env.local file.
   db apply            Apply migrations against the shared Supabase stack.
   db reset            Reset the shared Supabase stack for a project (destructive).
   db status           Show the shared Supabase stack status for a project.
+  project env sync    Merge Supabase env vars into a project .env.local file.
+  project env diff    Compare a project .env.local with the shared Supabase env vars.
+  project env clean   Remove the generated project .env.local file.
   project use         Sync env vars, run migrations, and show status for a project.
   project setup       Prime a project's .env.local from .env.example and Supabase vars.
   project current     Display the last project used with `project use`.
@@ -46,29 +48,56 @@ Use "airnub <command> --help" for more information on a command.
 USAGE
 }
 
-env_usage() {
+db_env_usage() {
   cat <<'USAGE'
-Usage: airnub env <subcommand> [options]
+Usage: airnub db env <subcommand> [options]
 
 Subcommands:
-  sync                Write env vars, starting Supabase if needed (default behaviour).
-  status              Show Supabase status information without writing env vars.
-  start               Ensure Supabase is running and then write env vars.
-  clean               Remove the generated env file for a project.
+  diff                Compare Supabase CLI env output with supabase/.env.local.
+  sync                Capture Supabase env vars into supabase/.env.local.
+  clean               Remove supabase/.env.local.
 
-Options:
+Common options:
   --project-dir DIR   Supabase project directory (default: supabase/).
-  --env-file PATH     Destination for env vars (default: <project>/.env.local).
-  --status-only       (sync) Only refresh env vars if Supabase is already running.
-  --ensure-start      (sync) Force starting Supabase before syncing env vars.
-  --project-ref REF   (status) Override the Supabase project ref used for CLI calls.
+  --env-file PATH     Override the env file path (default: <project>/.env.local).
   -h, --help          Show this help message.
 
-  Examples:
-  airnub env sync --project-dir apps/my-app
-  airnub env status --project-dir apps/my-app
-  airnub env start  # alias for `env sync --ensure-start`
-  airnub env clean --project-dir apps/my-app
+Additional diff options:
+  --project-ref REF   Override the Supabase project ref used for CLI calls.
+
+Additional sync options:
+  --status-only       Only refresh env vars if Supabase is already running.
+  --ensure-start      Start Supabase before syncing env vars.
+
+Examples:
+  airnub db env diff
+  airnub db env sync --ensure-start
+  airnub db env clean --env-file ./custom/.env.local
+USAGE
+}
+
+project_env_usage() {
+  cat <<'USAGE'
+Usage: airnub project env <subcommand> [options]
+
+Subcommands:
+  sync                Merge supabase/.env.local into a project .env.local file.
+  diff                Show differences between supabase/.env.local and a project env file.
+  clean               Remove the generated project env file.
+
+Common options:
+  --project-dir DIR   Project directory (default: remembered project).
+  --env-file PATH     Override the project .env.local path.
+  -h, --help          Show this help message.
+
+Additional sync options:
+  --status-only       Only refresh shared env vars if Supabase is already running.
+  --ensure-start      Start Supabase before refreshing shared env vars.
+
+Examples:
+  airnub project env diff --project-dir apps/my-app
+  airnub project env sync --project-dir apps/my-app
+  airnub project env clean --project-dir apps/my-app
 USAGE
 }
 
@@ -77,6 +106,7 @@ db_usage() {
 Usage: airnub db <subcommand> [options] [-- <supabase args>]
 
 Subcommands:
+  env <subcommand>    Manage supabase/.env.local credentials (run with `--help` for details).
   apply               Apply migrations for the shared Supabase stack (alias: switch).
   reset               Reset the shared Supabase stack (destructive).
   status              Show shared Supabase stack details.
@@ -99,6 +129,7 @@ project_usage() {
 Usage: airnub project <subcommand> [options]
 
 Subcommands:
+  env                 Manage project .env.local files based on Supabase credentials.
   use                 Sync env vars, apply migrations, and show status for a project.
   setup               Seed .env.local from .env.example (or append missing keys) and sync Supabase vars.
   current             Show the most recent project selected with `project use`.
@@ -134,7 +165,7 @@ Options:
 Without --project-dir, the command uses the project last selected via
 `airnub project use`. It copies <project>/.env.example to <project>/.env.local
 when the destination does not exist, appends any missing keys from the example,
-then runs `airnub env sync` to refresh Supabase credentials.
+then runs `airnub project env sync` to refresh Supabase credentials.
 USAGE
 }
 
@@ -440,11 +471,12 @@ else:
 PY
 }
 
-parse_env_sync_like_args() {
+parse_db_env_sync_args() {
   local default_mode="$1"
   local allow_status_override="$2"
   local action_label="$3"
-  shift 3 || true
+  local usage_func="$4"
+  shift 4 || true
 
   ENV_HELPER_MODE="$default_mode"
   ENV_PROJECT_DIR=""
@@ -464,7 +496,7 @@ parse_env_sync_like_args() {
         ;;
       --status-only)
         if [[ "$allow_status_override" != "true" ]]; then
-          die "--status-only is not available for 'airnub env ${action_label}'"
+          die "--status-only is not available for '${action_label}'"
         fi
         ENV_HELPER_MODE="status-only"
         shift
@@ -474,17 +506,17 @@ parse_env_sync_like_args() {
         shift
         ;;
       --help|-h)
-        env_usage
+        "$usage_func"
         return 1
         ;;
       --)
         shift
         if [[ $# -gt 0 ]]; then
-          die "Unexpected extra arguments for 'airnub env ${action_label}': $*"
+          die "Unexpected extra arguments for '${action_label}': $*"
         fi
         ;;
       *)
-        die "Unknown option for 'airnub env ${action_label}': $1"
+        die "Unknown option for '${action_label}': $1"
         ;;
     esac
   done
@@ -499,13 +531,127 @@ parse_env_sync_like_args() {
   return 0
 }
 
-env_command() {
-  local action="${1:-}";
+db_env_command() {
+  local action="${1:-}"
   shift || true
 
   case "$action" in
+    diff)
+      local project_dir=""
+      local env_file=""
+      local project_ref=""
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --env-file)
+            [[ $# -lt 2 ]] && die "--env-file requires a path"
+            env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
+          --project-ref)
+            [[ $# -lt 2 ]] && die "--project-ref requires a value"
+            project_ref="$2"
+            shift 2
+            ;;
+          --help|-h)
+            db_env_usage
+            return 0
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments for 'airnub db env diff': $*"
+            fi
+            ;;
+          *)
+            die "Unknown option for 'airnub db env diff': $1"
+            ;;
+        esac
+      done
+
+      ensure_supabase_cli
+
+      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
+      local target_env_file="${env_file:-${effective_project_dir}/.env.local}"
+
+      local supabase_tmp
+      supabase_tmp="$(mktemp)"
+
+      local -a supabase_cmd=("supabase" "status" "--workdir" "$effective_project_dir" "-o" "env")
+      local -a env_prefix=()
+      if [[ -n "$project_ref" ]]; then
+        env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
+      fi
+
+      if ! (cd "$REPO_ROOT" && env "${env_prefix[@]}" "${supabase_cmd[@]}") >"$supabase_tmp"; then
+        rm -f "$supabase_tmp"
+        die "Failed to capture Supabase status env output."
+      fi
+
+      python3 - "$supabase_tmp" "$target_env_file" <<'PY'
+import os
+import sys
+
+supabase_path, env_path = sys.argv[1:3]
+
+def load_env(path):
+    data = {}
+    if not os.path.exists(path):
+        return data
+    with open(path, 'r', encoding='utf-8') as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            data[key.strip()] = value.strip()
+    return data
+
+sup_env = load_env(supabase_path)
+file_env = load_env(env_path)
+all_keys = sorted(set(sup_env) | set(file_env))
+
+diffs = []
+for key in all_keys:
+    sup_val = sup_env.get(key)
+    file_val = file_env.get(key)
+    if sup_val == file_val:
+        continue
+    if sup_val is None:
+        diffs.append(f"- {key}={file_val}")
+    elif file_val is None:
+        diffs.append(f"+ {key}={sup_val}")
+    else:
+        diffs.append("~ {}\n    Supabase: {}\n    File: {}".format(key, sup_val, file_val))
+
+file_exists = os.path.exists(env_path)
+
+if not file_exists and not diffs:
+    print(f"[airnub] {env_path} does not exist yet; 'airnub db env sync' would create it with {len(sup_env)} entries.")
+elif not diffs:
+    print(f"[airnub] {env_path} already matches Supabase status output.")
+else:
+    print(f"[airnub] Differences between Supabase status env output and {env_path}:")
+    for entry in diffs:
+        print(entry)
+
+if not file_exists and sup_env and diffs:
+    missing = [d for d in diffs if d.startswith('+ ')]
+    if missing:
+        print("[airnub] The env file is missing these Supabase values:")
+        for entry in missing:
+            print(entry)
+PY
+
+      rm -f "$supabase_tmp"
+      ;;
     sync)
-      if ! parse_env_sync_like_args ensure-start true "sync" "$@"; then
+      if ! parse_db_env_sync_args ensure-start true "airnub db env sync" db_env_usage "$@"; then
         return 0
       fi
 
@@ -522,63 +668,7 @@ env_command() {
       fi
       ;;
     start)
-      if ! parse_env_sync_like_args ensure-start false "start" "$@"; then
-        return 0
-      fi
-
-      [[ -x "$DB_ENV_HELPER" ]] || die "db-env helper not found at $DB_ENV_HELPER"
-
-      if ! run_db_env_helper ensure-start "$ENV_EFFECTIVE_PROJECT_DIR" "$ENV_ENV_FILE"; then
-        die "Failed to start Supabase services via $DB_ENV_HELPER"
-      fi
-
-      echo "[airnub] Ensured Supabase stack is running and synced env vars into $ENV_TARGET_ENV_FILE."
-      ;;
-    status)
-      local project_dir=""
-      local project_ref=""
-      local -a cli_args=()
-
-      while [[ $# -gt 0 ]]; do
-        case "$1" in
-          --project-dir)
-            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
-            project_dir="$(resolve_dir "$2")"
-            shift 2
-            ;;
-          --project-ref)
-            [[ $# -lt 2 ]] && die "--project-ref requires a value"
-            project_ref="$2"
-            shift 2
-            ;;
-          --help|-h)
-            env_usage
-            return 0
-            ;;
-          --)
-            shift
-            cli_args+=("$@")
-            break
-            ;;
-          *)
-            die "Unknown option for 'airnub env status': $1"
-            ;;
-        esac
-      done
-
-      ensure_supabase_cli
-
-      local effective_project_dir="${project_dir:-${SUPABASE_DIR}}"
-      local workspace_root="$REPO_ROOT"
-      local -a supabase_cmd=("supabase" "status" "--workdir" "$effective_project_dir")
-      supabase_cmd+=("${cli_args[@]}")
-
-      local -a env_prefix=()
-      if [[ -n "$project_ref" ]]; then
-        env_prefix+=("SUPABASE_PROJECT_REF=$project_ref")
-      fi
-
-      (cd "$workspace_root" && env "${env_prefix[@]}" "${supabase_cmd[@]}")
+      db_env_command sync --ensure-start "$@"
       ;;
     clean)
       local project_dir=""
@@ -597,17 +687,17 @@ env_command() {
             shift 2
             ;;
           --help|-h)
-            env_usage
+            db_env_usage
             return 0
             ;;
           --)
             shift
             if [[ $# -gt 0 ]]; then
-              die "Unexpected extra arguments for 'airnub env clean': $*"
+              die "Unexpected extra arguments for 'airnub db env clean': $*"
             fi
             ;;
           *)
-            die "Unknown option for 'airnub env clean': $1"
+            die "Unknown option for 'airnub db env clean': $1"
             ;;
         esac
       done
@@ -623,10 +713,225 @@ env_command() {
       fi
       ;;
     --help|-h|"")
-      env_usage
+      db_env_usage
       ;;
     *)
-      die "Unknown env subcommand: ${action}"
+      die "Unknown db env subcommand: ${action}"
+      ;;
+  esac
+}
+
+project_env_command() {
+  local action="${1:-}"
+  shift || true
+
+  case "$action" in
+    sync)
+      local project_dir=""
+      local env_file=""
+      local ensure_mode="true"
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --env-file)
+            [[ $# -lt 2 ]] && die "--env-file requires a path"
+            env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
+          --status-only)
+            ensure_mode="false"
+            shift
+            ;;
+          --ensure-start)
+            ensure_mode="true"
+            shift
+            ;;
+          --help|-h)
+            project_env_usage
+            return 0
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments for 'airnub project env sync': $*"
+            fi
+            ;;
+          *)
+            die "Unknown option for 'airnub project env sync': $1"
+            ;;
+        esac
+      done
+
+      if [[ -z "$project_dir" ]]; then
+        if ! project_dir="$(get_current_project_dir 2>/dev/null)"; then
+          die "Project directory is required; pass --project-dir or run 'airnub project use <dir>' first."
+        fi
+      fi
+
+      local target_env_file="${env_file:-${project_dir}/.env.local}"
+
+      if ! sync_shared_env_into_project "$ensure_mode" "$target_env_file"; then
+        die "Failed to merge Supabase env vars into $target_env_file; run 'airnub db env sync' first if needed."
+      fi
+      ;;
+    diff)
+      local project_dir=""
+      local env_file=""
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --env-file)
+            [[ $# -lt 2 ]] && die "--env-file requires a path"
+            env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
+          --help|-h)
+            project_env_usage
+            return 0
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments for 'airnub project env diff': $*"
+            fi
+            ;;
+          *)
+            die "Unknown option for 'airnub project env diff': $1"
+            ;;
+        esac
+      done
+
+      if [[ -z "$project_dir" ]]; then
+        if ! project_dir="$(get_current_project_dir 2>/dev/null)"; then
+          die "Project directory is required; pass --project-dir or run 'airnub project use <dir>' first."
+        fi
+      fi
+
+      local target_env_file="${env_file:-${project_dir}/.env.local}"
+      local shared_file
+      shared_file="$(shared_env_file)"
+
+      if [[ ! -f "$shared_file" ]]; then
+        die "Shared Supabase env file not found at $shared_file. Run 'airnub db env sync' first."
+      fi
+
+      python3 - "$shared_file" "$target_env_file" <<'PY'
+import os
+import sys
+
+shared_path, project_path = sys.argv[1:3]
+
+def load_env(path):
+    data = {}
+    if not os.path.exists(path):
+        return data
+    with open(path, 'r', encoding='utf-8') as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            data[key.strip()] = value.strip()
+    return data
+
+shared_env = load_env(shared_path)
+project_env = load_env(project_path)
+all_keys = sorted(set(shared_env) | set(project_env))
+
+diffs = []
+for key in all_keys:
+    shared_val = shared_env.get(key)
+    project_val = project_env.get(key)
+    if shared_val == project_val:
+        continue
+    if shared_val is None:
+        diffs.append(f"- {key}={project_val}")
+    elif project_val is None:
+        diffs.append(f"+ {key}={shared_val}")
+    else:
+        diffs.append("~ {}\n    Supabase: {}\n    Project: {}".format(key, shared_val, project_val))
+
+project_exists = os.path.exists(project_path)
+
+if not project_exists and not diffs:
+    print(f"[airnub] {project_path} does not exist yet; run 'airnub project env sync' to seed it.")
+elif not diffs:
+    print(f"[airnub] {project_path} already matches {shared_path}.")
+else:
+    print(f"[airnub] Differences between {shared_path} and {project_path}:")
+    for entry in diffs:
+        print(entry)
+
+if not project_exists and shared_env and diffs:
+    missing = [d for d in diffs if d.startswith('+ ')]
+    if missing:
+        print("[airnub] The project env file is missing these Supabase values:")
+        for entry in missing:
+            print(entry)
+PY
+      ;;
+    clean)
+      local project_dir=""
+      local env_file=""
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --project-dir)
+            [[ $# -lt 2 ]] && die "--project-dir requires a directory"
+            project_dir="$(resolve_dir "$2")"
+            shift 2
+            ;;
+          --env-file)
+            [[ $# -lt 2 ]] && die "--env-file requires a path"
+            env_file="$(resolve_path "$2")"
+            shift 2
+            ;;
+          --help|-h)
+            project_env_usage
+            return 0
+            ;;
+          --)
+            shift
+            if [[ $# -gt 0 ]]; then
+              die "Unexpected extra arguments for 'airnub project env clean': $*"
+            fi
+            ;;
+          *)
+            die "Unknown option for 'airnub project env clean': $1"
+            ;;
+        esac
+      done
+
+      if [[ -z "$project_dir" ]]; then
+        if ! project_dir="$(get_current_project_dir 2>/dev/null)"; then
+          die "Project directory is required; pass --project-dir or run 'airnub project use <dir>' first."
+        fi
+      fi
+
+      local target_env_file="${env_file:-${project_dir}/.env.local}"
+
+      if [[ -f "$target_env_file" ]]; then
+        rm -f "$target_env_file"
+        echo "[airnub] Removed $target_env_file."
+      else
+        echo "[airnub] No env file to remove at $target_env_file."
+      fi
+      ;;
+    --help|-h|"")
+      project_env_usage
+      ;;
+    *)
+      die "Unknown project env subcommand: ${action}"
       ;;
   esac
 }
@@ -636,6 +941,9 @@ db_command() {
   shift || true
 
   case "$action" in
+    env)
+      db_env_command "$@"
+      ;;
     apply|switch|reset|status)
       local ensure_mode="auto"
       local project_dir=""
@@ -720,7 +1028,7 @@ db_command() {
             warn "Continuing with '$action' even though env sync failed."
           fi
         elif [[ "$action" == "status" ]]; then
-          echo "[airnub] Skipping env file refresh for status; run 'airnub env sync' if you need updated credentials."
+          echo "[airnub] Skipping env file refresh for status; run 'airnub project env sync' if you need updated credentials."
         fi
       else
         echo "[airnub] Skipping shared env refresh before $action (--skip-env-sync)."
@@ -786,6 +1094,9 @@ project_command() {
   shift || true
 
   case "$action" in
+    env)
+      project_env_command "$@"
+      ;;
     use)
       local skip_status="false"
       local project_input=""
@@ -849,7 +1160,7 @@ project_command() {
         echo "[airnub] No project supplied; defaulting to $(relative_to_repo "$resolved_project")."
       fi
 
-      env_command sync --project-dir "$resolved_project"
+      project_env_command sync --project-dir "$resolved_project"
       db_command apply --project-dir "$resolved_project"
       if [[ "$skip_status" != "true" ]]; then
         db_command status --project-dir "$resolved_project"
@@ -974,7 +1285,7 @@ PY
       fi
 
       if [[ "$skip_env_sync" != "true" ]]; then
-        env_command sync --project-dir "$resolved_project"
+        project_env_command sync --project-dir "$resolved_project"
       else
         echo "[airnub] Skipped Supabase env sync (per --skip-env-sync)."
       fi
@@ -1035,14 +1346,14 @@ main() {
   shift
 
   case "$command" in
-    env)
-      env_command "$@"
-      ;;
     db)
       db_command "$@"
       ;;
     project)
       project_command "$@"
+      ;;
+    env)
+      die "'airnub env' has moved. Use 'airnub db env' for Supabase env management or 'airnub project env' for project env files."
       ;;
     use)
       project_command use "$@"

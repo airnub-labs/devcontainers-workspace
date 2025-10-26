@@ -56,8 +56,12 @@ airnub use                                               # reuse the last projec
 airnub use ./million-dollar-maps                        # env sync + migrations + status in one step
 airnub project current                                  # show which project was activated last
 airnub project setup --project-dir ./million-dollar-maps # copy .env.example, append missing keys, sync Supabase env vars
-airnub env status --project-dir ./million-dollar-maps    # show Supabase status without rewriting env files
-airnub env clean --project-dir ./million-dollar-maps     # remove the generated Supabase env file
+airnub db env diff                                       # compare Supabase CLI env output with supabase/.env.local
+airnub db env sync --ensure-start                        # refresh supabase/.env.local (starting services if needed)
+airnub db env clean                                      # remove the shared supabase/.env.local file
+airnub project env diff --project-dir ./million-dollar-maps   # compare project env with shared Supabase vars
+airnub project env sync --project-dir ./million-dollar-maps   # merge shared Supabase vars into the project env file
+airnub project env clean --project-dir ./million-dollar-maps  # remove the project's generated env file
 airnub db apply --project-dir ./million-dollar-maps      # supabase db push --local
 airnub db reset --project-dir ./million-dollar-maps      # supabase db reset --local -y
 airnub db status --project-dir ./million-dollar-maps     # supabase status --workdir ./million-dollar-maps
@@ -66,7 +70,8 @@ airnub project clean                                    # forget the remembered 
 
 The CLI follows a consistent naming pattern:
 
-* `env` commands manage `.env.local` files (`sync`, `start`, `clean`) and expose `--project-dir`, `--env-file`, `--ensure-start`, and `--status-only` for fine-grained control. Use `env status` when you just need to inspect the Supabase stack without touching env files.
+* `db env` commands (`diff`, `sync`, `clean`) manage the shared Supabase `.env.local` file and expose `--project-dir`, `--env-file`, `--ensure-start`, and `--status-only` for fine-grained control.
+* `project env` commands (`diff`, `sync`, `clean`) merge the shared Supabase credentials into project-specific `.env.local` files while preserving custom keys.
 * `db` commands (`apply`, `reset`, `status`) wrap the shared Supabase stack. Use `--project-env-file`, `--project-ref`, `--skip-env-sync`, `--ensure-env-sync`, or `--status-only-env-sync` to match different workflows, and pass additional Supabase CLI flags after `--`.
 * `project use` (and the `use` alias) chain the env + db commands, remember your selection, and support `--skip-status` when you want a faster handoff.
 * `project setup` seeds `.env.local` from `.env.example`, appends missing keys without overwriting existing values, and (by default) refreshes Supabase credentials using the last remembered project.
@@ -133,7 +138,7 @@ Environment variables such as `PROJECT_DIR`, `PROJECT_ENV_FILE`, `SUPABASE_PROJE
 If you run into problems when using the shared stack, these quick checks solve most issues:
 
 * Port collisions: ensure you don't have another local Supabase instance running (search for `supabase` containers with `docker ps`). Stop them or run `supabase stop` in the meta workspace.
-* Stale credentials: re-run `./supabase/scripts/db-env-local.sh --ensure-start` in the Dev Container to refresh `supabase/.env.local` and then run `airnub env sync --project-dir "$(pwd)"` to copy the shared values into your project.
+* Stale credentials: re-run `./supabase/scripts/db-env-local.sh --ensure-start` in the Dev Container to refresh `supabase/.env.local` and then run `airnub project env sync --project-dir "$(pwd)"` to copy the shared values into your project.
 * App server collisions: stop any local app processes (for example, a leftover `npm run dev`) before switching projects to avoid reusing forwarded ports like `3000`.
 * High memory/CPU: if your machine struggles, allocate more resources to Docker or run fewer heavy services simultaneously (e.g., stop analytics sidecar if not needed).
 * Logs: `supabase logs` (in the container) and `docker compose logs supabase` are helpful for diagnosing service failures.
@@ -145,6 +150,6 @@ If you need an isolated Supabase instance for a single repo (rare), use that pro
 ## Best practices
 
 * **One stack for all repos.** Apply a project’s migrations, then switch directories and apply the next project’s migrations when needed.
-* **Check status if something feels off.** `airnub db status` (or the compatibility script) confirms whether the services are up. Run `airnub env sync` if you also need fresh credentials.
+* **Check status if something feels off.** `airnub db status` (or the compatibility script) confirms whether the services are up. Run `airnub project env sync` if you also need fresh credentials.
 * **Stop stale servers.** Shut down any running app processes from the previous project before switching to avoid port collisions.
 * **Commit env scaffolding, not secrets.** If you decide to track the shared `supabase/.env.local`, use it only for bootstrap values. The helper script preserves any additional project-specific secrets stored in each project’s `.env.local`.

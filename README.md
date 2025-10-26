@@ -81,8 +81,12 @@ Need a refresher on the helper scripts or the clone automation? See the docs lin
   airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
   airnub project current                            # see which project was activated last
   airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
-  airnub env status --project-dir ./million-dollar-maps      # show Supabase status without rewriting env files
-  airnub env clean --project-dir ./million-dollar-maps       # remove the generated Supabase env file
+  airnub db env diff                                     # compare Supabase CLI env output with supabase/.env.local
+  airnub db env sync --ensure-start                      # refresh supabase/.env.local (start services if needed)
+  airnub db env clean                                    # remove the shared supabase/.env.local file
+  airnub project env diff --project-dir ./million-dollar-maps   # compare project env with shared Supabase vars
+  airnub project env sync --project-dir ./million-dollar-maps   # merge shared Supabase vars into the project env file
+  airnub project env clean --project-dir ./million-dollar-maps  # remove the project's generated env file
   airnub db apply --project-dir ./million-dollar-maps
   airnub db reset --project-dir ./million-dollar-maps
   airnub db status --project-dir ./million-dollar-maps
