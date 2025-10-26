@@ -285,12 +285,23 @@ else
   fi
 fi
 
-# --- Fluxbox: menu + autostart Chrome/Chromium in noVNC ---
+# --- Fluxbox: menu + autostart Chrome/Chromium in noVNC (autoconnect + remote resize) ---
 setup_fluxbox_desktop() {
   set -euo pipefail
   local home_dir="${HOME:-/home/vscode}"
   local fb_dir="$home_dir/.fluxbox"
   mkdir -p "$fb_dir"
+
+  # 2a) Make noVNC open with autoconnect + remote resizing by default
+  #     The desktop-lite stack serves /usr/share/novnc; drop a redirecting index.html.
+  if [ -d /usr/share/novnc ]; then
+    cat >/usr/share/novnc/index.html <<'HTML'
+<!doctype html><meta http-equiv="refresh"
+content="0;url=vnc.html?autoconnect=true&reconnect=true&reconnect_delay=5000&resize=remote&path=websockify&encrypt=1">
+HTML
+    # autoconnect: start immediately; reconnect: robust; resize=remote: request server resize.
+    # docs: https://novnc.com/noVNC/docs/EMBEDDING.html
+  fi
 
   # Pick an installed browser
   local browser_bin=""
@@ -298,46 +309,64 @@ setup_fluxbox_desktop() {
     if command -v "$bin" >/dev/null 2>&1; then browser_bin="$(command -v "$bin")"; break; fi
   done
 
-  # Write a simple Fluxbox menu (right-click desktop)
+  # Fluxbox right-click menu
   cat > "$fb_dir/menu" <<MENU
 [begin] (Fluxbox)
   [exec] (XTerm) {xterm}
-$( [[ -n "$browser_bin" ]] && echo "  [exec] (Browser) {$browser_bin --start-fullscreen --no-first-run \${BROWSER_AUTOSTART_URL:-about:blank}}" )
-  [reconfig] (Reload Menu)
-  [exit] (Exit)
+$( [[ -n "$browser_bin" ]] && echo "  [exec] (Browser) {$browser_bin --no-first-run \${BROWSER_AUTOSTART_URL:-about:blank}}" )
 [end]
 MENU
 
-  # Autostart: Fluxbox's startup hook (run before fluxbox)
+  # 2b) Autostart: launch Fluxbox first, then start the browser and force fullscreen
   cat > "$fb_dir/startup" <<'STARTUP'
 #!/bin/sh
-# ~/.fluxbox/startup — launch a browser full screen, then start fluxbox
+# ~/.fluxbox/startup
 
-# Resolve browser at runtime
+# Resolve browser
 for bin in google-chrome chromium chromium-browser; do
   if command -v "$bin" >/dev/null 2>&1; then BROWSER_BIN="$bin"; break; fi
 done
-
 URL="${BROWSER_AUTOSTART_URL:-about:blank}"
-FLAGS="--start-fullscreen --no-first-run --disable-features=TranslateUI"
 
+# Start Fluxbox in background so we can manipulate windows after WM is ready
+fluxbox & 
+fbpid=$!
+
+# Give Fluxbox/Xvfb a moment to settle
+sleep 1
+
+# Safer Chrome flags under Xvfb/VNC: --disable-gpu avoids blank windows in virtual displays
+# We'll still *force* fullscreen via wmctrl once the window appears.
 if [ -n "${BROWSER_BIN:-}" ]; then
-  "$BROWSER_BIN" $FLAGS "$URL" &
+  "$BROWSER_BIN" \
+    --no-first-run \
+    --disable-gpu \
+    --disable-dev-shm-usage \
+    --no-default-browser-check \
+    "$URL" >/tmp/browser.log 2>&1 &
 fi
 
-# Start the WM last
-exec fluxbox
+# Wait for the browser window and force fullscreen (F11 sometimes races with WM init)
+# Try for ~10s
+for i in $(seq 1 20); do
+  # prefer class match; falls back to any chromium/chrome window
+  WID="$(wmctrl -lx 2>/dev/null | awk '/chrom|google-chrome/ {print $1; exit}')"
+  if [ -n "$WID" ]; then
+    wmctrl -i -r "$WID" -b add,fullscreen
+    break
+  fi
+  sleep 0.5
+done
+
+# If you prefer kiosk rather than fullscreen, replace the wmctrl line with:
+#   xdotool key --window "$WID" F11
+# or launch the browser with --kiosk (but wmctrl is most reliable in VNC)
+
+# Keep Fluxbox in the foreground
+wait $fbpid
 STARTUP
   chmod +x "$fb_dir/startup"
 
-  # Fallback: if fluxbox is already up (desktop-lite may start it directly), launch now
-  if pgrep -x fluxbox >/dev/null 2>&1; then
-    if ! pgrep -f 'google-chrome|chromium' >/dev/null 2>&1 && [[ -n "$browser_bin" ]]; then
-      DISPLAY="${DISPLAY:-:1}" "$browser_bin" --start-fullscreen --no-first-run "${BROWSER_AUTOSTART_URL:-about:blank}" >/dev/null 2>&1 &
-    fi
-  fi
-
-  # Ensure ownership for the vscode user
   chown -R "$(id -un)":"$(id -gn)" "$fb_dir" || true
 }
 
