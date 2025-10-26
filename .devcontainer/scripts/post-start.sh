@@ -111,18 +111,6 @@ supabase_stack_ready=false
 supabase_env_synced=false
 redis_container_ready=false
 
-ensure_supabase_seed_stub() {
-  local seed_file="$SUPABASE_PROJECT_DIR/seed.sql"
-
-  if [[ -f "$seed_file" ]]; then
-    return 0
-  fi
-
-  log "Creating stub Supabase seed file at $seed_file to silence CLI warnings."
-  mkdir -p "$(dirname "$seed_file")"
-  printf '%s\n' '-- no seed' >"$seed_file"
-}
-
 ensure_supabase_stack() {
   local supabase_dir="$SUPABASE_PROJECT_DIR"
   local supabase_start_args=()
@@ -226,8 +214,6 @@ if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supaba
 
   if ensure_supabase_stack; then
     supabase_stack_ready=true
-
-    ensure_supabase_seed_stub || true
 
     if [[ -x "$supabase_env_helper" ]]; then
       if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --status-only; then
