@@ -116,8 +116,6 @@
         "workbench.activityBar.location": "top",
         "workbench.colorTheme": "Default Dark Modern",
         "workbench.startupEditor": "readme",
-        "workbench.editor.openSideBySideDirection": "right",
-        "workbench.editor.openPositioning": "right",
         "workbench.views.defaultViewContainerLocations": {
           "workbench.view.extension.codexViewContainer": "secondarySideBar",
           "workbench.view.extension.geminiChat": "secondarySideBar",
@@ -126,8 +124,6 @@
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
-        "ms-python.python",
-        "ms-toolsai.jupyter",
         "ms-playwright.playwright",
         "denoland.vscode-deno",
         "Supabase.vscode-supabase-extension",
