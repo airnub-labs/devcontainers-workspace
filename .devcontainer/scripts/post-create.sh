@@ -165,6 +165,23 @@ log "Installing Gemini CLI..."
 log "Installing Claude CLI..."
 "$HERE/install-claude-cli.sh"
 
+# --- X11 window tools for Fluxbox/Chrome fullscreen control ---
+if command -v apt-get >/dev/null 2>&1; then
+  if command -v sudo >/dev/null 2>&1; then SUDO="sudo"; else SUDO=""; fi
+
+  # Only install what’s missing, then clean apt cache
+  MISSING=""
+  for pkg in wmctrl xdotool x11-utils; do
+    dpkg -s "$pkg" >/dev/null 2>&1 || MISSING="$MISSING $pkg"
+  done
+
+  if [ -n "$MISSING" ]; then
+    $SUDO apt-get update -y
+    $SUDO apt-get install -y --no-install-recommends $MISSING
+    $SUDO rm -rf /var/lib/apt/lists/*
+  fi
+fi
+
 # Ensure pnpm global bin directory is on PATH for future shells
 if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then
   case ":$PATH:" in
