@@ -51,7 +51,9 @@
       "label": "Supabase Postgres"
     },
     "54323": {
-      "label": "Supabase Studio"
+      "label": "Supabase Studio",
+      "protocol": "http",
+      "onAutoForward": "openPreview"
     },
     "54324": {
       "label": "Supabase Inbucket"

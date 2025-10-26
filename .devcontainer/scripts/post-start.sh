@@ -49,17 +49,11 @@ docker_cli_present=false
 docker_ready=false
 supabase_cli_present=false
 supabase_project_available=false
-docker_compose_available=false
 
 if command -v docker >/dev/null 2>&1; then
   docker_cli_present=true
   if wait_for_docker_daemon 40 2; then
     docker_ready=true
-    if docker compose version >/dev/null 2>&1; then
-      docker_compose_available=true
-    else
-      log "Docker Compose plugin not available; Redis startup will be skipped."
-    fi
   else
     log "Docker daemon did not become ready; Docker-dependent services will be skipped."
   fi
@@ -81,20 +75,86 @@ fi
 
 supabase_stack_ready=false
 supabase_env_synced=false
-redis_service_ready=false
+redis_container_ready=false
+
+ensure_supabase_stack() {
+  local supabase_dir="$SUPABASE_PROJECT_DIR"
+  local supabase_start_args=()
+
+  if [[ -n "${SUPABASE_START_ARGS:-}" ]]; then
+    # shellcheck disable=SC2206 # Intentional word splitting for user-provided args
+    supabase_start_args+=(${SUPABASE_START_ARGS})
+  fi
+
+  if [[ -n "${SUPABASE_START_EXCLUDES:-}" ]]; then
+    local exclude
+    # shellcheck disable=SC2086 # Word splitting intentional to honour user input
+    for exclude in ${SUPABASE_START_EXCLUDES}; do
+      supabase_start_args+=(-x "$exclude")
+    done
+  fi
+
+  if (cd "$supabase_dir" && supabase status >/dev/null 2>&1); then
+    log "Supabase stack already running inside the inner Docker daemon."
+    return 0
+  fi
+
+  local start_display="supabase start"
+  if [[ ${#supabase_start_args[@]} -gt 0 ]]; then
+    start_display+=" ${supabase_start_args[*]}"
+  fi
+
+  log "Supabase stack not running; starting via '$start_display'..."
+  if (cd "$supabase_dir" && supabase start "${supabase_start_args[@]}"); then
+    log "Supabase stack started successfully."
+    return 0
+  fi
+
+  log "Failed to start Supabase stack; see Supabase CLI output above for details."
+  return 1
+}
+
+ensure_inner_redis() {
+  if docker ps --format '{{.Names}}' | grep -qx 'redis'; then
+    log "Redis container already running inside the inner Docker daemon."
+    return 0
+  fi
+
+  if docker ps -a --format '{{.Names}}' | grep -qx 'redis'; then
+    log "Starting existing Redis container inside the inner Docker daemon..."
+    if docker start redis >/dev/null; then
+      log "Redis container started."
+      return 0
+    fi
+    log "Failed to start existing Redis container named 'redis'."
+    return 1
+  fi
+
+  log "Launching Redis container inside the inner Docker daemon..."
+  if docker run -d --name redis -p 6379:6379 redis:7-alpine >/dev/null; then
+    log "Redis container launched."
+    return 0
+  fi
+
+  log "Failed to launch Redis container via 'docker run'."
+  return 1
+}
 
 if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   supabase_env_helper="$SUPABASE_PROJECT_DIR/scripts/db-env-local.sh"
-  if [[ -x "$supabase_env_helper" ]]; then
-    log "Ensuring Supabase stack is running and syncing env vars..."
-    if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --ensure-start; then
-      supabase_stack_ready=true
-      supabase_env_synced=true
+
+  if ensure_supabase_stack; then
+    supabase_stack_ready=true
+
+    if [[ -x "$supabase_env_helper" ]]; then
+      if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --status-only; then
+        supabase_env_synced=true
+      else
+        log "Supabase env helper failed; env vars were not updated automatically."
+      fi
     else
-      log "Supabase env helper failed; Supabase stack may not be ready."
+      log "Supabase env helper not found at $supabase_env_helper; skipping automatic env sync."
     fi
-  else
-    log "Supabase env helper not found at $supabase_env_helper; skipping automatic env sync."
   fi
 elif [[ "$supabase_cli_present" != "true" ]]; then
   log "Skipping Supabase startup because the Supabase CLI is unavailable."
@@ -104,49 +164,12 @@ elif [[ "$docker_ready" != "true" ]]; then
   log "Skipping Supabase startup because Docker is unavailable."
 fi
 
-ensure_redis_service() {
-  if [[ "$docker_compose_available" != "true" ]]; then
-    return 1
+if [[ "$docker_ready" == "true" ]]; then
+  if ensure_inner_redis; then
+    redis_container_ready=true
   fi
-
-  if [[ ! -f "$DEVCONTAINER_COMPOSE_FILE" ]]; then
-    log "Devcontainer Docker Compose file not found at $DEVCONTAINER_COMPOSE_FILE; skipping Redis startup."
-    return 1
-  fi
-
-  local compose_cmd
-  compose_cmd=(docker compose --project-name "$DEVCONTAINER_PROJECT_NAME" -f "$DEVCONTAINER_COMPOSE_FILE")
-
-  local running_services
-  if running_services="$(${compose_cmd[@]} ps --services --filter status=running 2>/dev/null)"; then
-    if grep -qx 'redis' <<<"$running_services"; then
-      log "Redis service already running under project '$DEVCONTAINER_PROJECT_NAME'."
-      return 0
-    fi
-  fi
-
-  log "Starting Redis service under project '$DEVCONTAINER_PROJECT_NAME' via Docker Compose..."
-  if ${compose_cmd[@]} up -d redis; then
-    log "Redis service started."
-    return 0
-  fi
-
-  log "Failed to start Redis service via Docker Compose."
-  return 1
-}
-
-if [[ "$docker_ready" == "true" && "$docker_compose_available" == "true" ]]; then
-  if ensure_redis_service; then
-    redis_service_ready=true
-  fi
-elif [[ "$docker_ready" != "true" ]]; then
-  log "Docker unavailable; unable to manage Redis service."
-fi
-
-if [[ "$redis_service_ready" != "true" ]]; then
-  if [[ "$docker_ready" == "true" && "$docker_compose_available" != "true" ]]; then
-    log "Redis service was not started because the Docker Compose plugin is unavailable."
-  fi
+else
+  log "Docker unavailable; unable to manage Redis container."
 fi
 
 if [[ "$supabase_stack_ready" != "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
@@ -155,6 +178,10 @@ fi
 
 if [[ "$supabase_env_synced" != "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   log "Supabase environment variables were not synced automatically; run './supabase/scripts/db-env-local.sh --ensure-start' once the stack is ready."
+fi
+
+if [[ "$redis_container_ready" != "true" && "$docker_ready" == "true" ]]; then
+  log "Redis container was not started automatically. Use 'docker start redis' or the provided VS Code task when ready."
 fi
 
 # ---------------------------------------------------------------------------
