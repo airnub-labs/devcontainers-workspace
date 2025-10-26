@@ -162,11 +162,4 @@ else
   log "clone-from-devcontainer-repos.sh not found; skipping clone step"
 fi
 
-# --- Informational (no apt here; system bits live in Dockerfile now) ---
-if command -v google-chrome >/dev/null 2>&1; then
-  log "Chromium-based browser detected: $(google-chrome --version || true)"
-else
-  log "No Chrome found in PATH (expected if removed from image)."
-fi
-
 log "post-create complete."
