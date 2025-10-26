@@ -295,10 +295,17 @@ setup_fluxbox_desktop() {
   # 2a) Make noVNC open with autoconnect + remote resizing by default
   #     The desktop-lite stack serves /usr/share/novnc; drop a redirecting index.html.
   if [ -d /usr/share/novnc ]; then
-    cat >/usr/share/novnc/index.html <<'HTML'
+    tmpfile="$(mktemp)"
+    cat >"$tmpfile" <<'HTML'
 <!doctype html><meta http-equiv="refresh"
 content="0;url=vnc.html?autoconnect=true&reconnect=true&reconnect_delay=5000&resize=remote&path=websockify&encrypt=1">
 HTML
+    if command -v sudo >/dev/null 2>&1; then
+      sudo tee /usr/share/novnc/index.html >/dev/null <"$tmpfile"
+    else
+      cp "$tmpfile" /usr/share/novnc/index.html || true
+    fi
+    rm -f "$tmpfile"
     # autoconnect: start immediately; reconnect: robust; resize=remote: request server resize.
     # docs: https://novnc.com/noVNC/docs/EMBEDDING.html
   fi
@@ -348,15 +355,17 @@ fi
 
 # Wait for the browser window and force fullscreen (F11 sometimes races with WM init)
 # Try for ~10s
-for i in $(seq 1 20); do
-  # prefer class match; falls back to any chromium/chrome window
-  WID="$(wmctrl -lx 2>/dev/null | awk '/chrom|google-chrome/ {print $1; exit}')"
-  if [ -n "$WID" ]; then
-    wmctrl -i -r "$WID" -b add,fullscreen
-    break
-  fi
-  sleep 0.5
-done
+if command -v wmctrl >/dev/null 2>&1; then
+  for i in $(seq 1 20); do
+    # prefer class match; falls back to any chromium/chrome window
+    WID="$(wmctrl -lx 2>/dev/null | awk '/chrom|google-chrome/ {print $1; exit}')"
+    if [ -n "$WID" ]; then
+      wmctrl -i -r "$WID" -b add,fullscreen
+      break
+    fi
+    sleep 0.5
+  done
+fi
 
 # If you prefer kiosk rather than fullscreen, replace the wmctrl line with:
 #   xdotool key --window "$WID" F11
