@@ -2,7 +2,7 @@ services:
   novnc-desktop:
     build:
       context: ..
-      dockerfile: .devcontainer/novnc.Dockerfile
+      dockerfile: .devcontainer/gui/Dockerfile
       args:
         DEFAULT_TZ: "Europe/Dublin"       # override as needed
         DEFAULT_LOCALE: "en_IE.UTF-8"
@@ -12,7 +12,10 @@ services:
       # Let the desktop reach your app running in the devcontainer
       APP_URL: "http://localhost:3000"    # with network_mode: service:devcontainer
     network_mode: "service:devcontainer"  # share net namespace — localhost maps to devcontainer
-    ports:
-      - "6080:6080"                       # host/Codespaces will forward this
     depends_on:
       - devcontainer
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://127.0.0.1:6080/vnc.html >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 12

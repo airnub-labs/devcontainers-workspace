@@ -2,7 +2,7 @@
   "name": "airnub-labs",
   "dockerComposeFile": [
     "./docker-compose.yml",
-    "./docker-compose.novnc.yml"
+    "./gui/docker-compose.yml"
   ],
   "service": "devcontainer",
   "workspaceFolder": "/airnub-labs",

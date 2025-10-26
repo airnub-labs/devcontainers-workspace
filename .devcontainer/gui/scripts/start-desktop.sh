@@ -17,7 +17,7 @@ websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5900 &
 # Optional: open a URL in Chrome inside the desktop (defaults to blank)
 ${CHROME_BIN:-google-chrome} \
   --no-first-run --no-default-browser-check \
-  --no-sandbox --disable-dev-shm-usage \
+  --no-sandbox --disable-dev-shm-usage --disable-gpu \
   --window-size=1600,900 \
   "${APP_URL:-about:blank}" &
 

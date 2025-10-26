@@ -4,6 +4,7 @@ name: ${WORKSPACE_STACK_NAME:-airnub-labs}
 
 services:
   devcontainer:
+    privileged: true
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
