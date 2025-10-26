@@ -9,6 +9,11 @@ fi
 
 log() { echo "[post-create] $*"; }
 
+SUDO=""
+if command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+fi
+
 append_shell_snippet() {
   local file="$1"
   local marker="$2"
@@ -167,8 +172,6 @@ log "Installing Claude CLI..."
 
 # --- X11 window tools for Fluxbox/Chrome fullscreen control ---
 if command -v apt-get >/dev/null 2>&1; then
-  if command -v sudo >/dev/null 2>&1; then SUDO="sudo"; else SUDO=""; fi
-
   # Only install what’s missing, then clean apt cache
   MISSING=""
   for pkg in wmctrl xdotool x11-utils; do
@@ -181,6 +184,30 @@ if command -v apt-get >/dev/null 2>&1; then
     $SUDO rm -rf /var/lib/apt/lists/*
   fi
 fi
+
+ensure_browser_available() {
+  if command -v google-chrome >/dev/null 2>&1 ||
+     command -v chromium >/dev/null 2>&1 ||
+     command -v chromium-browser >/dev/null 2>&1; then
+    log "Chromium-based browser already installed."
+    return 0
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    log "apt-get unavailable; cannot install google-chrome-stable automatically."
+    return 0
+  fi
+
+  log "Installing google-chrome-stable because no Chromium-based browser was found..."
+  $SUDO apt-get update -y
+  if ! $SUDO apt-get install -y --no-install-recommends google-chrome-stable; then
+    log "Failed to install google-chrome-stable; continuing without a browser."
+    return 0
+  fi
+  $SUDO rm -rf /var/lib/apt/lists/*
+}
+
+ensure_browser_available
 
 # Ensure pnpm global bin directory is on PATH for future shells
 if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then
@@ -257,10 +284,6 @@ else
 fi
 
 # Chrome/Chromium classroom policy (allowlist)
-SUDO=""
-if command -v sudo >/dev/null 2>&1; then
-  SUDO="sudo"
-fi
 
 if command -v google-chrome >/dev/null 2>&1 || [ -d /etc/opt/chrome ]; then
   if [ -n "$SUDO" ]; then
