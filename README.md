@@ -28,7 +28,7 @@ On an iPad (or any browser-only device) you can jump straight into this workspac
 
 ### AI coding extensions
 
-This workspace ships with three AI assistants pre-installed. Sign in once and VS Code remembers your session across restarts of the same container.
+GitHub Codespaces automatically adds three AI assistants to this workspace. When you run the Dev Container locally you can install them from the Marketplace using the commands below, and VS Code will remember your session across restarts of the same container.
 
 * **GitHub Copilot Chat** (`GitHub.copilot-chat`)
   * Open the Command Palette and run `>GitHub: Sign in` (or use the Copilot Chat view’s sign-in button).
