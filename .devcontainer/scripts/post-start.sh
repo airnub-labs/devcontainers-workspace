@@ -213,3 +213,61 @@ else
     log "      ALLOW_WILDCARD=0 bash \"$SCRIPT_DIR/clone-from-devcontainer-repos.sh\""
   fi
 fi
+
+# --- Fluxbox: menu + autostart Chrome/Chromium in noVNC ---
+setup_fluxbox_desktop() {
+  set -euo pipefail
+  local home_dir="${HOME:-/home/vscode}"
+  local fb_dir="$home_dir/.fluxbox"
+  mkdir -p "$fb_dir"
+
+  # Pick an installed browser
+  local browser_bin=""
+  for bin in google-chrome chromium chromium-browser; do
+    if command -v "$bin" >/dev/null 2>&1; then browser_bin="$(command -v "$bin")"; break; fi
+  done
+
+  # Write a simple Fluxbox menu (right-click desktop)
+  cat > "$fb_dir/menu" <<MENU
+[begin] (Fluxbox)
+  [exec] (XTerm) {xterm}
+$( [[ -n "$browser_bin" ]] && echo "  [exec] (Browser) {$browser_bin --start-fullscreen --no-first-run \${BROWSER_AUTOSTART_URL:-about:blank}}" )
+  [reconfig] (Reload Menu)
+  [exit] (Exit)
+[end]
+MENU
+
+  # Autostart: Fluxbox's startup hook (run before fluxbox)
+  cat > "$fb_dir/startup" <<'STARTUP'
+#!/bin/sh
+# ~/.fluxbox/startup — launch a browser full screen, then start fluxbox
+
+# Resolve browser at runtime
+for bin in google-chrome chromium chromium-browser; do
+  if command -v "$bin" >/dev/null 2>&1; then BROWSER_BIN="$bin"; break; fi
+done
+
+URL="${BROWSER_AUTOSTART_URL:-about:blank}"
+FLAGS="--start-fullscreen --no-first-run --disable-features=TranslateUI"
+
+if [ -n "${BROWSER_BIN:-}" ]; then
+  "$BROWSER_BIN" $FLAGS "$URL" &
+fi
+
+# Start the WM last
+exec fluxbox
+STARTUP
+  chmod +x "$fb_dir/startup"
+
+  # Fallback: if fluxbox is already up (desktop-lite may start it directly), launch now
+  if pgrep -x fluxbox >/dev/null 2>&1; then
+    if ! pgrep -f 'google-chrome|chromium' >/dev/null 2>&1 && [[ -n "$browser_bin" ]]; then
+      DISPLAY="${DISPLAY:-:1}" "$browser_bin" --start-fullscreen --no-first-run "${BROWSER_AUTOSTART_URL:-about:blank}" >/dev/null 2>&1 &
+    fi
+  fi
+
+  # Ensure ownership for the vscode user
+  chown -R "$(id -un)":"$(id -gn)" "$fb_dir" || true
+}
+
+setup_fluxbox_desktop || echo "[post-start] warn: fluxbox desktop setup skipped"

@@ -2,7 +2,9 @@ name: airnub-labs
 
 services:
   devcontainer:
-    image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
     command: sleep infinity
     init: true
     volumes:
