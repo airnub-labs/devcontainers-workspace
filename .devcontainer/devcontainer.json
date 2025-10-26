@@ -24,7 +24,6 @@
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
   ],
-  "updateContentCommand": "bash -lc 'set -e; shopt -s nullglob; for dir in */.devcontainer .devcontainer; do if [ -x \"$dir/scripts/update-content.sh\" ]; then \"$dir/scripts/update-content.sh\"; exit $?; fi; done; echo \"[update-content][warn] No update-content script found; skipping.\"'",
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
