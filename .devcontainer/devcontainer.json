@@ -54,7 +54,7 @@
     "9222": {
       "label": "Chrome DevTools (CDP)",
       "onAutoForward": "notify"
-    },    
+    },
     "54321": {
       "label": "Supabase API",
       "onAutoForward": "silent"
