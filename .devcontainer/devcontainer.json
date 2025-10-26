@@ -14,7 +14,8 @@
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12",
       "installJupyterlab": true
-    }
+    },
+    "ghcr.io/devcontainers/features/desktop-lite:1": {}
   },
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",
@@ -27,6 +28,7 @@
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
+    6080,
     6379,
     54321,
     54322,
@@ -35,6 +37,9 @@
     54327
   ],
   "portsAttributes": {
+    "6080": {
+      "label": "Desktop"
+    },
     "6379": {
       "label": "Redis"
     },
