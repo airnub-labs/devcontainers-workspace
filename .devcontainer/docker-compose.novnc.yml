@@ -1,8 +1,4 @@
 services:
-  # Your existing devcontainer service is referenced by name below
-  devcontainer:
-    # (left as-is; defined in your base compose)
-
   novnc-desktop:
     build:
       context: ..
