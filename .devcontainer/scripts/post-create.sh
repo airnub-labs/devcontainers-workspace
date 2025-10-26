@@ -305,43 +305,37 @@ if command -v google-chrome >/dev/null 2>&1 || [ -d /etc/opt/chrome ]; then
   if [ -n "$SUDO" ]; then
     $SUDO tee /etc/opt/chrome/policies/managed/classroom.json >/dev/null <<'JSON'
 {
-  "URLBlocklist": ["*"],
-  "URLAllowlist": [
-    "http://localhost/*",
-    "https://localhost/*",
-    "http://127.0.0.1/*",
-    "https://127.0.0.1/*",
-    "http://[::1]/*",
-    "https://[::1]/*",
-    "https://*.github.dev/*",
-    "https://github.com/*",
-    "chrome://*",
-    "devtools://*",
-    "chrome-devtools://*"
-  ],
   "DeveloperToolsAvailability": 1,
-  "ExtensionInstallBlocklist": ["*"]
+  "ExtensionDeveloperModeSettings": 1,
+  "ShowHomeButton": true,
+  "ShowDownloadButton": true,
+  "ExtensionInstallBlocklist": ["*"],
+  "ExtensionSettings": {
+    "*": { "installation_mode": "blocked" },
+    "fmkadmapgofadopljbjfkapdkoienihi": {
+      "installation_mode": "force_installed",
+      "update_url": "https://clients2.google.com/service/update2/crx",
+      "toolbar_pin": "force_pinned"
+    }
+  }
 }
 JSON
   else
     tee /etc/opt/chrome/policies/managed/classroom.json >/dev/null <<'JSON'
 {
-  "URLBlocklist": ["*"],
-  "URLAllowlist": [
-    "http://localhost/*",
-    "https://localhost/*",
-    "http://127.0.0.1/*",
-    "https://127.0.0.1/*",
-    "http://[::1]/*",
-    "https://[::1]/*",
-    "https://*.github.dev/*",
-    "https://github.com/*",
-    "chrome://*",
-    "devtools://*",
-    "chrome-devtools://*"
-  ],
   "DeveloperToolsAvailability": 1,
-  "ExtensionInstallBlocklist": ["*"]
+  "ExtensionDeveloperModeSettings": 1,
+  "ShowHomeButton": true,
+  "ShowDownloadButton": true,
+  "ExtensionInstallBlocklist": ["*"],
+  "ExtensionSettings": {
+    "*": { "installation_mode": "blocked" },
+    "fmkadmapgofadopljbjfkapdkoienihi": {
+      "installation_mode": "force_installed",
+      "update_url": "https://clients2.google.com/service/update2/crx",
+      "toolbar_pin": "force_pinned"
+    }
+  }
 }
 JSON
   fi
