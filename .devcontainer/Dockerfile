@@ -7,6 +7,9 @@ ARG INSTALL_NOVNC=true
 # Make timezone/locale configurable at build time
 ARG DEFAULT_TZ=Etc/UTC
 ARG DEFAULT_LOCALE=en_IE.UTF-8
+# Provide a simple way to set the LANGUAGE env without shell parameter
+# expansion (which BuildKit does not support inside ENV statements).
+ARG DEFAULT_LANGUAGE=en_IE:en_IE
 
 # --- Common base packages (system-level; suitable for Dockerfile) ---
 RUN set -eux; \
@@ -39,7 +42,7 @@ RUN set -eux; \
 ENV TZ=${DEFAULT_TZ} \
   LANG=${DEFAULT_LOCALE} \
   LC_ALL=${DEFAULT_LOCALE} \
-  LANGUAGE=${DEFAULT_LOCALE%.*}:${DEFAULT_LOCALE%.*}
+  LANGUAGE=${DEFAULT_LANGUAGE}
 
 # --- Google Chrome repo & install ---
 RUN set -eux; \
