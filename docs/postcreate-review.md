@@ -11,6 +11,8 @@ This document summarizes the activity recorded in the most recent `postCreateCom
 - Workspace repositories cloned into `/airnub-labs`, including `airnub-labs/million-dollar-maps` (ignored by the meta-workspace Git).
 - A managed Chrome/Chromium classroom policy is written to `/etc/opt/chrome/policies/managed/classroom.json` (and mirrored to `/etc/chromium/policies/managed/` when Chromium exists) to allow only localhost and `*.github.dev` origins while blocking all extensions and leaving DevTools enabled.
 - The post-start script now ships a noVNC landing page that auto-connects, auto-reconnects, requests remote resize, and exposes an audio bridge when available.
+- Supabase start-up now authenticates to Amazon ECR Public when AWS credentials are present, ensuring image pulls are less likely to rate-limit.
+- A stub `supabase/seed.sql` is created automatically after Supabase starts to silence missing seed warnings, and audio bridge prerequisites (`pulseaudio`, `ffmpeg`) are installed on-demand.
 
 ## Next Steps
 

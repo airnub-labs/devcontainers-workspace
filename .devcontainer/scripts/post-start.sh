@@ -28,6 +28,27 @@ log() { echo "[post-start] $*"; }
 
 NOVNC_AUDIO_PORT_EFFECTIVE="${NOVNC_AUDIO_PORT:-6081}"
 
+authenticate_ecr_public_registry() {
+  if [[ "$docker_ready" != "true" ]]; then
+    return 0
+  fi
+
+  if ! command -v aws >/dev/null 2>&1; then
+    log "AWS CLI not available; skipping Amazon ECR Public authentication."
+    return 0
+  fi
+
+  log "Authenticating to Amazon ECR Public registry to raise pull rate limits..."
+  if aws ecr-public get-login-password --region us-east-1 \
+    | docker login --username AWS --password-stdin public.ecr.aws >/dev/null 2>&1; then
+    log "Amazon ECR Public authentication succeeded."
+    return 0
+  fi
+
+  log "Amazon ECR Public authentication failed; Supabase image pulls may be rate limited."
+  return 1
+}
+
 wait_for_docker_daemon() {
   local max_attempts="${1:-30}"
   local sleep_seconds="${2:-2}"
@@ -78,6 +99,18 @@ fi
 supabase_stack_ready=false
 supabase_env_synced=false
 redis_container_ready=false
+
+ensure_supabase_seed_stub() {
+  local seed_file="$SUPABASE_PROJECT_DIR/seed.sql"
+
+  if [[ -f "$seed_file" ]]; then
+    return 0
+  fi
+
+  log "Creating stub Supabase seed file at $seed_file to silence CLI warnings."
+  mkdir -p "$(dirname "$seed_file")"
+  printf '%s\n' '-- no seed' >"$seed_file"
+}
 
 ensure_supabase_stack() {
   local supabase_dir="$SUPABASE_PROJECT_DIR"
@@ -170,11 +203,17 @@ ensure_inner_redis() {
   return 1
 }
 
+if [[ "$docker_ready" == "true" ]]; then
+  authenticate_ecr_public_registry || true
+fi
+
 if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   supabase_env_helper="$SUPABASE_PROJECT_DIR/scripts/db-env-local.sh"
 
   if ensure_supabase_stack; then
     supabase_stack_ready=true
+
+    ensure_supabase_seed_stub || true
 
     if [[ -x "$supabase_env_helper" ]]; then
       if SUPABASE_ENV_LOG_PREFIX="[post-start]" "$supabase_env_helper" --status-only; then
@@ -472,6 +511,32 @@ EOF
   fi
 }
 
+ensure_audio_prereqs_installed() {
+  if command -v pulseaudio >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    log "Audio prerequisites missing and apt-get unavailable; skipping automatic installation."
+    return 0
+  fi
+
+  local sudo_prefix=()
+  if command -v sudo >/dev/null 2>&1; then
+    sudo_prefix=(sudo)
+  fi
+
+  log "Installing audio bridge prerequisites (pulseaudio, ffmpeg)..."
+  if "${sudo_prefix[@]}" apt-get update -y \
+    && "${sudo_prefix[@]}" apt-get install -y --no-install-recommends pulseaudio ffmpeg; then
+    "${sudo_prefix[@]}" rm -rf /var/lib/apt/lists/* >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  log "Audio prerequisite installation failed; remote audio bridge may remain unavailable."
+  return 1
+}
+
 setup_fluxbox_desktop() {
   set -euo pipefail
   local home_dir="${HOME:-/home/vscode}"
@@ -580,6 +645,7 @@ STARTUP
   chown -R "$(id -un)":"$(id -gn)" "$fb_dir" || true
 }
 
+ensure_audio_prereqs_installed || true
 setup_novnc_audio || echo "[post-start] warn: remote audio setup skipped"
 setup_fluxbox_desktop || echo "[post-start] warn: fluxbox desktop setup skipped"
 
