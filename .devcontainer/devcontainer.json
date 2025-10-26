@@ -13,7 +13,7 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12",
-      "installJupyterlab": true
+      "installJupyterlab": false
     },
     "ghcr.io/devcontainers/features/desktop-lite:1": {}
   },
@@ -38,7 +38,9 @@
   ],
   "portsAttributes": {
     "6080": {
-      "label": "Desktop"
+      "label": "Desktop",
+      "protocol": "http",
+      "onAutoForward": "openPreview"
     },
     "6379": {
       "label": "Redis"
@@ -99,6 +101,8 @@
         "workbench.activityBar.location": "top",
         "workbench.colorTheme": "Default Dark Modern",
         "workbench.startupEditor": "readme",
+        "workbench.editor.openSideBySideDirection": "right",
+        "workbench.editor.openPositioning": "right",
         "workbench.views.defaultViewContainerLocations": {
           "workbench.view.extension.codexViewContainer": "secondarySideBar",
           "workbench.view.extension.geminiChat": "secondarySideBar",
