@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [[ -h "$source" ]]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    source="$(readlink "$source")"
+    [[ $source != /* ]] && source="$dir/$source"
+  done
+
+  local resolved_dir
+  resolved_dir="$(cd -P "$(dirname "$source")" && pwd)"
+  printf '%s\n' "$resolved_dir"
+}
+
+SCRIPT_DIR="$(resolve_script_dir)"
 REPO_ROOT="$SCRIPT_DIR"
 SUPABASE_DIR="${SUPABASE_DIR:-${REPO_ROOT}/supabase}"
 DB_ENV_HELPER="${DB_ENV_HELPER:-${SUPABASE_DIR}/scripts/db-env-local.sh}"
