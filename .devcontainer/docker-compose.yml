@@ -4,14 +4,28 @@ name: ${WORKSPACE_STACK_NAME:-airnub-labs}
 
 services:
   devcontainer:
-    privileged: true
+    # NOTE: In GitHub Codespaces, privileged containers are generally not allowed.
+    # If you need Docker-in-Docker locally, keep `privileged: true`.
+    # In Codespaces, remove this line and avoid DinD (prefer sidecar services in Compose).
+    privileged: false
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+
+    # Run a minimal init for proper signal handling      
     init: true
+
+    # Optional but helpful for Node/Playwright/Chrome tooling that use shared memory
+    shm_size: "2g"
+        
+    # Keep the workspace mounted at a stable path (defaults to /airnub-labs)
     volumes:
       - ..:${WORKSPACE_CONTAINER_ROOT:-/airnub-labs}:cached
+      # Persist inner Docker data if using DinD feature locally
       - dind-data:/var/lib/docker
+
+    # Compose will restart the container if it stops (Codespaces manages lifecycle too)
+    restart: unless-stopped
 
 volumes:
   dind-data:
