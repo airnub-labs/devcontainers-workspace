@@ -115,23 +115,51 @@ ensure_supabase_stack() {
 }
 
 ensure_inner_redis() {
-  if docker ps --format '{{.Names}}' | grep -qx 'redis'; then
+  local container_name="redis"
+  local container_image="redis:7-alpine"
+  local host_port="6379"
+
+  # Determine whether another container already binds the desired host port so we
+  # can bail out early instead of letting `docker start/run` fail with a cryptic
+  # "port is already allocated" message.
+  local port_owner
+  port_owner="$(
+    docker ps --format '{{.Names}} {{.Ports}}' |
+      awk -v port="$host_port" '
+        {
+          name=$1
+          $1=""
+          if ($0 ~ ":" port "->") {
+            print name
+          }
+        }
+      ' |
+      head -n 1
+  )"
+
+  if docker ps --format '{{.Names}}' | grep -qx "$container_name"; then
     log "Redis container already running inside the inner Docker daemon."
     return 0
   fi
 
-  if docker ps -a --format '{{.Names}}' | grep -qx 'redis'; then
+  if [[ -n "$port_owner" && "$port_owner" != "$container_name" ]]; then
+    log "Host port $host_port is already bound by container '$port_owner'; skipping Redis startup."
+    log "Stop the conflicting container or reconfigure it to free port $host_port, then rerun 'docker start $container_name'."
+    return 1
+  fi
+
+  if docker ps -a --format '{{.Names}}' | grep -qx "$container_name"; then
     log "Starting existing Redis container inside the inner Docker daemon..."
-    if docker start redis >/dev/null; then
+    if docker start "$container_name" >/dev/null; then
       log "Redis container started."
       return 0
     fi
-    log "Failed to start existing Redis container named 'redis'."
+    log "Failed to start existing Redis container named '$container_name'."
     return 1
   fi
 
   log "Launching Redis container inside the inner Docker daemon..."
-  if docker run -d --name redis -p 6379:6379 redis:7-alpine >/dev/null; then
+  if docker run -d --name "$container_name" -p "$host_port:$host_port" "$container_image" >/dev/null; then
     log "Redis container launched."
     return 0
   fi
