@@ -308,10 +308,16 @@ if command -v google-chrome >/dev/null 2>&1 || [ -d /etc/opt/chrome ]; then
   "URLBlocklist": ["*"],
   "URLAllowlist": [
     "http://localhost/*",
+    "https://localhost/*",
+    "http://127.0.0.1/*",
     "https://127.0.0.1/*",
+    "http://[::1]/*",
     "https://[::1]/*",
     "https://*.github.dev/*",
-    "https://github.com/*"
+    "https://github.com/*",
+    "chrome://*",
+    "devtools://*",
+    "chrome-devtools://*"
   ],
   "DeveloperToolsAvailability": 1,
   "ExtensionInstallBlocklist": ["*"]
@@ -323,10 +329,16 @@ JSON
   "URLBlocklist": ["*"],
   "URLAllowlist": [
     "http://localhost/*",
+    "https://localhost/*",
+    "http://127.0.0.1/*",
     "https://127.0.0.1/*",
+    "http://[::1]/*",
     "https://[::1]/*",
     "https://*.github.dev/*",
-    "https://github.com/*"
+    "https://github.com/*",
+    "chrome://*",
+    "devtools://*",
+    "chrome-devtools://*"
   ],
   "DeveloperToolsAvailability": 1,
   "ExtensionInstallBlocklist": ["*"]
