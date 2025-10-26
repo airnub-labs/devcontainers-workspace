@@ -32,24 +32,6 @@ log() {
   fi
 }
 
-authenticate_ecr_public_registry() {
-  if [[ "$docker_ready" != "true" ]]; then
-    return 0
-  fi
-  if ! command -v aws >/dev/null 2>&1; then
-    log "AWS CLI not available; skipping Amazon ECR Public authentication."
-    return 0
-  fi
-  log "Authenticating to Amazon ECR Public registry to raise pull rate limits..."
-  if aws ecr-public get-login-password --region us-east-1 \
-    | docker login --username AWS --password-stdin public.ecr.aws >/dev/null 2>&1; then
-    log "Amazon ECR Public authentication succeeded."
-    return 0
-  fi
-  log "Amazon ECR Public authentication failed; Supabase image pulls may be rate limited."
-  return 1
-}
-
 wait_for_docker_daemon() {
   local max_attempts="${1:-30}"
   local sleep_seconds="${2:-2}"
@@ -186,10 +168,6 @@ ensure_inner_redis() {
   log "Failed to launch Redis container via 'docker run'."
   return 1
 }
-
-if [[ "$docker_ready" == "true" ]]; then
-  authenticate_ecr_public_registry || true
-fi
 
 if [[ "$docker_ready" == "true" && "$supabase_cli_present" == "true" && "$supabase_project_available" == "true" ]]; then
   supabase_env_helper="$SUPABASE_PROJECT_DIR/scripts/db-env-local.sh"
