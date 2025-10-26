@@ -1,8 +1,13 @@
 services:
   novnc-desktop:
     build:
-      context: .
-      dockerfile: Dockerfile
+      # Use the repo root as build context so the dedicated GUI Dockerfile and
+      # its scripts are available regardless of where docker compose is
+      # invoked from (Codespaces vs. local). Without this the build would fall
+      # back to the main devcontainer Dockerfile, leaving the GUI image
+      # without Chrome/noVNC.
+      context: ..
+      dockerfile: .devcontainer/gui/Dockerfile
       args:
         DEFAULT_TZ: "Europe/Dublin"       # override as needed
         DEFAULT_LOCALE: "en_IE.UTF-8"
