@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+MANIFEST=${1:-".devcontainer/workspace.repos.yaml"}
+if ! command -v yq >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+  echo "[ws-clone] yq/jq required; skipping." >&2
+  exit 0
+fi
+ROOT=$(yq '.workspace.root' "$MANIFEST")
+DEFAULT_REF=$(yq '.workspace.defaultRef' "$MANIFEST")
+mkdir -p "$ROOT"
+mapfile -t ITEMS < <(yq -o=json '.repos' "$MANIFEST" | jq -c '.[]')
+for item in "${ITEMS[@]}"; do
+  URL=$(jq -r '.url' <<<"$item")
+  PATH_REL=$(jq -r '.path' <<<"$item")
+  REF=$(jq -r '.ref // empty' <<<"$item")
+  DEPTH=$(jq -r '.depth // empty' <<<"$item")
+  DEST="$ROOT/$PATH_REL"
+  mkdir -p "$(dirname "$DEST")"
+  if [[ -d "$DEST/.git" ]]; then
+    echo "[ws-clone] Exists: $PATH_REL → fetch & checkout"
+    git -C "$DEST" fetch --all --prune
+  else
+    echo "[ws-clone] Cloning $URL → $PATH_REL"
+    if [[ -n "$DEPTH" ]]; then
+      git clone --filter=blob:none --depth "$DEPTH" "$URL" "$DEST"
+    else
+      git clone --filter=blob:none "$URL" "$DEST"
+    fi
+  fi
+  git -C "$DEST" checkout "${REF:-$DEFAULT_REF}"
+  SPARSE=$(jq -r '.sparse // empty' <<<"$item")
+  if [[ -n "$SPARSE" && "$SPARSE" != "null" ]]; then
+    git -C "$DEST" sparse-checkout init --cone || true
+    jq -r '.sparse[]' <<<"$item" | xargs git -C "$DEST" sparse-checkout set
+    git -C "$DEST" pull --rebase
+  fi
+done

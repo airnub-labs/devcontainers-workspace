@@ -9,14 +9,26 @@
     "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
       "manageLocalStack": true
     },
-    "ghcr.io/airnub-labs/devcontainer-features/mcp-clis:1": {}
+    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {}
+  },
+  "customizations": {
+    "codespaces": {
+      "repositories": [
+        {
+          "repository": "airnub-labs/lesson-starter",
+          "ref": "main",
+          "clonePath": "Lessons/01-starter"
+        }
+      ]
+    }
   },
   "forwardPorts": [
     {{templateOption.webtopPort}}
   ],
   "portsAttributes": {
     "{{templateOption.webtopPort}}": {
-      "label": "Desktop (webtop)"
+      "label": "Desktop (webtop)",
+      "requireLocalPort": false
     }
   },
   "remoteEnv": {
@@ -24,5 +36,5 @@
     "CHROME_POLICY_SOURCE": "{{templateOption.chromePolicies}}",
     "CHROME_POLICY_MODE": "{{templateOption.policyMode}}"
   },
-  "postCreateCommand": "./.devcontainer/postCreate.sh"
+  "postCreateCommand": "bash -c \"chmod +x ./scripts/ws-clone && ./scripts/ws-clone .devcontainer/workspace.repos.yaml && ./.devcontainer/postCreate.sh\""
 }
