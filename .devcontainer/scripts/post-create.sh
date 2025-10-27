@@ -174,4 +174,26 @@ fi
 ( npx -y chrome-devtools-mcp@latest --help >/dev/null 2>&1 || true )
 ( npx --yes @playwright/mcp@latest --version >/dev/null 2>&1 || true )
 
+# Configure MCP servers per client (project-scoped)
+if command -v claude >/dev/null 2>&1; then
+  log "Configuring Claude MCP servers via CLI (project scope)..."
+  CLAUDE_CHROME_SERVER_JSON="$(python3 - <<'PYTHON'
+import json, os
+print(json.dumps({
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "chrome-devtools-mcp@latest", "--browserUrl", os.environ.get("CHROME_CDP_URL", "http://127.0.0.1:9222")]
+}))
+PYTHON
+  )"
+  claude mcp add-json chrome-devtools "${CLAUDE_CHROME_SERVER_JSON}" \
+    || log "Claude MCP configuration skipped or already present."
+fi
+
+if command -v codex >/dev/null 2>&1; then
+  log "Configuring Codex MCP servers via CLI (project scope)..."
+  codex mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --browserUrl "${CHROME_CDP_URL:-http://127.0.0.1:9222}" \
+    || log "Codex MCP configuration skipped or already present."
+fi
+
 log "post-create complete."

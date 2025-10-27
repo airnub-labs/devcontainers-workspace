@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `supabase-cli` | Installs the Supabase CLI with optional helper scripts and metadata capture. | `version`, `manageLocalStack`, `services`, `projectRef` |
 | `chrome-cdp` | Headless Chrome with a DevTools Protocol endpoint managed by supervisord. | `channel`, `port` |
-| `mcp-clis` | Installs Codex, Claude, and Gemini CLIs using pnpm/npm fallbacks. | `installCodex`, `installClaude`, `installGemini`, `versions` |
+| `agent-tooling-clis` | Installs Codex, Claude, and Gemini CLIs using pnpm/npm fallbacks. Configure MCP servers per project via template hooks. | `installCodex`, `installClaude`, `installGemini`, `versions` |
 | `docker-in-docker-plus` | Adds Buildx/BuildKit ergonomics on top of Docker-in-Docker. | _none_ |
 | `cuda-lite` | Installs CUDA runtime libraries only when a GPU is detected. | _none_ |
 
@@ -15,7 +15,7 @@
 | Template | Base Image(s) | Included Features | Notes |
 | --- | --- | --- | --- |
 | `web` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli` | Options toggle the prebuilt image and CDP channel/port. |
-| `nextjs-supabase` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli`, `mcp-clis` (optional) | Supports turnkey Next.js scaffolding with Supabase integrations. |
-| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `mcp-clis` | Managed/none Chrome policy presets sync into `.devcontainer/policies/managed.json`; override via the `chromePolicies` option. |
+| `nextjs-supabase` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli`, `agent-tooling-clis` (optional) | Supports turnkey Next.js scaffolding with Supabase integrations. |
+| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `agent-tooling-clis` | Managed/none Chrome policy presets sync into `.devcontainer/policies/managed.json`; override via the `chromePolicies` option. |
 
 Refer to [`VERSIONING.md`](../VERSIONING.md) for published tags and digests.

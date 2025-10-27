@@ -4,5 +4,5 @@ Extends the base web workspace with optional Next.js scaffolding. Template optio
 
 - Reuse the published `dev-web` image or build locally (`usePrebuiltImage`).
 - Select the Chrome channel/port for the CDP feature (`chromeChannel`, `cdpPort`).
-- Decide whether to install the MCP CLI suite (`includeMcpClis`).
+- Decide whether to install the agent tooling CLI suite (`includeAgentToolingClis`).
 - Scaffold a Next.js app with version, TypeScript, App Router, and Supabase auth defaults (`scaffold`, `nextVersion`, `ts`, `appRouter`, `auth`).

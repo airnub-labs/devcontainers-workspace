@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | `devcontainer-features/supabase-cli` | `1.0.0` | Installs Supabase CLI + helpers |
 | `devcontainer-features/chrome-cdp` | `1.0.0` | Headless Chrome via supervisord |
-| `devcontainer-features/mcp-clis` | `1.0.0` | Codex/Claude/Gemini pnpm installers |
+| `devcontainer-features/agent-tooling-clis` | `1.1.0` | Codex/Claude/Gemini pnpm installers |
 | `devcontainer-features/docker-in-docker-plus` | `1.0.0` | Buildx and BuildKit defaults |
 | `devcontainer-features/cuda-lite` | `1.0.0` | Conditional CUDA runtime |
 | `ghcr.io/airnub-labs/dev-base` | `v1.0.0` | Node 24 + pnpm base |

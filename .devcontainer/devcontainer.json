@@ -18,7 +18,7 @@
     "../features/supabase-cli": {
       "manageLocalStack": true
     },
-    "../features/mcp-clis": {},
+    "../features/agent-tooling-clis": {},
     "../features/chrome-cdp": {
       "channel": "stable",
       "port": 9222
