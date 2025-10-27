@@ -24,7 +24,7 @@ The Supabase CLI spins up multiple services when you run `supabase start -o env`
 | Storage | `54326` | Object storage API. |
 | Analytics (Logflare) | `54327` | Supabase analytics/logging endpoint. |
 
-A Redis sidecar is available at `6379` (defined in `.devcontainer/docker-compose.yml`). Because these ports are fixed and shared, you avoid the complexity of tracking different ports for each project.
+A Redis sidecar is available at `6379` (defined in `workspaces/<variant>/.devcontainer/compose.yaml`). Because these ports are fixed and shared, you avoid the complexity of tracking different ports for each project.
 
 ---
 

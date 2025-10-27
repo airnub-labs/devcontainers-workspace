@@ -12,7 +12,7 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 
 * **Multi-root workspace:** `airnub-labs.code-workspace` opens all of your project folders side-by-side.
 * **Shared runtime:** the Dev Container maps the parent directory to `/workspaces`, provides Docker-in-Docker, Node 24 with pnpm, Python 3.12, and ships with Redis plus a Supabase local stack configured in [`supabase/config.toml`](./supabase/config.toml).
-* **Helper scripts:** `.devcontainer/scripts/` manages cloning and bootstrap tasks, while `supabase/scripts/` keeps local Supabase credentials in sync across repos.
+* **Helper scripts:** `workspaces/<variant>/postCreate.sh` reads the matching `workspace.blueprint.json` manifest to clone sibling repos into `/apps`, while `supabase/scripts/` keeps local Supabase credentials in sync across repos.
 
 ---
 
@@ -55,17 +55,17 @@ The first build of the Dev Container or Codespace takes a few minutes while the 
 
 ### Option A — Local VS Code + Dev Containers
 
-1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.
-2. In the Dev Container terminal, list the mounted repos with `ls /workspaces`.
-3. Start the shared services once per session: `supabase start -o env` (Studio: [http://localhost:54323](http://localhost:54323), API: [http://localhost:54321](http://localhost:54321)). This single stack serves all projects in `/workspaces` so you don't need a separate Supabase instance per repo.
-4. Work in a project folder (for example `cd /workspaces/million-dollar-maps`) and run that project’s migrations against the shared stack.
+1. Open this repository in VS Code and choose **Reopen in Container**. The root `.devcontainer/devcontainer.json` bridges to the default `workspaces/webtop` variant so Codespaces and the Dev Containers extension share the same configuration.
+2. In the Dev Container terminal, list the mounted repos with `ls /workspaces` (the repo itself) or `ls /apps` (cloned via `workspace.blueprint.json`).
+3. Start the shared services once per session: `supabase start -o env` (Studio: [http://localhost:54323](http://localhost:54323), API: [http://localhost:54321](http://localhost:54321)). This single stack serves all projects in `/workspaces` and `/apps` so you don't need a separate Supabase instance per repo.
+4. Work in a project folder (for example `cd /apps/million-dollar-maps`) and run that project’s migrations against the shared stack.
 
 ### Option B — GitHub Codespaces
 
 1. Create a Codespace from this repo.
 2. (Optional) Update `.devcontainer/devcontainer.json → customizations.codespaces.repositories` so the Codespace token can clone other private repos.
 3. Securely add any required secrets via the Codespaces command palette: press <kbd>Shift</kbd>+<kbd>Command</kbd>+<kbd>P</kbd> (macOS) or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (Windows/Linux), type `>Codespaces: Manage User Secrets`, and follow the prompts to set key/value pairs that your workspace can access.
-4. After the container boots, clone sibling repos into `/workspaces/<repo>` (post-create hooks handle the common cases) and use the same Supabase workflow as local.
+4. After the container boots, inspect `/apps` to confirm that `postCreate.sh` cloned repos listed in the blueprint. Use the same Supabase workflow as local.
 
 Need a refresher on the helper scripts or the clone automation? See the docs linked below.
 
