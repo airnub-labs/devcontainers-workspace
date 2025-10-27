@@ -14,14 +14,93 @@
     "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
   },
 
+  "containerEnv": {
+    "PNPM_HOME": "/home/vscode/.local/share/pnpm",
+    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store",
+    "CHROME_CDP_URL": "http://127.0.0.1:9222"
+  },
+
+  "mounts": [
+    "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
+  ],
+
   "forwardPorts": [9222, 6080, 6379, 54323],
   "portsAttributes": {
-    "9222": { "label": "Chrome DevTools (CDP)" },
-    "6080": { "label": "Desktop (noVNC)" },
-    "6379": { "label": "Redis" },
-    "54323": { "label": "Supabase Studio" }
+    "6080": { "label": "noVNC (Desktop)", "visibility": "private", "requireLocalPort": false },
+    "9222": { "label": "Chrome DevTools (CDP)", "visibility": "private", "requireLocalPort": false },
+    "6379": { "label": "Redis", "onAutoForward": "silent" },
+    "54323": { "label": "Supabase Studio", "onAutoForward": "notify" }
   },
 
   "postCreateCommand": "bash workspaces/novnc/postCreate.sh",
-  "postStartCommand": "bash workspaces/novnc/postStart.sh"
+  "postStartCommand": "bash workspaces/novnc/postStart.sh",
+
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "airnub-labs/million-dollar-maps": {
+          "permissions": { "contents": "write", "pull_requests": "write" }
+        }
+      }
+    },
+    "vscode": {
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "editor.formatOnSave": true,
+        "deno.enablePaths": ["supabase/functions"],
+        "deno.lint": true,
+        "deno.unstable": [
+          "bare-node-builtins","byonm","sloppy-imports","unsafe-proto","webgpu",
+          "broadcast-channel","worker-options","cron","kv","ffi","fs","http","net"
+        ],
+        "[typescript]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+        "workbench.activityBar.location": "top",
+        "workbench.colorTheme": "Default Dark Modern",
+        "workbench.startupEditor": "readme",
+        "workbench.views.defaultViewContainerLocations": {
+          "workbench.view.extension.codexViewContainer": "secondarySideBar",
+          "workbench.view.extension.geminiChat": "secondarySideBar",
+          "workbench.view.extension.claudeCode": "secondarySideBar"
+        },
+        "chat.mcp.gallery.enabled": true
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-playwright.playwright",
+        "denoland.vscode-deno",
+        "Supabase.vscode-supabase-extension",
+        "Redis.redis-for-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "deque-systems.vscode-axe-linter",
+        "DavidAnson.vscode-markdownlint",
+        "bradlc.vscode-tailwindcss",
+        "github.vscode-github-actions",
+        "openai.chatgpt",
+        "google.geminicodeassist",
+        "google.gemini-cli-vscode-ide-companion",
+        "anthropic.claude-code",
+        "ms-windows-ai-studio.windows-ai-studio"
+      ],
+      "mcp": {
+        "servers": {
+          "chrome-devtools": {
+            "command": "npx",
+            "args": [
+              "-y",
+              "chrome-devtools-mcp@latest",
+              "--browserUrl", "${localEnv:CHROME_CDP_URL}",
+              "--headless", "${localEnv:CHROME_HEADLESS:false}",
+              "--isolated", "${localEnv:CHROME_ISOLATED:false}",
+              "--channel", "${localEnv:CHROME_CHANNEL:stable}"
+            ]
+          },
+          "playwright": {
+            "command": "npx",
+            "args": ["--yes", "@playwright/mcp@latest"]
+          }
+        }
+      }
+    }
+  }
 }
