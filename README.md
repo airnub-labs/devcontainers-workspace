@@ -53,6 +53,55 @@ When you want to bring this workspace into your own GitHub org, choose one of th
 
 The first build of the Dev Container or Codespace takes a few minutes while the image assembles. After that initial build, starting/stopping the container (locally or in Codespaces) is quick, and the environment behaves the same in both places.
 
+## Reusing the published Dev Container catalogue
+
+GitHub Actions automatically validates every feature and template, builds them with the `devcontainer` CLI, and publishes the resulting OCI artifacts to `ghcr.io/airnub-labs/devcontainers`. Downstream repositories (or GitHub Codespaces) can depend on the same building blocks without copying this repository.
+
+### Features
+
+Reference the published features by their fully-qualified IDs inside `devcontainer.json`:
+
+```jsonc
+{
+  "features": {
+    "ghcr.io/airnub-labs/devcontainers/features/docker-in-docker-helpers:0.1.0": {},
+    "ghcr.io/airnub-labs/devcontainers/features/gui-tooling:0.1.0": {},
+    "ghcr.io/airnub-labs/devcontainers/features/supabase-stack:0.1.0": {}
+  }
+}
+```
+
+Use the `:0.1.0` tags (or a later version) to pin your environment to an immutable release. Documentation links baked into each feature manifest point back to the relevant reference material in `docs/`.
+
+### Templates
+
+Templates are also published to GHCR. You can apply them directly with the Dev Containers CLI or reference them from `devcontainer.json`:
+
+```bash
+devcontainer templates apply \
+  ghcr.io/airnub-labs/devcontainers/templates/full-gui:0.1.0 \
+  --workspace-folder .
+```
+
+Inside a `devcontainer.json`, use the `extends` field to layer a template onto your project:
+
+```jsonc
+{
+  "name": "My AirNub-powered app",
+  "extends": "ghcr.io/airnub-labs/devcontainers/templates/base:0.1.0"
+}
+```
+
+### Codespaces cohorts and prebuilds
+
+Classroom cohorts that rely on GitHub Codespaces can keep their prebuild configuration in sync with the published template versions by running:
+
+```bash
+node devcontainers/scripts/sync-codespaces-prebuilds.mjs
+```
+
+The script materialises `.github/codespaces/prebuilds/classroom.json` with the current template versions so instructors can wire prebuilds to the latest GHCR tags without hand-editing JSON.
+
 ### Option A — Local VS Code + Dev Containers
 
 1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.

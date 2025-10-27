@@ -1,0 +1,115 @@
+name: Dev Container Quality Gates
+
+on:
+  push:
+    paths:
+      - "devcontainers/**"
+      - ".github/workflows/devcontainer-ci.yml"
+  pull_request:
+    paths:
+      - "devcontainers/**"
+      - ".github/workflows/devcontainer-ci.yml"
+
+jobs:
+  lint-metadata:
+    name: Validate feature and template metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download Dev Container schemas
+        run: |
+          set -euo pipefail
+          curl -sSL https://aka.ms/devcontainer-feature-schema -o feature-schema.json
+          curl -sSL https://aka.ms/devcontainer-template-schema -o template-schema.json
+
+      - name: Lint feature metadata
+        run: |
+          set -euo pipefail
+          npx --yes ajv-cli@5 validate \
+            -s feature-schema.json \
+            -d "devcontainers/features/**/devcontainer-feature.json"
+
+      - name: Lint template metadata
+        run: |
+          set -euo pipefail
+          npx --yes ajv-cli@5 validate \
+            -s template-schema.json \
+            -d "devcontainers/templates/**/devcontainer-template.json"
+
+  build-smoke:
+    name: Build and smoke test templates
+    runs-on: ubuntu-latest
+    needs: lint-metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [base, api-only, full-gui]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dev Containers CLI
+        run: |
+          set -euo pipefail
+          npm install -g @devcontainers/cli@0.59.0
+
+      - name: Build ${{ matrix.template }} template
+        run: |
+          set -euo pipefail
+          devcontainer build \
+            --workspace-folder "devcontainers/templates/${{ matrix.template }}/.devcontainer"
+
+      - name: Launch ${{ matrix.template }} template
+        run: |
+          set -euo pipefail
+          devcontainer up \
+            --workspace-folder "devcontainers/templates/${{ matrix.template }}/.devcontainer" \
+            --id-label "ci-template=${{ matrix.template }}"
+
+      - name: Run smoke tests for ${{ matrix.template }}
+        run: |
+          set -euo pipefail
+          case "${{ matrix.template }}" in
+            base)
+              devcontainer exec \
+                --workspace-folder "devcontainers/templates/${{ matrix.template }}/.devcontainer" \
+                --id-label "ci-template=${{ matrix.template }}" \
+                -- bash -lc "node --version && pnpm --version && python --version"
+              ;;
+            api-only)
+              devcontainer exec \
+                --workspace-folder "devcontainers/templates/${{ matrix.template }}/.devcontainer" \
+                --id-label "ci-template=${{ matrix.template }}" \
+                -- bash -lc "supabase status || true"
+              ;;
+            full-gui)
+              devcontainer exec \
+                --workspace-folder "devcontainers/templates/${{ matrix.template }}/.devcontainer" \
+                --id-label "ci-template=${{ matrix.template }}" \
+                -- bash -lc "GUI_PROVIDERS=novnc,webtop /usr/local/share/devcontainer/features/gui-tooling/bin/update-profiles.sh && grep -q 'COMPOSE_PROFILES=' .devcontainer/.env"
+              ;;
+            *)
+              echo "Unknown template '${{ matrix.template }}'" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Tear down ${{ matrix.template }} template
+        if: always()
+        run: |
+          set -euo pipefail
+          devcontainer down \
+            --workspace-folder "devcontainers/templates/${{ matrix.template }}/.devcontainer" \
+            --id-label "ci-template=${{ matrix.template }}" || true
