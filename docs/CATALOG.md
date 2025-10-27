@@ -19,3 +19,23 @@
 | `classroom-studio-webtop` | `1.0.0` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `agent-tooling-clis` | Managed/none Chrome policy presets sync into `.devcontainer/policies/managed.json`; override via the `chromePolicies` option. |
 
 Refer to [`VERSIONING.md`](../VERSIONING.md) for published tags and digests.
+
+---
+
+## Workspace Variants (v0.2)
+
+| Variant | GUI | CDP | Redis | Supabase local | Notes |
+|---|---|---:|---:|---:|---|
+| `workspaces/webtop` | linuxserver/webtop:ubuntu-xfce | 9222 | 6379 | CLI-managed | Desktop at 3001 |
+| `workspaces/novnc` | dorowu/ubuntu-desktop-lxde-vnc | 9222 | 6379 | CLI-managed | Desktop at 6080 (audio opt. 6081) |
+
+## Feature Matrix (selected, v0.2)
+
+| Feature | Default Options | Provides |
+|---|---|---|
+| `supabase-cli@1` | `manageLocalStack: true` | `supabase` binary + helpers |
+| `chrome-cdp@1` | `channel: stable`, `port: 9222` | Headless Chrome + CDP |
+| `agent-tooling-clis@1` | `installCodex: true` | Agent CLIs (codex/claude/gemini opts) |
+| `docker-in-docker-plus@1` | — | buildx bootstrap |
+| `cuda-lite@1` | — | Minimal CUDA libs (no-op w/o GPU) |
+
