@@ -1,0 +1,18 @@
+# Versioning Strategy
+
+- Features follow semantic versioning and publish to `ghcr.io/airnub-labs/devcontainer-features/<feature>:<version>`. Update the `version` field in each `devcontainer-feature.json` and tag the repo accordingly.
+- Images publish to `ghcr.io/airnub-labs/dev-base` and `ghcr.io/airnub-labs/dev-web` with tags matching Git refs (e.g., `v1.0.0`). Multi-arch manifests (amd64 + arm64) are produced via `build-images.yml`.
+- Templates are versioned via git tags. When cutting a release, update template metadata if new options are introduced and regenerate README badges as needed.
+- Document released versions and digests here:
+
+| Artifact | Latest Tag | Notes |
+| --- | --- | --- |
+| `devcontainer-features/supabase-cli` | `1.0.0` | Installs Supabase CLI + helpers |
+| `devcontainer-features/chrome-cdp` | `1.0.0` | Headless Chrome via supervisord |
+| `devcontainer-features/mcp-clis` | `1.0.0` | Codex/Claude/Gemini pnpm installers |
+| `devcontainer-features/docker-in-docker-plus` | `1.0.0` | Buildx and BuildKit defaults |
+| `devcontainer-features/cuda-lite` | `1.0.0` | Conditional CUDA runtime |
+| `ghcr.io/airnub-labs/dev-base` | `v1.0.0` | Node 24 + pnpm base |
+| `ghcr.io/airnub-labs/dev-web` | `v1.0.0` | Browser-ready extension |
+
+Update this table as new versions are pushed.

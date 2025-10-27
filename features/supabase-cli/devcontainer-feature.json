@@ -1,0 +1,33 @@
+{
+  "id": "supabase-cli",
+  "version": "1.0.0",
+  "name": "Supabase CLI",
+  "description": "Installs the Supabase CLI and optional helper scripts for managing local stacks.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "description": "Version of the Supabase CLI to install (npm tag or semver)."
+    },
+    "manageLocalStack": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install helper scripts (sbx-start/stop/status) for managing Supabase local stack."
+    },
+    "services": {
+      "type": "array",
+      "description": "Advisory list of Supabase services used by the project.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "projectRef": {
+      "type": "string",
+      "description": "Supabase project reference (exported as SUPABASE_PROJECT_REF if provided)."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

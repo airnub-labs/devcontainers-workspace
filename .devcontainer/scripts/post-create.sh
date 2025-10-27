@@ -113,11 +113,19 @@ fi
 # -----------------------------
 # Tool CLIs (user-level, toggleable via dedicated scripts)
 # -----------------------------
-log "Installing Supabase CLI..."; "$HERE/install-supabase-cli.sh"
 log "Installing Deno CLI...";     "$HERE/install-deno-cli.sh"
-log "Installing Codex CLI...";    "$HERE/install-codex-cli.sh"
-log "Installing Gemini CLI...";   "$HERE/install-gemini-cli.sh"
-log "Installing Claude CLI...";   "$HERE/install-claude-cli.sh"
+if command -v supabase >/dev/null 2>&1; then
+  log "Supabase CLI provided by features; skipping manual install."
+fi
+if command -v codex >/dev/null 2>&1; then
+  log "Codex CLI provided by features; skipping manual install."
+fi
+if command -v gemini >/dev/null 2>&1; then
+  log "Gemini CLI provided by features; skipping manual install."
+fi
+if command -v claude >/dev/null 2>&1; then
+  log "Claude CLI provided by features; skipping manual install."
+fi
 
 # Ensure pnpm global bin is on PATH for future shells
 if [[ -n "${PNPM_HOME:-}" && -d "$PNPM_HOME" ]]; then

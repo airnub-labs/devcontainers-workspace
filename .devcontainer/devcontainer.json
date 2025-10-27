@@ -14,7 +14,16 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
-    }
+    },
+    "../features/supabase-cli": {
+      "manageLocalStack": true
+    },
+    "../features/mcp-clis": {},
+    "../features/chrome-cdp": {
+      "channel": "stable",
+      "port": 9222
+    },
+    "../features/docker-in-docker-plus": {}
   },
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",

@@ -1,0 +1,23 @@
+{
+  "id": "chrome-cdp",
+  "version": "1.0.0",
+  "name": "Chrome DevTools Protocol",
+  "description": "Installs Google Chrome with a headless DevTools Protocol endpoint.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
+  "options": {
+    "channel": {
+      "type": "string",
+      "enum": ["stable", "beta"],
+      "default": "stable",
+      "description": "Chrome release channel to install."
+    },
+    "port": {
+      "type": "integer",
+      "default": 9222,
+      "description": "Port exposed by the Chrome DevTools Protocol server."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

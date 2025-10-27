@@ -1,4 +1,6 @@
-# Dev Container packaging roadmap
+# Dev Container packaging roadmap (Legacy)
+
+> **Note:** The active documentation now lives in [`SPEC-ALIGNMENT.md`](./SPEC-ALIGNMENT.md). This file is kept for historical context and will be removed in a future cleanup.
 
 This document captures how the meta workspace evolves into a spec-compliant catalogue of Dev Container **features**, **templates**, and **stacks**. The goal is to keep the multi-repo developer workspace intact while letting downstream projects consume the same building blocks from GitHub Codespaces or any Dev Container implementation that follows the [Dev Container specification](https://containers.dev/implementors/spec/).
 

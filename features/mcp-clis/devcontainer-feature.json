@@ -1,0 +1,36 @@
+{
+  "id": "mcp-clis",
+  "version": "1.0.0",
+  "name": "MCP CLIs",
+  "description": "Installs optional Model Context Protocol client CLIs (Codex, Claude, Gemini).",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
+  "options": {
+    "installCodex": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install the Codex CLI."
+    },
+    "installClaude": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install the Claude CLI."
+    },
+    "installGemini": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install the Gemini CLI."
+    },
+    "versions": {
+      "type": "object",
+      "description": "Optional per-CLI version map (semver or tag).",
+      "properties": {
+        "codex": { "type": "string" },
+        "claude": { "type": "string" },
+        "gemini": { "type": "string" }
+      }
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

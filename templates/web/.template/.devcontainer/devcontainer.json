@@ -1,0 +1,28 @@
+{
+  "name": "web",
+{{#templateOption.usePrebuiltImage}}
+  "image": "ghcr.io/airnub-labs/dev-web:latest",
+{{/templateOption.usePrebuiltImage}}
+{{^templateOption.usePrebuiltImage}}
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+{{/templateOption.usePrebuiltImage}}
+  "features": {
+    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": {
+      "channel": "{{templateOption.chromeChannel}}",
+      "port": {{templateOption.cdpPort}}
+    },
+    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {}
+  },
+  "forwardPorts": [
+    {{templateOption.cdpPort}}
+  ],
+  "portsAttributes": {
+    "{{templateOption.cdpPort}}": {
+      "label": "Chrome DevTools"
+    }
+  },
+  "postCreateCommand": "./.devcontainer/postCreate.sh"
+}

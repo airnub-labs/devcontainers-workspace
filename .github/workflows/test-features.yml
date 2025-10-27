@@ -1,0 +1,23 @@
+name: Test Dev Container Features
+
+on:
+  pull_request:
+    paths:
+      - 'features/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'features/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: devcontainers/action@v1
+        with:
+          base-path: ./features
+          run-features-test: true
