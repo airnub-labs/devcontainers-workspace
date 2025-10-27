@@ -1,0 +1,31 @@
+{
+  "$schema": "https://aka.ms/devcontainer-stack-schema",
+  "id": "production-api",
+  "version": "0.1.0",
+  "name": "AirNub production API stack",
+  "publisher": "airnub-labs",
+  "description": "Back-end focused stack targeting production readiness with Supabase and pnpm caching.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/devcontainers/stacks/README.md",
+  "licenseURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/LICENCE",
+  "tags": ["api", "production"],
+  "templates": [
+    {
+      "id": "base",
+      "path": "../../templates/base"
+    },
+    {
+      "id": "api-only",
+      "path": "../../templates/api-only"
+    }
+  ],
+  "features": [
+    {
+      "id": "docker-in-docker-helpers",
+      "path": "../../features/docker-in-docker-helpers"
+    },
+    {
+      "id": "supabase-stack",
+      "path": "../../features/supabase-stack"
+    }
+  ]
+}

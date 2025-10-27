@@ -1,0 +1,38 @@
+{
+  "$schema": "https://aka.ms/devcontainer-template-schema",
+  "id": "api-only",
+  "version": "0.1.0",
+  "name": "AirNub API workspace",
+  "publisher": "airnub-labs",
+  "description": "Extends the base workspace with Supabase tooling for backend-only development and testing.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/workspace-architecture.md",
+  "licenseURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/LICENCE",
+  "platforms": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
+  "dockerComposeFile": [
+    "../base/.devcontainer/docker-compose.yml",
+    ".devcontainer/docker-compose.override.yml"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "vscode",
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "pnpmVersion": "10.0.0",
+      "nodeGypDependencies": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true,
+      "version": "latest"
+    },
+    "file:../../features/docker-in-docker-helpers": {},
+    "file:../../features/supabase-stack": {}
+  }
+}

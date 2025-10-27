@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+    volumes:
+      - global-pnpm-store:/pnpm/store
+volumes:
+  global-pnpm-store:
+    name: global-pnpm-store
