@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+determine_repo_root() {
+  if command -v git >/dev/null 2>&1; then
+    if root=$(git rev-parse --show-toplevel 2>/dev/null); then
+      printf '%s\n' "$root"
+      return 0
+    fi
+  fi
+  pwd
+}
+
+ROOT="$(determine_repo_root)"
 ENV_FILE="${ROOT}/.devcontainer/.env"
 
 declare -a ENV_KEYS=()

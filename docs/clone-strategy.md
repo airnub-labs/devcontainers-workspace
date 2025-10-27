@@ -38,8 +38,12 @@ This document explains **how the meta workspace clones project repos** in a sing
     devcontainer.json                # declares Codespaces repo permissions
     scripts/
       post-create.sh                 # main post-create entrypoint (already in use)
-      post-start.sh                  # optional checks; shared stack bootstrap
       clone-from-devcontainer-repos.sh  # the clone helper (idempotent)
+  devcontainers/
+    features/
+      docker-in-docker-helpers/      # post-start checks, Redis bootstrap, clone hints
+      supabase-stack/                # supabase bootstrap + supabase-up task helper
+      gui-tooling/                   # GUI profile selection helper
   airnub-labs.code-workspace         # multi-root list of folders you want open
 ```
 
@@ -92,7 +96,7 @@ You can force a mode via `CLONE_WITH=gh|ssh|https|https-pat`.
 | `CLONE_WITH`          | `auto`                            | `gh`, `ssh`, `https`, or `https-pat`                    |
 | `GH_MULTI_REPO_PAT`   | *(unset)*                         | Token for `https-pat` mode                              |
 | `ALLOW_WILDCARD`      | `0`                               | If `1`, expand `owner/*` with `gh repo list`            |
-| `CLONE_ON_START`      | `false`                           | If `true`, `post-start.sh` will re-run the clone helper |
+| `CLONE_ON_START`      | `false`                           | If `true`, the Docker helper feature re-runs the clone helper |
 
 ---
 
@@ -160,7 +164,7 @@ if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
 fi
 ```
 
-Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON_START=true`, or it will log a helpful hint if any workspace repos are missing.
+Optionally, the Docker helper feature’s `post-start` hook can **re-run** the clone helper if you set `CLONE_ON_START=true`, or it will log a helpful hint if any workspace repos are missing.
 
 ---
 

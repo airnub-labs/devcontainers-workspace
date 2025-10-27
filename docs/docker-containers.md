@@ -54,7 +54,7 @@ All folders under `supabase/docker/volumes/` are ignored by Git so you can safel
 
 ### Directory bootstrap
 
-[`post-start.sh`](../.devcontainer/scripts/post-start.sh) creates the required directories just before running `supabase start`:
+[`bootstrap-supabase.sh`](../devcontainers/features/supabase-stack/scripts/bootstrap-supabase.sh) creates the required directories just before running `supabase start`:
 
 ```bash
 mkdir -p "$SUPABASE_PROJECT_DIR/docker/volumes/db" \
@@ -73,7 +73,7 @@ You can customise the prefix by setting `WORKSPACE_STACK_NAME` before the Dev Co
 
 ## Customising the setup
 
-1. **Adjust Supabase services** – Edit [`supabase/docker/docker-compose.override.yml`](../supabase/docker/docker-compose.override.yml) to add, remove, or retarget bind mounts. Remember to create the new directories in `post-start.sh`.
+1. **Adjust Supabase services** – Edit [`supabase/docker/docker-compose.override.yml`](../supabase/docker/docker-compose.override.yml) to add, remove, or retarget bind mounts. Remember to create the new directories in [`bootstrap-supabase.sh`](../devcontainers/features/supabase-stack/scripts/bootstrap-supabase.sh).
 2. **Change persistence strategy** – Remove `dind-data` from [`docker-compose.yml`](../.devcontainer/docker-compose.yml) if you prefer the inner Docker cache to reset on each rebuild, or mount a different named volume if you want project-specific caches.
 3. **Tune resources** – Update `.devcontainer/docker-compose.yml` to set `shm_size`, CPU limits, or memory reservations when working with resource-intensive tooling.
 4. **Disable DinD** – If your environment forbids privileged containers (e.g., certain Codespaces policies), remove `privileged: true` and the DinD feature from [`devcontainer.json`](../.devcontainer/devcontainer.json). In that case configure Supabase to use a remote Docker host or a sidecar service instead.

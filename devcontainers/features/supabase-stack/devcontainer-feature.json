@@ -1,0 +1,19 @@
+{
+  "id": "supabase-stack",
+  "version": "0.1.0",
+  "name": "Supabase stack bootstrap",
+  "description": "Bootstraps the local Supabase stack inside the inner Docker daemon and synchronises workspace env vars.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/feature-catalog.md#supabase-stack",
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/docker-in-docker"
+  ],
+  "options": {},
+  "containerEnv": {
+    "SUPABASE_INCLUDE": "${localEnv:SUPABASE_INCLUDE}",
+    "SUPABASE_PROJECT_DIR": "${localEnv:SUPABASE_PROJECT_DIR}",
+    "SUPABASE_CONFIG_PATH": "${localEnv:SUPABASE_CONFIG_PATH}",
+    "SUPABASE_START_ARGS": "${localEnv:SUPABASE_START_ARGS}",
+    "SUPABASE_START_EXCLUDES": "${localEnv:SUPABASE_START_EXCLUDES}"
+  },
+  "postStartCommand": "bash /usr/local/share/devcontainer/features/supabase-stack/bin/bootstrap-supabase.sh"
+}
