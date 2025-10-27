@@ -18,6 +18,23 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Verify feature READMEs exist
+        run: |
+          set -euo pipefail
+          missing=0
+          for feature_dir in devcontainers/features/*; do
+            if [[ -d "$feature_dir" ]]; then
+              if [[ ! -f "$feature_dir/README.md" ]]; then
+                echo "Missing README.md in $feature_dir" >&2
+                missing=1
+              fi
+            fi
+          done
+          if [[ "$missing" -ne 0 ]]; then
+            echo "One or more features are missing README.md files." >&2
+            exit 1
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
