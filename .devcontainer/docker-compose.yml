@@ -4,7 +4,6 @@ name: ${WORKSPACE_STACK_NAME:-airnub-labs}
 
 services:
   devcontainer:
-    profiles: ["default", "devcontainer"]
     # NOTE: In GitHub Codespaces, privileged containers are generally not allowed.
     # If you need Docker-in-Docker locally, keep `privileged: true`.
     # In Codespaces, remove this line and avoid DinD (prefer sidecar services in Compose).
