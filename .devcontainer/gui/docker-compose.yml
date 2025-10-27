@@ -12,7 +12,13 @@ services:
         DEFAULT_TZ: "Europe/Dublin"       # override as needed
         DEFAULT_LOCALE: "en_IE.UTF-8"
         DEFAULT_LANGUAGE: "en_IE:en"
-    shm_size: "2g"                        # helps Chrome stability
+    # Run a minimal init for proper signal handling      
+    init: true
+    # Keep Bash alive so the entrypoint doesn’t exit immediately
+    tty: true
+    stdin_open: true
+
+    # shm_size: "2g"                        # helps Chrome stability
     environment:
       # Let the desktop reach your app running in the devcontainer
       APP_URL: "http://localhost:3000"    # with network_mode: service:devcontainer
@@ -43,4 +49,3 @@ services:
       interval: 10s
       timeout: 3s
       retries: 30
-    restart: unless-stopped
