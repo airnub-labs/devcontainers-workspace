@@ -50,7 +50,7 @@ The [devcontainer stacks directory](../devcontainers/stacks/README.md) documents
 
 ### Template and stack catalogue
 
-The `devcontainers/templates/` folder now contains a base template (Node.js 20, pnpm 8, Python 3.12) plus derivatives for GUI-heavy or API-only work. Stack definitions under `devcontainers/stacks/` reference those templates so classrooms, Codespaces, or production-like workflows can pick a single identifier that bundles the right compose files, features, and forwarded ports.
+The `devcontainers/templates/` folder now contains a base template (Node.js 24, pnpm 10, Python 3.12) plus derivatives for GUI-heavy or API-only work. Stack definitions under `devcontainers/stacks/` reference those templates so classrooms, Codespaces, or production-like workflows can pick a single identifier that bundles the right compose files, features, and forwarded ports.
 
 Each stack README provides:
 

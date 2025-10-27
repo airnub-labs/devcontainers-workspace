@@ -21,8 +21,8 @@
       "upgradePackages": false
     },
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "20",
-      "pnpmVersion": "8.15.4",
+      "version": "24",
+      "pnpmVersion": "10.0.0",
       "nodeGypDependencies": true
     },
     "ghcr.io/devcontainers/features/python:1": {

@@ -5,7 +5,7 @@ This template packages the core tooling shared across AirNub projects so other t
 ## Included tooling
 
 - Ubuntu 24.04 base image configured through Docker Compose.
-- Node.js 20 with pnpm 8 preinstalled via the official Dev Containers feature.
+- Node.js 24 with pnpm 10 preinstalled via the official Dev Containers feature.
 - Python 3.12 configured through the Dev Containers Python feature.
 - Common utilities (Git, curl, zsh) with the default `vscode` user.
 - Shared VS Code settings enabling format-on-save, ESLint fixes, and Python IntelliSense.
