@@ -43,7 +43,7 @@ if command -v apply-chrome-policy.sh >/dev/null 2>&1; then
 fi
 
 # Build redirect query string
-NOVNC_QUERY="autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}&path=${NOVNC_PATH}"
+NOVNC_QUERY="autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}"
 if [ "${NOVNC_AUDIO_ENABLE}" = "1" ]; then
   NOVNC_QUERY+="&audio_port=${NOVNC_AUDIO_PORT}"
 fi
