@@ -1,3 +1,5 @@
 # Scripts
 
-Helper automation and release scripts live here. CI workflows reference this directory for future tooling, but no runtime scripts are required for the feature/template distribution.
+Helper automation and release scripts live here. The key entry today is
+`ws-clone`, which reads `.devcontainer/workspace.repos.yaml` manifests
+and clones the listed repositories during template post-create hooks.

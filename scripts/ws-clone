@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""Clone repositories described in a workspace manifest.
+
+The manifest defaults to `.devcontainer/workspace.repos.yaml` but a
+path may be provided as the first argument. The parser supports the
+minimal subset of YAML used by this repository, and falls back to a
+simple hand-rolled parser if PyYAML is unavailable. The script is
+idempotent: repositories that already exist are skipped.
+"""
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional
+
+
+@dataclass
+class WorkspaceConfig:
+    root: Path
+    default_ref: Optional[str]
+    default_depth: Optional[int]
+
+
+@dataclass
+class RepoConfig:
+    url: str
+    path: Path
+    ref: Optional[str]
+    depth: Optional[int]
+
+
+def load_manifest(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        raise FileNotFoundError(path)
+
+    raw_text = path.read_text(encoding="utf-8")
+
+    try:
+        import yaml  # type: ignore
+
+        data = yaml.safe_load(raw_text)
+        if not isinstance(data, dict):
+            raise ValueError("Manifest did not parse into a mapping")
+        return data
+    except ModuleNotFoundError:
+        pass
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[ws-clone] Failed to parse manifest with PyYAML: {exc}", file=sys.stderr)
+
+    return _parse_without_yaml(raw_text)
+
+
+def _parse_without_yaml(raw_text: str) -> Dict[str, Any]:
+    data: Dict[str, Any] = {"workspace": {}, "repos": []}
+    current_section: Optional[str] = None
+
+    for raw_line in raw_text.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if stripped == "workspace:":
+            current_section = "workspace"
+            continue
+        if stripped == "repos":
+            # Handle edge case where someone writes `repos` without colon.
+            current_section = "repos"
+            continue
+        if stripped == "repos:":
+            current_section = "repos"
+            continue
+
+        if current_section == "repos" and stripped.startswith("- "):
+            entry: Dict[str, Any] = {}
+            remainder = stripped[2:].strip()
+            if remainder:
+                key, value = _split_key_value(remainder)
+                entry[key] = value
+            data.setdefault("repos", []).append(entry)
+            current_section = "repo-item"
+            continue
+
+        if current_section == "repo-item" and stripped.startswith("- "):
+            # Start of a new item without blank line.
+            entry = {}
+            remainder = stripped[2:].strip()
+            if remainder:
+                key, value = _split_key_value(remainder)
+                entry[key] = value
+            data.setdefault("repos", []).append(entry)
+            continue
+
+        if ":" in stripped:
+            key, value = _split_key_value(stripped)
+            if current_section == "workspace":
+                workspace = data.setdefault("workspace", {})
+                workspace[key] = value
+            elif current_section in {"repos", "repo-item"}:
+                repos: List[Dict[str, Any]] = data.setdefault("repos", [])
+                if not repos:
+                    repos.append({})
+                repos[-1][key] = value
+            else:
+                # Top-level key (unexpected but tolerated).
+                data[key] = value
+
+    return data
+
+
+def _split_key_value(line: str) -> tuple[str, str]:
+    key, value = line.split(":", 1)
+    value = value.strip()
+    value = value.strip('"\'')
+    return key.strip(), value
+
+
+def parse_workspace(data: Dict[str, Any]) -> WorkspaceConfig:
+    workspace_data = data.get("workspace", {})
+    if not isinstance(workspace_data, dict):
+        workspace_data = {}
+
+    root = Path(workspace_data.get("root") or "/workspaces").expanduser()
+    default_ref = workspace_data.get("defaultRef")
+    if isinstance(default_ref, str) and not default_ref:
+        default_ref = None
+
+    default_depth = workspace_data.get("defaultDepth")
+    if isinstance(default_depth, str) and default_depth.isdigit():
+        default_depth = int(default_depth)
+    elif isinstance(default_depth, int):
+        pass
+    else:
+        default_depth = None
+
+    return WorkspaceConfig(root=root, default_ref=default_ref, default_depth=default_depth)
+
+
+def parse_repos(data: Dict[str, Any]) -> List[RepoConfig]:
+    repos_data = data.get("repos", [])
+    repos: List[RepoConfig] = []
+    if not isinstance(repos_data, Iterable):
+        return repos
+
+    for entry in repos_data:
+        if not isinstance(entry, dict):
+            continue
+        url = str(entry.get("url") or "").strip()
+        path_value = entry.get("path")
+        path = Path(str(path_value or "").strip())
+        if not url or not path:
+            continue
+
+        ref = entry.get("ref")
+        if isinstance(ref, str) and not ref:
+            ref = None
+
+        depth_value = entry.get("depth")
+        depth: Optional[int]
+        if isinstance(depth_value, int):
+            depth = depth_value
+        elif isinstance(depth_value, str) and depth_value.isdigit():
+            depth = int(depth_value)
+        else:
+            depth = None
+
+        repos.append(RepoConfig(url=url, path=path, ref=ref, depth=depth))
+    return repos
+
+
+def clone_repo(workspace: WorkspaceConfig, repo: RepoConfig) -> None:
+    target = workspace.root / repo.path
+    git_dir = target / ".git"
+
+    if git_dir.exists():
+        print(f"[ws-clone] Skipping {repo.url} (already cloned at {target})")
+        return
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    cmd: List[str] = ["git", "clone"]
+    depth = repo.depth or workspace.default_depth
+    if depth:
+        cmd.extend(["--depth", str(depth)])
+
+    ref = repo.ref or workspace.default_ref
+    if ref:
+        cmd.extend(["--branch", ref])
+
+    cmd.extend([repo.url, str(target)])
+
+    print(f"[ws-clone] Cloning {repo.url} -> {target}")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as exc:
+        print(f"[ws-clone] git clone failed ({exc.returncode}) for {repo.url}", file=sys.stderr)
+
+
+def main(argv: List[str]) -> int:
+    parser = argparse.ArgumentParser(description="Clone repositories from a workspace manifest")
+    parser.add_argument("manifest", nargs="?", default=".devcontainer/workspace.repos.yaml")
+    args = parser.parse_args(argv)
+
+    manifest = Path(args.manifest)
+    try:
+        data = load_manifest(manifest)
+    except FileNotFoundError:
+        print(f"[ws-clone] Manifest not found: {manifest}", file=sys.stderr)
+        return 0
+
+    workspace = parse_workspace(data)
+    repos = parse_repos(data)
+
+    if not repos:
+        print("[ws-clone] No repositories to clone")
+        return 0
+
+    for repo in repos:
+        clone_repo(workspace, repo)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
