@@ -37,10 +37,10 @@ if [ ! -d "$NOVNC_ROOT" ]; then
   fi
 fi
 
-# Apply managed Chrome policy if available
-if command -v apply-chrome-policy.sh >/dev/null 2>&1; then
-  apply-chrome-policy.sh || echo "[gui] Chrome policy application failed (continuing)"
-fi
+# Apply managed Chrome policy if available // TODO: Enable chrome policy
+# if command -v apply-chrome-policy.sh >/dev/null 2>&1; then
+#   apply-chrome-policy.sh || echo "[gui] Chrome policy application failed (continuing)"
+# fi
 
 # Build redirect query string
 NOVNC_QUERY="autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}"
@@ -71,7 +71,7 @@ websockify --web="$NOVNC_ROOT" 0.0.0.0:6080 localhost:5900 &
 # ------------------ Launch Chrome -------------------
 CMD=("${CHROME_BIN:-google-chrome}"
   --no-first-run --no-default-browser-check
-  --no-sandbox --disable-dev-shm-usage --disable-gpu
+  --disable-dev-shm-usage --disable-gpu
   --start-fullscreen
   --remote-debugging-address=0.0.0.0
   --remote-debugging-port="${CDP_PORT}"
