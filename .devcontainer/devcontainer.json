@@ -5,47 +5,27 @@
   ],
   "service": "devcontainer",
   "workspaceFolder": "/airnub-labs",
-  "updateContentCommand": ".devcontainer/scripts/select-gui-profiles.sh",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "../devcontainers/features/docker-in-docker-helpers": {},
     "ghcr.io/devcontainers/features/node:1": {
       "version": "24",
       "installPnpm": true
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
-    }
+    },
+    "../devcontainers/features/gui-tooling": {},
+    "../devcontainers/features/supabase-stack": {}
   },
   "containerEnv": {
     "PNPM_HOME": "/home/vscode/.local/share/pnpm",
-    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store",
-    "CHROME_CDP_URL": "http://127.0.0.1:9222",
-    "CHROME_HEADLESS": "false",
-    "CHROME_ISOLATED": "false",
-    "CHROME_CHANNEL": "stable",
-    "GUI_PROVIDERS": "${localEnv:GUI_PROVIDERS}",
-    "WEBTOP_AUDIO": "${localEnv:WEBTOP_AUDIO}",
-    "GUI_CHROME_DEBUG": "${localEnv:GUI_CHROME_DEBUG}",
-    "GUI_NOVNC_HTTP_PORT": "${localEnv:GUI_NOVNC_HTTP_PORT}",
-    "GUI_WEBTOP_HTTPS_PORT": "${localEnv:GUI_WEBTOP_HTTPS_PORT}",
-    "GUI_CHROME_HTTPS_PORT": "${localEnv:GUI_CHROME_HTTPS_PORT}",
-    "GUI_NOVNC_DEVTOOLS_PORT": "${localEnv:GUI_NOVNC_DEVTOOLS_PORT}",
-    "GUI_WEBTOP_DEVTOOLS_PORT": "${localEnv:GUI_WEBTOP_DEVTOOLS_PORT}",
-    "GUI_CHROME_DEVTOOLS_PORT": "${localEnv:GUI_CHROME_DEVTOOLS_PORT}",
-    "WEBTOP_USER": "${localEnv:WEBTOP_USER}",
-    "WEBTOP_PASSWORD": "${localEnv:WEBTOP_PASSWORD}",
-    "CHROME_USER": "${localEnv:CHROME_USER}",
-    "CHROME_PASSWORD": "${localEnv:CHROME_PASSWORD}",
-    "DEFAULT_TZ": "${localEnv:DEFAULT_TZ}",
-    "DEFAULT_LOCALE": "${localEnv:DEFAULT_LOCALE}",
-    "DEFAULT_LANGUAGE": "${localEnv:DEFAULT_LANGUAGE}",
-    "SUPABASE_INCLUDE": "${localEnv:SUPABASE_INCLUDE}"
+    "PNPM_STORE_PATH": "/home/vscode/.pnpm-store"
   },
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
   ],
   "postCreateCommand": ".devcontainer/scripts/post-create.sh",
-  "postStartCommand": ".devcontainer/scripts/post-start.sh",
   "forwardPorts": [
     6080,
     6081,
@@ -136,7 +116,7 @@
     "tasks": {
       "supabase-up": {
         "label": "Supabase: Start (include-list)",
-        "command": ".devcontainer/scripts/supabase-up.sh"
+        "command": "bash /usr/local/share/devcontainer/features/supabase-stack/bin/supabase-up.sh"
       }
     },
     "vscode": {

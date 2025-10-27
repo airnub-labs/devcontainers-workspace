@@ -1,0 +1,12 @@
+{
+  "id": "docker-in-docker-helpers",
+  "version": "0.1.0",
+  "name": "Docker-in-Docker helpers",
+  "description": "Adds helper logic for inner-docker authentication, Redis bootstrap, and workspace repo cloning hints.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/feature-catalog.md#docker-in-docker-helpers",
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/docker-in-docker"
+  ],
+  "options": {},
+  "postStartCommand": "bash /usr/local/share/devcontainer/features/docker-in-docker-helpers/bin/post-start.sh"
+}

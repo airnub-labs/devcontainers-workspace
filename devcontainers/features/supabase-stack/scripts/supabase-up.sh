@@ -3,7 +3,17 @@ set -euo pipefail
 
 ALL="db,auth,rest,realtime,storage,edge-runtime,studio,imgproxy,analytics,inbucket,pgadmin,vector,cron,smtp"
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+determine_repo_root() {
+  if command -v git >/dev/null 2>&1; then
+    if root=$(git rev-parse --show-toplevel 2>/dev/null); then
+      printf '%s\n' "$root"
+      return 0
+    fi
+  fi
+  pwd
+}
+
+ROOT="$(determine_repo_root)"
 for f in "${ROOT}/.devcontainer/.env.example" "${ROOT}/.env"; do
   if [[ -f "${f}" ]]; then
     while IFS= read -r line || [[ -n "${line}" ]]; do

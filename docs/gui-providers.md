@@ -15,8 +15,8 @@ providers:
 - `chrome` – [LinuxServer Chrome](https://docs.linuxserver.io/images/docker-chrome/)
 
 You can also use the shortcut `GUI_PROVIDERS=all` to launch every desktop at the
-same time. The `.devcontainer/scripts/select-gui-profiles.sh` helper translates
-this list into Docker Compose profiles so that Codespaces or local devcontainers
+same time. The `devcontainers/features/gui-tooling/scripts/update-profiles.sh`
+helper translates this list into Docker Compose profiles so that Codespaces or local devcontainers
 start exactly the sidecars you need.
 
 ## Default ports and authentication
@@ -64,6 +64,6 @@ that they can run simultaneously without conflicts. Use a subset—such as
 ## Supabase include list helper
 
 The `SUPABASE_INCLUDE` variable lists the Supabase services you want to run
-(e.g. `db,auth,rest`). The `.devcontainer/scripts/supabase-up.sh` task translates
-that into the exclusion list expected by `supabase start -x ...`, so you can
+(e.g. `db,auth,rest`). The `devcontainers/features/supabase-stack/scripts/supabase-up.sh`
+task translates that into the exclusion list expected by `supabase start -x ...`, so you can
 control the Supabase stack purely via environment variables.
