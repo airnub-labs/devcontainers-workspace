@@ -31,7 +31,7 @@
       "moby": true,
       "version": "latest"
     },
-    "file:../../features/docker-in-docker-helpers": {},
-    "file:../../features/gui-tooling": {}
+    "ghcr.io/airnub-labs/devcontainers/features/docker-in-docker-helpers:latest": {},
+    "ghcr.io/airnub-labs/devcontainers/features/gui-tooling:latest": {}
   }
 }

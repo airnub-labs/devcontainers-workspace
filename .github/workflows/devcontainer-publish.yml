@@ -44,6 +44,12 @@ jobs:
           namespace_features="${NAMESPACE_BASE}/features"
 
           if [[ "$ref" == templates/* ]]; then
+            version="${ref##*/}"
+            echo "Preparing template feature references for ${version}"
+            node devcontainers/scripts/prepare-template-features.mjs \
+              --namespace "$NAMESPACE_BASE" \
+              --version "$version"
+
             echo "Publishing templates collection to ghcr.io/${namespace_templates}"
             devcontainer templates publish devcontainers/templates --namespace "$namespace_templates"
           elif [[ "$ref" == features/* ]]; then

@@ -43,6 +43,11 @@ jobs:
             -s template-schema.json \
             -d "devcontainers/templates/**/devcontainer-template.json"
 
+      - name: Verify template feature references
+        run: |
+          set -euo pipefail
+          node devcontainers/scripts/prepare-template-features.mjs --dry-run
+
   build-smoke:
     name: Build and smoke test templates
     runs-on: ubuntu-latest
