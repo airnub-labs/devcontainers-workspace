@@ -1,0 +1,27 @@
+{
+  "name": "airnub — novnc",
+  "dockerComposeFile": ["./compose.yaml"],
+  "service": "dev",
+  "runServices": ["dev", "novnc", "redis"],
+
+  "workspaceMount": "source=${localWorkspaceFolder}/../..,target=/workspaces,type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces",
+
+  "features": {
+    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
+    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
+    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
+    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+  },
+
+  "forwardPorts": [9222, 6080, 6379, 54323],
+  "portsAttributes": {
+    "9222": { "label": "Chrome DevTools (CDP)" },
+    "6080": { "label": "Desktop (noVNC)" },
+    "6379": { "label": "Redis" },
+    "54323": { "label": "Supabase Studio" }
+  },
+
+  "postCreateCommand": "bash workspaces/novnc/postCreate.sh",
+  "postStartCommand": "bash workspaces/novnc/postStart.sh"
+}

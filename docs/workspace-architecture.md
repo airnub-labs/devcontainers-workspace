@@ -90,3 +90,8 @@ For a deeper dive into permissions, auth modes, and configuration knobs, read th
 
 * **Connect a local app to Supabase**
   * Use `SUPABASE_URL=http://localhost:54321` along with the publishable/secret keys from `supabase/.env.local` (or the project’s synced `.env.local`).
+
+## Workspaces layout
+- Catalog (publisher): features/, templates/, images/, docs/
+- Workspaces: workspaces/<variant> with its own .devcontainer and .code-workspace.
+- Apps cloned dynamically into /apps via workspaces/<variant>/workspace.blueprint.json

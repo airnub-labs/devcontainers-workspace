@@ -1,0 +1,5 @@
+{
+  "repos": [
+    { "url": "https://github.com/airnub-labs/million-dollar-maps", "path": "apps/million-dollar-maps", "ref": "main" }
+  ]
+}
