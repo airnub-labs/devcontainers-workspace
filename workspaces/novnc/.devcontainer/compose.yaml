@@ -1,11 +1,12 @@
 services:
   dev:
-    build:
-      context: ../../images/dev-web
     image: ghcr.io/airnub-labs/dev-web:latest
+    build:
+      context: ../../../images/dev-web
+      dockerfile: Dockerfile
     user: "vscode"
     volumes:
-      - ../..:/workspaces:cached
+      - ../../../:/workspaces:cached
     shm_size: "2gb"
 
   redis:
@@ -18,5 +19,5 @@ services:
     environment:
       - TZ=Etc/UTC
     ports:
-      - "6080:80"    # Web VNC
+      - "6080:80"
     shm_size: "1gb"
