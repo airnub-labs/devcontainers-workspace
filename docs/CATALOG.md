@@ -12,10 +12,10 @@
 
 ## Templates
 
-| Template | Base Image(s) | Included Features | Notes |
-| --- | --- | --- | --- |
-| `web` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli` | Options toggle the prebuilt image and CDP channel/port. |
-| `nextjs-supabase` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli`, `agent-tooling-clis` (optional) | Supports turnkey Next.js scaffolding with Supabase integrations. |
-| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `agent-tooling-clis` | Managed/none Chrome policy presets sync into `.devcontainer/policies/managed.json`; override via the `chromePolicies` option. |
+| Template | Version | Base Image(s) | Included Features | Notes |
+| --- | --- | --- | --- | --- |
+| `web` | `1.0.0` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli` | Options toggle the prebuilt image and CDP channel/port. |
+| `nextjs-supabase` | `1.0.0` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli`, `agent-tooling-clis` (optional) | Supports turnkey Next.js scaffolding with Supabase integrations. |
+| `classroom-studio-webtop` | `1.0.0` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `agent-tooling-clis` | Managed/none Chrome policy presets sync into `.devcontainer/policies/managed.json`; override via the `chromePolicies` option. |
 
 Refer to [`VERSIONING.md`](../VERSIONING.md) for published tags and digests.

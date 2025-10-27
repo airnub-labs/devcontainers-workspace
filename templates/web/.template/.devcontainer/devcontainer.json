@@ -16,6 +16,17 @@
     },
     "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {}
   },
+  "customizations": {
+    "codespaces": {
+      "repositories": [
+        {
+          "repository": "airnub-labs/lesson-starter",
+          "ref": "main",
+          "clonePath": "Lessons/01-starter"
+        }
+      ]
+    }
+  },
   "forwardPorts": [
     {{templateOption.cdpPort}}
   ],
@@ -24,5 +35,5 @@
       "label": "Chrome DevTools"
     }
   },
-  "postCreateCommand": "./.devcontainer/postCreate.sh"
+  "postCreateCommand": "bash -c \"chmod +x ./scripts/ws-clone && ./scripts/ws-clone .devcontainer/workspace.repos.yaml && ./.devcontainer/postCreate.sh\""
 }

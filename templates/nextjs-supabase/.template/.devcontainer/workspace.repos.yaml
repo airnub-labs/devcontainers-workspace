@@ -1,0 +1,9 @@
+workspace:
+  root: /workspaces
+  defaultRef: main
+  defaultProtocol: https
+repos:
+  - url: https://github.com/airnub-labs/lesson-starter.git
+    path: Lessons/01-starter
+    ref: main
+    depth: 1
