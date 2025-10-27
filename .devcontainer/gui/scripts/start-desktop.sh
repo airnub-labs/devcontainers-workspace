@@ -72,7 +72,7 @@ websockify --web="$NOVNC_ROOT" 0.0.0.0:6080 localhost:5900 &
 CMD=("${CHROME_BIN:-google-chrome}"
   --no-first-run --no-default-browser-check
   --disable-dev-shm-usage --disable-gpu
-  --start-fullscreen
+  --start-fullscreen --no-sandbox
   --remote-debugging-address=0.0.0.0
   --remote-debugging-port="${CDP_PORT}"
 )
