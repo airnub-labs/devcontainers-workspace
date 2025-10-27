@@ -11,6 +11,8 @@
 # Allow the shared devcontainer config (and everything in it)
 !.devcontainer/
 !.devcontainer/**
+/.devcontainer/.env
+/.env
 !supabase/
 !supabase/**
 /supabase/docker/volumes/
