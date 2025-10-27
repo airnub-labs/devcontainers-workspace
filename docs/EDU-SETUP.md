@@ -5,4 +5,4 @@
 3. Use the `policyMode` option when applying the template:
    - `none` keeps Chrome un-managed (best for experimentation).
    - `managed` mounts the selected policy JSON into the sidecar to enforce signin/tabs/password defaults for students.
-4. The primary container ships with the Supabase CLI (with helper wrappers) and optional MCP CLIs for Codex/Claude/Gemini. Supply API keys via Codespaces secrets or `.env` files after the container boots.
+4. The primary container ships with the Supabase CLI (with helper wrappers) and optional agent tooling CLIs for Codex/Claude/Gemini. Supply API keys via Codespaces secrets or `.env` files after the container boots. Add MCP server connections per project using `.devcontainer/postCreate.sh` (or editor project settings) so every workspace configures the same endpoints on first launch.

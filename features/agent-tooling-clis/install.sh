@@ -8,7 +8,7 @@ VERSION_JSON="${VERSIONS:-}"
 VERSION_CODEX="${VERSIONS__CODEX:-}"
 VERSION_CLAUDE="${VERSIONS__CLAUDE:-}"
 VERSION_GEMINI="${VERSIONS__GEMINI:-}"
-FEATURE_DIR="/usr/local/share/devcontainer/features/mcp-clis"
+FEATURE_DIR="/usr/local/share/devcontainer/features/agent-tooling-clis"
 
 mkdir -p "${FEATURE_DIR}"
 
@@ -62,7 +62,7 @@ install_cli() {
     esac
 
     if command -v "${binary}" >/dev/null 2>&1; then
-        echo "[mcp-clis] ${binary} already installed; skipping."
+        echo "[agent-tooling-clis] ${binary} already installed; skipping."
         return 0
     fi
 
@@ -77,15 +77,15 @@ install_cli() {
     elif command -v npm >/dev/null 2>&1; then
         installer=(npm install -g "${target}")
     else
-        echo "[mcp-clis] Neither pnpm nor npm is available to install ${binary}; skipping." >&2
+        echo "[agent-tooling-clis] Neither pnpm nor npm is available to install ${binary}; skipping." >&2
         return 0
     fi
 
-    echo "[mcp-clis] Installing ${target} via ${installer[0]}"
+    echo "[agent-tooling-clis] Installing ${target} via ${installer[0]}"
     if "${installer[@]}"; then
-        echo "[mcp-clis] ${binary} installation complete."
+        echo "[agent-tooling-clis] ${binary} installation complete."
     else
-        echo "[mcp-clis] Failed to install ${binary}; continuing without it." >&2
+        echo "[agent-tooling-clis] Failed to install ${binary}; continuing without it." >&2
     fi
 }
 

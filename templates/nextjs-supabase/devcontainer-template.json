@@ -21,10 +21,10 @@
       "default": 9222,
       "description": "Forwarded port for the headless Chrome CDP endpoint."
     },
-    "includeMcpClis": {
+    "includeAgentToolingClis": {
       "type": "boolean",
       "default": true,
-      "description": "Install optional MCP CLIs (Codex/Claude/Gemini)."
+      "description": "Install optional agent tooling CLIs (Codex/Claude/Gemini)."
     },
     "scaffold": {
       "type": "boolean",
