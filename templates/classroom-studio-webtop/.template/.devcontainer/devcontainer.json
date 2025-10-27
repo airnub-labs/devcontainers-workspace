@@ -21,7 +21,7 @@
   },
   "remoteEnv": {
     "WEBTOP_PORT": "{{templateOption.webtopPort}}",
-    "CHROME_POLICY_FILE": "{{templateOption.chromePolicies}}",
+    "CHROME_POLICY_SOURCE": "{{templateOption.chromePolicies}}",
     "CHROME_POLICY_MODE": "{{templateOption.policyMode}}"
   },
   "postCreateCommand": "./.devcontainer/postCreate.sh"

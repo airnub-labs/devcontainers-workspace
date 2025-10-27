@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCAFFOLD={{templateOption.scaffold}}
+SCAFFOLD="{{templateOption.scaffold}}"
 NEXT_VERSION="{{templateOption.nextVersion}}"
-USE_TS={{templateOption.ts}}
-USE_APP_ROUTER={{templateOption.appRouter}}
-USE_AUTH={{templateOption.auth}}
+USE_TS="{{templateOption.ts}}"
+USE_APP_ROUTER="{{templateOption.appRouter}}"
+USE_AUTH="{{templateOption.auth}}"
 
 if [ "${SCAFFOLD}" = "true" ] && [ ! -f package.json ]; then
   if ! command -v pnpm >/dev/null 2>&1; then

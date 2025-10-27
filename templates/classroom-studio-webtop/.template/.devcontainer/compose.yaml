@@ -15,10 +15,7 @@ services:
       - CUSTOM_USER=vscode
     volumes:
       - ..:/workspace
-      - type: bind
-        source: {{#templateOption.chromePolicies}}{{.}}{{/templateOption.chromePolicies}}{{^templateOption.chromePolicies}}.devcontainer/policies/{{templateOption.policyMode}}.json{{/templateOption.chromePolicies}}
-        target: /etc/opt/chrome/policies/managed/managed.json
-        read_only: true
+      - ./.devcontainer/policies:/etc/opt/chrome/policies/managed:ro
     ports:
       - "${WEBTOP_PORT:-{{templateOption.webtopPort}}}:3000"
     shm_size: "2gb"
