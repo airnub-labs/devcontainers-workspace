@@ -13,6 +13,7 @@
 !.devcontainer/**
 !supabase/
 !supabase/**
+/supabase/docker/volumes/
 
 # (Optional) keep these if you use them:
 !README.md
