@@ -13,6 +13,9 @@ set -euo pipefail
 : "${CDP_PORT:=9222}"
 : "${CHROME_USER_DATA_DIR:=/tmp/chrome-profile-stable}"
 : "${CHROME_ARGS:=}"
+: "${CHROME_WIDTH:=1280}"
+: "${CHROME_HEIGHT:=800}"
+: "${CHROME_FULLSCREEN:=0}"   # 1 = fullscreen, 0 = use window-size
 
 export DISPLAY="${DISPLAY:-:99}"
 
@@ -87,12 +90,24 @@ CHROME_CMD=(
   "${CHROME_BIN:-google-chrome}"
   --no-first-run --no-default-browser-check
   --disable-dev-shm-usage --disable-gpu
-  --window-size="1280,800"
-  #--start-fullscreen
   --user-data-dir="${CHROME_USER_DATA_DIR}"
   --remote-debugging-address=0.0.0.0
   --remote-debugging-port="${CDP_PORT}"
 )
+
+if [ "${CHROME_FULLSCREEN}" = "1" ]; then
+  CHROME_CMD+=(--start-fullscreen)
+else
+  CHROME_CMD+=(
+    --new-window
+    --window-size="${CHROME_WIDTH},${CHROME_HEIGHT}"
+    --window-position=0,0
+  )
+fi
+
+# Optional: if Chrome ignores window-size due to saved bounds in the profile
+# uncomment the next line to reset them on each start:
+# rm -f "${CHROME_USER_DATA_DIR}/Default/Preferences" 2>/dev/null || true
 
 if [ -n "${CHROME_ARGS}" ]; then
   # shellcheck disable=SC2206  # intentional word splitting to honour extra args
@@ -103,5 +118,13 @@ fi
 CHROME_CMD+=("${APP_URL}")
 
 "${CHROME_CMD[@]}" &
+
+if command -v wmctrl >/dev/null 2>&1 && [ "${CHROME_FULLSCREEN}" != "1" ]; then
+  for i in $(seq 1 30); do
+    WID="$(wmctrl -lx 2>/dev/null | awk '/chrom|google-chrome/ {print $1; exit}')"
+    [ -n "$WID" ] && { wmctrl -i -r "$WID" -e "0,0,0,${CHROME_WIDTH},${CHROME_HEIGHT}"; break; }
+    sleep 0.2
+  done
+fi
 
 wait "$XVFB_PID"
