@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schemas.github.com/codespaces/prebuild-configuration",
+  "stack": {
+    "id": "classroom",
+    "name": "AirNub classroom stack",
+    "version": "0.1.0",
+    "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/devcontainers/stacks/README.md"
+  },
+  "generatedAt": "2025-10-27T16:41:40.336Z",
+  "namespace": "ghcr.io/airnub-labs/devcontainers/templates",
+  "templates": [
+    {
+      "id": "base",
+      "name": "AirNub base workspace",
+      "version": "0.1.0",
+      "uri": "ghcr.io/airnub-labs/devcontainers/templates/base:0.1.0",
+      "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/workspace-architecture.md"
+    },
+    {
+      "id": "full-gui",
+      "name": "AirNub full GUI workspace",
+      "version": "0.1.0",
+      "uri": "ghcr.io/airnub-labs/devcontainers/templates/full-gui:0.1.0",
+      "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/workspace-architecture.md"
+    }
+  ]
+}

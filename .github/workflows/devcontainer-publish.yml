@@ -1,0 +1,56 @@
+name: Publish Dev Container Artifacts
+
+on:
+  push:
+    tags:
+      - "features/**"
+      - "templates/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Install Dev Containers CLI
+        run: |
+          set -euo pipefail
+          npm install -g @devcontainers/cli@0.59.0
+
+      - name: Publish Dev Container artifacts
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          NAMESPACE_BASE: airnub-labs/devcontainers
+        run: |
+          set -euo pipefail
+          ref="$REF_NAME"
+          namespace_templates="${NAMESPACE_BASE}/templates"
+          namespace_features="${NAMESPACE_BASE}/features"
+
+          if [[ "$ref" == templates/* ]]; then
+            echo "Publishing templates collection to ghcr.io/${namespace_templates}"
+            devcontainer templates publish devcontainers/templates --namespace "$namespace_templates"
+          elif [[ "$ref" == features/* ]]; then
+            echo "Publishing features collection to ghcr.io/${namespace_features}"
+            devcontainer features publish devcontainers/features --namespace "$namespace_features"
+          else
+            echo "Publishing all features and templates to GHCR"
+            devcontainer features publish devcontainers/features --namespace "$namespace_features"
+            devcontainer templates publish devcontainers/templates --namespace "$namespace_templates"
+          fi
