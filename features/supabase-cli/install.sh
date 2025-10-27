@@ -69,7 +69,20 @@ install_supabase_cli() {
     curl -fsSL "${deb_url}" -o "${tmp_deb}/supabase.deb"
 
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${tmp_deb}/supabase.deb"
+
+    local log_file="/tmp/supabase-cli-install.log"
+    : >"${log_file}"
+
+    if ! DEBIAN_FRONTEND=noninteractive dpkg -i "${tmp_deb}/supabase.deb" >"${log_file}" 2>&1; then
+        echo "[supabase-cli] Resolving Supabase CLI dependencies (see ${log_file})"
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -f \
+            >>"${log_file}" 2>&1
+        DEBIAN_FRONTEND=noninteractive dpkg -i "${tmp_deb}/supabase.deb" >>"${log_file}" 2>&1
+    fi
+
+    if [ ! -s "${log_file}" ]; then
+        rm -f "${log_file}"
+    fi
 
     rm -rf "${tmp_deb}"
     trap - EXIT
