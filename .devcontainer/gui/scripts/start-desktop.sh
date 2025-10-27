@@ -87,7 +87,8 @@ CHROME_CMD=(
   "${CHROME_BIN:-google-chrome}"
   --no-first-run --no-default-browser-check
   --disable-dev-shm-usage --disable-gpu
-  --start-fullscreen
+  --window-size="1280,800"
+  #--start-fullscreen
   --user-data-dir="${CHROME_USER_DATA_DIR}"
   --remote-debugging-address=0.0.0.0
   --remote-debugging-port="${CDP_PORT}"
