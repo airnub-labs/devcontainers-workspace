@@ -13,6 +13,10 @@
 | `devcontainer-features/docker-in-docker-plus` | `1.0.0` | Buildx and BuildKit defaults |
 | `devcontainer-features/cuda-lite` | `1.0.0` | Conditional CUDA runtime |
 | `ghcr.io/airnub-labs/dev-base` | `v1.0.0` | Node 24 + pnpm base |
-| `ghcr.io/airnub-labs/dev-web` | `v1.0.0` | Browser-ready extension |
+| `ghcr.io/airnub-labs/dev-web` | `v1.0.0` | Browser-ready extension (published digest pending) |
 
 Update this table as new versions are pushed.
+
+> **Maintainer note:** The prebuilt `dev-web` image has not been published with a digest yet. Keep template references on
+> `ghcr.io/airnub-labs/dev-web:latest` until the first digest is promoted, then replace the note above with the pinned
+> `@sha256:<digest>` value and update the template documentation matrices.

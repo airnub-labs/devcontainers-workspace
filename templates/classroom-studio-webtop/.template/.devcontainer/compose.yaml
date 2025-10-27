@@ -1,5 +1,6 @@
 services:
   dev:
+    # TODO: swap to ghcr.io/airnub-labs/dev-web@sha256:<digest> once the digest is published.
     image: ghcr.io/airnub-labs/dev-web:latest
     user: "vscode"
     volumes:
