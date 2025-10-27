@@ -1,9 +1,9 @@
 {
-  "name": "airnub — webtop (default)",
-  "dockerComposeFile": ["../workspaces/webtop/.devcontainer/compose.yaml"],
+  "name": "airnub — webtop",
+  "dockerComposeFile": ["../../workspaces/webtop/.devcontainer/compose.yaml"],
   "service": "dev",
   "runServices": ["dev", "webtop", "redis"],
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces,type=bind,consistency=cached",
+  "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
   "features": {
     "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
