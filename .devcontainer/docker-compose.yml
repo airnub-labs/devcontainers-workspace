@@ -45,8 +45,8 @@ services:
     tty: true
     stdin_open: true
     environment:
-      # Let the desktop reach your app running in the devcontainer
-      APP_URL: "http://devcontainer:3000"
+      # Let the desktop reach Supabase Studio running in the devcontainer
+      APP_URL: "http://devcontainer:54323"
 
       # Chrome profile & extra flags (optional, safe for single-user Codespaces)
       CHROME_USER_DATA_DIR: "/tmp/chrome-profile-stable"
@@ -89,6 +89,7 @@ services:
       - WEBTOP_AUDIO=${WEBTOP_AUDIO:-1}
       - GUI_CHROME_DEBUG=${GUI_CHROME_DEBUG:-1}
       - GUI_WEBTOP_DEVTOOLS_PORT=${GUI_WEBTOP_DEVTOOLS_PORT:-9223}
+      - WEBTOP_START_URL=http://devcontainer:54323
     volumes:
       - webtop_home:/config
       - ./.devcontainer/gui/webtop-devtools.sh:/config/custom-cont-init.d/50-devtools.sh:ro
@@ -106,6 +107,7 @@ services:
       - PASSWORD=${CHROME_PASSWORD:-change-me}
       - GUI_CHROME_DEBUG=${GUI_CHROME_DEBUG:-1}
       - GUI_CHROME_DEVTOOLS_PORT=${GUI_CHROME_DEVTOOLS_PORT:-9224}
+      - CHROME_CLI=http://devcontainer:54323
     volumes:
       - chrome_home:/config
       - ./.devcontainer/gui/chrome-devtools.sh:/config/custom-cont-init.d/50-devtools.sh:ro
