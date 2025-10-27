@@ -1,11 +1,12 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-ARG DEBIAN_FRONTEND=noninteractive
 ARG DEFAULT_TZ="Europe/Dublin"
 ARG DEFAULT_LOCALE="en_IE.UTF-8"
 ARG DEFAULT_LANGUAGE="en_IE:en"
 
 # Base deps + TZ/locale + X11/WM + noVNC + audio + utils + fonts
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -18,7 +19,7 @@ RUN set -eux; \
     # Timezone & locale
     ln -fs "/usr/share/zoneinfo/${DEFAULT_TZ}" /etc/localtime; \
     dpkg-reconfigure -f noninteractive tzdata; \
-    sed -i "s/^# \(${DEFAULT_LOCALE//\//\/} \)UTF-8/\1UTF-8/" /etc/locale.gen || true; \
+    sed -i "s|^# \(${DEFAULT_LOCALE} \)UTF-8|\1UTF-8|" /etc/locale.gen || true; \
     grep -q "^${DEFAULT_LOCALE} UTF-8$" /etc/locale.gen || echo "${DEFAULT_LOCALE} UTF-8" >> /etc/locale.gen; \
     locale-gen; \
     update-locale LANG="${DEFAULT_LOCALE}" LC_ALL="${DEFAULT_LOCALE}" LANGUAGE="${DEFAULT_LANGUAGE}"; \
