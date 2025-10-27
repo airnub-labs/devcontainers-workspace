@@ -28,8 +28,8 @@
       "moby": true,
       "version": "latest"
     },
-    "file:../../features/docker-in-docker-helpers": {},
-    "file:../../features/supabase-stack": {}
+    "ghcr.io/airnub-labs/devcontainers/features/docker-in-docker-helpers:latest": {},
+    "ghcr.io/airnub-labs/devcontainers/features/supabase-stack:latest": {}
   },
   "forwardPorts": [
     3000,
