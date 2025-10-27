@@ -1,6 +1,6 @@
 # MCP CLIs Feature
 
-Installs Model Context Protocol client CLIs for Codex, Claude, and Gemini using `pnpm`. Each CLI can be toggled individually and version-pinned.
+Installs Model Context Protocol client CLIs for Codex, Claude, and Gemini using the first available Node package manager (`pnpm` preferred, `npm` fallback). Each CLI can be toggled individually and version-pinned.
 
 ## Options
 
@@ -11,4 +11,4 @@ Installs Model Context Protocol client CLIs for Codex, Claude, and Gemini using 
 | `installGemini` | boolean | `false` | Install the Gemini CLI (`@google/gemini-cli`). |
 | `versions` | object | `{}` | Optional map of `{ codex, claude, gemini }` → version strings. |
 
-The feature skips installation if a CLI binary is already on the `PATH` or if `pnpm` is unavailable.
+The feature skips installation if a CLI binary is already on the `PATH` or if neither `pnpm` nor `npm` is available.

@@ -27,6 +27,9 @@
       "description": "Supabase project reference (exported as SUPABASE_PROJECT_REF if provided)."
     }
   },
+  "containerEnv": {
+    "SUPABASE_PROJECT_REF": "${projectRef}"
+  },
   "installsAfter": [
     "ghcr.io/devcontainers/features/common-utils"
   ]

@@ -21,31 +21,59 @@ jobs:
           - name: web
             path: templates/web
             service: devcontainer
+            cdpPort: 9222
           - name: nextjs-supabase
             path: templates/nextjs-supabase
             service: devcontainer
+            cdpPort: 9222
           - name: classroom-studio-webtop
             path: templates/classroom-studio-webtop
             service: dev
+            webtopService: webtop
+            webtopPort: 3001
     steps:
       - uses: actions/checkout@v4
       - name: Install Dev Containers CLI
         run: npm install -g @devcontainers/cli
       - name: Build template
+        env:
+          TEMPLATE_PATH: ${{ matrix.path }}
         run: |
           set -euo pipefail
           workdir="$(mktemp -d)"
-          rsync -a "${{ matrix.path }}/.template/" "${workdir}/"
+          template_id="file:${GITHUB_WORKSPACE}/${TEMPLATE_PATH}"
+          devcontainer templates apply --template-id "${template_id}" --workspace-folder "${workdir}"
           devcontainer build --workspace-folder "${workdir}"
       - name: Smoke test
+        env:
+          TEMPLATE_PATH: ${{ matrix.path }}
+          TEMPLATE_SERVICE: ${{ matrix.service }}
+          TEMPLATE_CDP_PORT: ${{ matrix.cdpPort || '' }}
+          TEMPLATE_WEBTOP_SERVICE: ${{ matrix.webtopService || '' }}
+          TEMPLATE_WEBTOP_PORT: ${{ matrix.webtopPort || '' }}
         run: |
           set -euo pipefail
           workdir="$(mktemp -d)"
-          rsync -a "${{ matrix.path }}/.template/" "${workdir}/"
-          SERVICE_FLAG=""
-          if [ "${{ matrix.service }}" != "devcontainer" ]; then
-            SERVICE_FLAG="--service ${{ matrix.service }}"
+          template_id="file:${GITHUB_WORKSPACE}/${TEMPLATE_PATH}"
+          devcontainer templates apply --template-id "${template_id}" --workspace-folder "${workdir}"
+
+          service_flag=""
+          if [ -n "${TEMPLATE_SERVICE}" ] && [ "${TEMPLATE_SERVICE}" != "devcontainer" ]; then
+            service_flag="--service ${TEMPLATE_SERVICE}"
           fi
-          devcontainer up --workspace-folder "${workdir}" ${SERVICE_FLAG}
-          devcontainer exec --workspace-folder "${workdir}" ${SERVICE_FLAG} -- bash -lc "supabase --version"
-          devcontainer down --workspace-folder "${workdir}" ${SERVICE_FLAG}
+
+          cleanup() {
+            devcontainer down --workspace-folder "${workdir}" ${service_flag} || true
+          }
+          trap cleanup EXIT
+
+          devcontainer up --workspace-folder "${workdir}" ${service_flag}
+          devcontainer exec --workspace-folder "${workdir}" ${service_flag} -- bash -lc "supabase --version"
+
+          if [ -n "${TEMPLATE_CDP_PORT}" ]; then
+            devcontainer exec --workspace-folder "${workdir}" ${service_flag} -- bash -lc "curl -fsS http://127.0.0.1:${TEMPLATE_CDP_PORT}/json/version >/dev/null"
+          fi
+
+          if [ -n "${TEMPLATE_WEBTOP_SERVICE}" ] && [ -n "${TEMPLATE_WEBTOP_PORT}" ]; then
+            devcontainer exec --workspace-folder "${workdir}" ${service_flag} -- bash -lc "curl -fsS http://webtop:3000 >/dev/null"
+          fi

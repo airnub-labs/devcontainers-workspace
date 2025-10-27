@@ -16,7 +16,15 @@ if [ "${SCAFFOLD}" = "true" ] && [ ! -f package.json ]; then
   TS_FLAG=$([ "${USE_TS}" = "true" ] && echo "--ts" || echo "--js")
   APP_FLAG=$([ "${USE_APP_ROUTER}" = "true" ] && echo "--app" || echo "--pages")
 
-  pnpm dlx create-next-app@"${NEXT_VERSION}" ${TS_FLAG} ${APP_FLAG} --use-pnpm --no-tailwind --eslint --src-dir --import-alias "@/*" .
+  pnpm dlx create-next-app@"${NEXT_VERSION}" \
+    ${TS_FLAG} \
+    ${APP_FLAG} \
+    --use-pnpm \
+    --no-tailwind \
+    --eslint \
+    --src-dir \
+    --import-alias "@/*" \
+    .
 
   pnpm add @supabase/supabase-js
   if [ "${USE_AUTH}" = "true" ]; then

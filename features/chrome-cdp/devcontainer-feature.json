@@ -17,6 +17,9 @@
       "description": "Port exposed by the Chrome DevTools Protocol server."
     }
   },
+  "containerEnv": {
+    "CDP_PORT": "${port}"
+  },
   "installsAfter": [
     "ghcr.io/devcontainers/features/common-utils"
   ]

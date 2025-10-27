@@ -1,19 +1,30 @@
 {
   "name": "nextjs-supabase",
+{{#templateOption.usePrebuiltImage}}
   "image": "ghcr.io/airnub-labs/dev-web:latest",
+{{/templateOption.usePrebuiltImage}}
+{{^templateOption.usePrebuiltImage}}
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+{{/templateOption.usePrebuiltImage}}
   "features": {
     "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": {
-      "channel": "stable",
-      "port": 9222
+      "channel": "{{templateOption.chromeChannel}}",
+      "port": {{templateOption.cdpPort}}
     },
     "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
       "manageLocalStack": true
-    },
+    }{{#templateOption.includeMcpClis}},
     "ghcr.io/airnub-labs/devcontainer-features/mcp-clis:1": {}
+    {{/templateOption.includeMcpClis}}
   },
-  "forwardPorts": [9222],
+  "forwardPorts": [
+    {{templateOption.cdpPort}}
+  ],
   "portsAttributes": {
-    "9222": {
+    "{{templateOption.cdpPort}}": {
       "label": "Chrome DevTools"
     }
   },

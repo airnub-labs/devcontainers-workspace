@@ -1,3 +1,8 @@
 # Next.js + Supabase Template
 
-Extends the base web workspace with optional Next.js scaffolding. Toggle the `scaffold` option to create a project on first boot, specify the Next.js version, and choose TypeScript/App Router/Auth defaults.
+Extends the base web workspace with optional Next.js scaffolding. Template options let you:
+
+- Reuse the published `dev-web` image or build locally (`usePrebuiltImage`).
+- Select the Chrome channel/port for the CDP feature (`chromeChannel`, `cdpPort`).
+- Decide whether to install the MCP CLI suite (`includeMcpClis`).
+- Scaffold a Next.js app with version, TypeScript, App Router, and Supabase auth defaults (`scaffold`, `nextVersion`, `ts`, `appRouter`, `auth`).

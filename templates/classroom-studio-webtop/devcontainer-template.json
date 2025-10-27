@@ -18,8 +18,8 @@
     },
     "chromePolicies": {
       "type": "string",
-      "default": ".devcontainer/policies/managed.json",
-      "description": "Path to a JSON policy file mounted into the webtop container when policyMode=managed."
+      "default": "",
+      "description": "Override the JSON policy file mounted into the webtop container. Leave blank to follow the selected policy mode."
     }
   }
 }
