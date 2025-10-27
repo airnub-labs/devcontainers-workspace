@@ -18,15 +18,12 @@ This document explains **how the meta workspace clones project repos** in a sing
 
 1. **Permissions ≠ Clones.**
 
-   * `devcontainer.json → customizations.codespaces.repositories` tells **which repos the Codespace token may access**.
-   * A **clone script** actually performs the clones.
+   * `.devcontainer/devcontainer.json → customizations.codespaces.repositories` tells **which repos the Codespace token may access**.
+   * `workspace.blueprint.json` records **which repos should actually be cloned**.
 
-2. **Two ways to decide *what* to clone** (we support both):
+2. **Blueprint manifests drive the clone list.** Each workspace variant (`workspaces/webtop`, `workspaces/novnc`, …) owns a blueprint that lists `{ url, path, ref? }` entries. Paths should live under `/apps` so the clones stay ignored by Git.
 
-   * **Explicit‑only (recommended):** clone the repos explicitly listed as `owner/repo` in `devcontainer.json`.
-   * **Intersection mode:** clone the repos that are **both** permitted in `devcontainer.json` **and** listed as folders in the VS Code `*.code-workspace` file.
-
-3. **Wildcards are for permissions, not a manifest.** You may grant `owner/*` in `devcontainer.json` for convenience. We only expand that wildcard into concrete repos if you opt in (see `ALLOW_WILDCARD`).
+3. **Permissions still gate access.** Grant each blueprint repo at least `contents: read`. Wildcards in the permissions block are fine for convenience but do **not** trigger automatic cloning on their own.
 
 ---
 
@@ -35,11 +32,16 @@ This document explains **how the meta workspace clones project repos** in a sing
 ```text
 <workspace root>
   .devcontainer/
-    devcontainer.json                # declares Codespaces repo permissions
-    scripts/
-      post-create.sh                 # main post-create entrypoint (already in use)
-      post-start.sh                  # optional checks; shared stack bootstrap
-      clone-from-devcontainer-repos.sh  # the clone helper (idempotent)
+    devcontainer.json                # bridge that points at workspaces/webtop/.devcontainer
+  workspaces/
+    webtop/
+      .devcontainer/
+        devcontainer.json            # concrete config used by the default variant
+      postCreate.sh                  # post-create entrypoint that applies the blueprint
+      postStart.sh                   # optional startup hook
+      workspace.blueprint.json       # manifest of repos cloned into /apps
+    novnc/
+      …
   airnub-labs.code-workspace         # multi-root list of folders you want open
 ```
 
@@ -49,50 +51,42 @@ This document explains **how the meta workspace clones project repos** in a sing
 
 ## How cloning works (step by step)
 
-1. **Post-create runs** inside the container and calls `scripts/clone-from-devcontainer-repos.sh`.
-2. The script reads **`devcontainer.json → customizations.codespaces.repositories`** and collects keys:
+1. **`postCreate.sh` runs** inside the container after VS Code provisions features.
+2. The script reads **`workspace.blueprint.json`** and collects each `{ url, path, ref? }` entry.
+3. For every repo:
 
-   * Concrete entries `owner/repo` → always cloned.
-   * Wildcards `owner/*` → *ignored by default* (you can enable expansion; see below).
-3. For each repo to clone (using `$WORKSPACE_ROOT`, which defaults to `/workspaces` but is set to `$ROOT` — for example `/airnub-labs` — in this meta workspace):
+   * If the target path already contains a Git repo → log `[skip] exists: <path>` and continue.
+   * Else clone to the requested location and, if `ref` is set, check it out.
 
-   * If `$WORKSPACE_ROOT/<repo_name>/.git` already exists → **fetch/prune** (no merge) and continue.
-   * Else clone to `$WORKSPACE_ROOT/<repo_name>` using the best available auth mode (see next section).
+   After the loop, helpers such as `airnub use` can inspect `/apps` to locate projects. Re-running the script is safe—it only clones what’s missing.
 
-   After the loop, the helper seeds `./.airnub-current-project` with the first repo it touched so the bundled `airnub` CLI has a sensible default (falling back to `./supabase` when nothing was cloned).
-
-> **Recursion guard:** If `WORKSPACE_ROOT` resolves *inside* this meta workspace folder, the helper logs a warning and falls back to the parent directory so it doesn’t try to create paths like `airnub-labs/airnub-labs`. Likewise, any individual repo whose target would land inside the meta repo is skipped.
->
-> This workspace intentionally sets `WORKSPACE_ROOT` to the meta repo root so that cloned projects appear in the same folder tree as local development. The helper detects this exact match, logs an informational message, and relies on the repo’s top-level `.gitignore` (which ignores everything except the meta tooling) to keep the nested clones untracked.
-
-The clone step is **idempotent** and **non-destructive**.
+The clone step is **idempotent** and **non-destructive**. Keep blueprint paths under `/apps` (which is git-ignored) so clones never pollute commits.
 
 ---
 
-## Authentication order (auto mode)
+## Authentication expectations
 
-The script picks the first viable method:
+Clones rely on the standard Git credential chain inside the container:
 
-1. **`gh` (GitHub CLI)** — if authenticated in the container/Codespace.
-2. **SSH** — if an agent is available and GitHub host keys are accepted.
-3. **HTTPS+PAT** — if `GH_MULTI_REPO_PAT` is set (token used only during clone; the URL is reset to `https://github.com/owner/repo.git`).
-4. **HTTPS (unauthenticated)** — works for public repos only.
+1. **GitHub CLI (`gh auth status`)** — recommended; Codespaces pre-authenticates this.
+2. **SSH agent** — works if you’ve forwarded keys or configured Codespaces `forwardPorts` secrets.
+3. **HTTPS** — falls back to any cached credentials or prompts (public repos work without auth).
 
-You can force a mode via `CLONE_WITH=gh|ssh|https|https-pat`.
+If you need to script non-interactive HTTPS clones, set `GH_TOKEN`/`GITHUB_TOKEN` or configure the Git credential helper before rerunning `postCreate.sh`.
 
 ---
 
-## Configuration knobs (env vars)
+## Configuration knobs
 
-| Variable              | Default                           | What it does                                            |
-| --------------------- | --------------------------------- | ------------------------------------------------------- |
-| `WORKSPACE_ROOT`      | `/workspaces` *(overridden to `$ROOT`, e.g. `/airnub-labs`, in this workspace)* | Target directory for all clones                         |
-| `DEVCONTAINER_FILE`   | `.devcontainer/devcontainer.json` | Where we read the permissions block                     |
-| `WORKSPACE_FILE`      | *(auto‑discover)*                 | Path to `*.code-workspace` (used for hints only)        |
-| `CLONE_WITH`          | `auto`                            | `gh`, `ssh`, `https`, or `https-pat`                    |
-| `GH_MULTI_REPO_PAT`   | *(unset)*                         | Token for `https-pat` mode                              |
-| `ALLOW_WILDCARD`      | `0`                               | If `1`, expand `owner/*` with `gh repo list`            |
-| `CLONE_ON_START`      | `false`                           | If `true`, `post-start.sh` will re-run the clone helper |
+Most behaviour is declarative now:
+
+| Setting | Where | Purpose |
+| --- | --- | --- |
+| `customizations.codespaces.repositories` | `.devcontainer/devcontainer.json` | Grants the Codespace token permission to access repos listed in blueprints. |
+| `workspace.blueprint.json` | `workspaces/<variant>/` | Lists repos to clone (URL, `/apps/...` path, optional `ref`). |
+| `postStart.sh` | `workspaces/<variant>/` | Optional follow-up tasks (e.g., starting Supabase) once the container is running. |
+
+Environment overrides from the legacy clone helper are no longer required.
 
 ---
 
@@ -149,18 +143,9 @@ Your `*.code-workspace` defines what folders you want to see in VS Code. It no l
 
 ## Script wiring (already set up)
 
-We call the clone helper **from `post-create.sh`** so your existing workflow stays intact. The call looks like this:
+`workspaces/<variant>/postCreate.sh` invokes an inline Node script that parses the blueprint and runs `git clone` for each entry. Because it lives in the repo, you can tweak it per variant if you need additional bootstrap steps (for example seeding data after clones finish).
 
-```bash
-# In .devcontainer/scripts/post-create.sh
-if [[ -x "$HERE/clone-from-devcontainer-repos.sh" ]]; then
-  ALLOW_WILDCARD=0 \
-  WORKSPACE_ROOT="$ROOT" \
-  bash "$HERE/clone-from-devcontainer-repos.sh" || log "Clone step skipped or failed (non-fatal)"
-fi
-```
-
-Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON_START=true`, or it will log a helpful hint if any workspace repos are missing.
+`postStart.sh` remains available for optional tasks (starting Supabase, sanity checks, etc.) but no longer needs to manage cloning.
 
 ---
 
@@ -169,14 +154,14 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 1. Open the workspace in the container; in a terminal run:
 
    ```bash
-   ls /airnub-labs
+   ls /apps
    ```
 
-   You should see the repos listed in your workspace (and/or explicit permissions) as directories.
+   You should see the repos listed in your blueprint cloned into `/apps` (if none are listed, the directory is empty).
 2. Inside one repo, confirm the remote:
 
    ```bash
-   cd /airnub-labs/million-dollar-maps
+   cd /apps/million-dollar-maps
    git remote -v
    ```
 
@@ -193,23 +178,22 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 
 * **Use wildcards for convenience, not for cloning.** Keep `owner/*` as a permission superset; leave `ALLOW_WILDCARD=0` unless you intentionally want to clone the entire org.
 
-* **Private repos not cloning?** Ensure they are explicitly listed in the permissions block (or covered by a wildcard **and** `ALLOW_WILDCARD=1`), and that your chosen auth method can access them.
+* **Private repos not cloning?** Ensure they are explicitly listed in the permissions block and that your credential helper can access them.
 
-* **Idempotent by design.** Re-running the helper won’t overwrite local work; it only `fetch --all --prune` on existing clones.
+* **Idempotent by design.** Re-running the helper won’t overwrite local work; it skips directories that already contain a Git repo.
 
-* **Security:** In `https-pat` mode, the token is used only during clone; the script resets the remote to a clean URL.
+* **Security:** Credentials never hit disk; `git clone` relies on your authenticated helper (GitHub CLI, SSH agent, or HTTPS).
 
 ---
 
 ## Manual commands (handy)
 
 ```bash
-# Re-run clone step (explicit list)
-ALLOW_WILDCARD=0 \
-bash .devcontainer/scripts/clone-from-devcontainer-repos.sh
+# Re-run clone step for the default variant
+bash workspaces/webtop/postCreate.sh
 
-# Force a specific auth mode
-CLONE_WITH=ssh bash .devcontainer/scripts/clone-from-devcontainer-repos.sh
+# Re-run clone step for the noVNC variant
+bash workspaces/novnc/postCreate.sh
 ```
 
 ---
@@ -220,4 +204,4 @@ CLONE_WITH=ssh bash .devcontainer/scripts/clone-from-devcontainer-repos.sh
 * **Predictable & minimal maintenance:** explicit repos yield deterministic clones; the workspace file is the visible UI list; no submodules or custom mapping files.
 * **Portable locally and in Codespaces:** same script and wiring work in both environments.
 
-If you have questions or need to add another project, update the permissions block and (optionally) the workspace file, then re-run the clone helper or create a fresh Codespace.
+If you have questions or need to add another project, update the permissions block and the relevant blueprint, then rerun the variant’s `postCreate.sh` or create a fresh Codespace.

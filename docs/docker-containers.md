@@ -2,7 +2,7 @@
 
 This repository relies on two layers of containers:
 
-1. **Outer Dev Container** – defined by VS Code in [`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json) and [`.devcontainer/docker-compose.yml`](../.devcontainer/docker-compose.yml). It installs the tooling used across every project.
+1. **Outer Dev Container** – defined by the workspace variant in [`workspaces/webtop/.devcontainer/devcontainer.json`](../workspaces/webtop/.devcontainer/devcontainer.json) (the root `.devcontainer/devcontainer.json` simply bridges to it). It installs the tooling used across every project.
 2. **Inner Docker daemon** – provided by the `docker-in-docker` feature so the Dev Container can launch services such as the shared Supabase stack.
 
 Understanding the responsibilities of each layer makes it easier to tune performance, persist the right data, and troubleshoot issues.
@@ -11,19 +11,11 @@ Understanding the responsibilities of each layer makes it easier to tune perform
 
 ## Outer Dev Container
 
-The Dev Container is launched via Docker Compose with the project name `airnub-labs` (or the value of `WORKSPACE_STACK_NAME`). Key settings:
+The Dev Container is launched via Docker Compose with the project name `airnub-labs`. Key settings from [`compose.yaml`](../workspaces/webtop/.devcontainer/compose.yaml):
 
-- **Workspace mount** – The repository root is mounted at `${WORKSPACE_CONTAINER_ROOT:-/airnub-labs}`. A `:cached` flag is present for backwards compatibility but is optional on modern Docker (virtiofs handles synchronization efficiently).
-- **Named volume for DinD cache** – `dind-data:/var/lib/docker` keeps the inner Docker images and build cache between sessions. This speeds up Supabase restarts and other DinD workloads. When it grows too large, run `docker system df`, `docker image prune -f`, `docker builder prune -af`, and `docker volume prune -f` _inside_ the Dev Container to recover space.
-- **Additional feature volumes** – Node’s pnpm store is persisted in `global-pnpm-store`. See the `mounts` section in [`devcontainer.json`](../.devcontainer/devcontainer.json) for details.
-
-You can customise container-wide behaviour by setting environment variables before the Dev Container starts:
-
-| Variable | Purpose |
-| --- | --- |
-| `WORKSPACE_CONTAINER_ROOT` | Changes the mount point where the repo appears inside the container. |
-| `WORKSPACE_STACK_NAME` | Updates the Compose project name used by `.devcontainer/docker-compose.yml` and downstream scripts. |
-| `DEVCONTAINER_PROJECT_NAME` | Overrides the project label written to logs. |
+- **Workspace mount** – The repository root is mounted at `/workspaces` for the dev container and `/workspace` for GUI sidecars. Apps cloned from blueprints land in `/apps` (a bind mount inside the repo, ignored by Git).
+- **Shared memory** – `shm_size: "2gb"` avoids Chrome crashes in the GUI sidecars.
+- **Redis sidecar** – Included in every variant so the shared runtime is always available.
 
 ---
 
@@ -54,7 +46,7 @@ All folders under `supabase/docker/volumes/` are ignored by Git so you can safel
 
 ### Directory bootstrap
 
-[`post-start.sh`](../.devcontainer/scripts/post-start.sh) creates the required directories just before running `supabase start`:
+[`postStart.sh`](../workspaces/webtop/postStart.sh) creates any required directories just before running `supabase start` (if you enable it):
 
 ```bash
 mkdir -p "$SUPABASE_PROJECT_DIR/docker/volumes/db" \
@@ -74,8 +66,8 @@ You can customise the prefix by setting `WORKSPACE_STACK_NAME` before the Dev Co
 ## Customising the setup
 
 1. **Adjust Supabase services** – Edit [`supabase/docker/docker-compose.override.yml`](../supabase/docker/docker-compose.override.yml) to add, remove, or retarget bind mounts. Remember to create the new directories in `post-start.sh`.
-2. **Change persistence strategy** – Remove `dind-data` from [`docker-compose.yml`](../.devcontainer/docker-compose.yml) if you prefer the inner Docker cache to reset on each rebuild, or mount a different named volume if you want project-specific caches.
-3. **Tune resources** – Update `.devcontainer/docker-compose.yml` to set `shm_size`, CPU limits, or memory reservations when working with resource-intensive tooling.
-4. **Disable DinD** – If your environment forbids privileged containers (e.g., certain Codespaces policies), remove `privileged: true` and the DinD feature from [`devcontainer.json`](../.devcontainer/devcontainer.json). In that case configure Supabase to use a remote Docker host or a sidecar service instead.
+2. **Change persistence strategy** – Adjust the `dind-data` volume in [`compose.yaml`](../workspaces/webtop/.devcontainer/compose.yaml) if you prefer the inner Docker cache to reset on each rebuild, or mount a different named volume for project-specific caches.
+3. **Tune resources** – Update the variant’s `compose.yaml` to set `shm_size`, CPU limits, or memory reservations when working with resource-intensive tooling.
+4. **Disable DinD** – If your environment forbids privileged containers (e.g., certain Codespaces policies), remove the Docker-in-Docker feature from [`devcontainer.json`](../workspaces/webtop/.devcontainer/devcontainer.json). In that case configure Supabase to use a remote Docker host or a sidecar service instead.
 
 For more information on how the shared Supabase stack operates once it is running, see [`docs/shared-supabase.md`](./shared-supabase.md).
