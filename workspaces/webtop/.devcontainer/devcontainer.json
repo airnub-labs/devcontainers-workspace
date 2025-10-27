@@ -1,0 +1,41 @@
+{
+  "name": "airnub — webtop",
+  "dockerComposeFile": ["./compose.yaml"],
+  "service": "dev",
+  "runServices": ["dev", "webtop", "redis"],
+
+  "workspaceMount": "source=${localWorkspaceFolder}/../..,target=/workspaces,type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces",
+
+  "features": {
+    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
+    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
+    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
+    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+  },
+
+  "forwardPorts": [9222, 3001, 6379, 54323],
+  "portsAttributes": {
+    "9222": { "label": "Chrome DevTools (CDP)" },
+    "3001": { "label": "Desktop (webtop)" },
+    "6379": { "label": "Redis" },
+    "54323": { "label": "Supabase Studio" }
+  },
+
+  "postCreateCommand": "bash workspaces/webtop/postCreate.sh",
+  "postStartCommand": "bash workspaces/webtop/postStart.sh",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "files.exclude": { "**/.git": true, "**/node_modules": true },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "github.vscode-github-actions"
+      ]
+    }
+  }
+}

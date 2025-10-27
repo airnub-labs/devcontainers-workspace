@@ -13,9 +13,6 @@
 !.devcontainer/**
 /.devcontainer/.env
 /.env
-!supabase/
-!supabase/**
-/supabase/docker/volumes/
 
 # (Optional) keep these if you use them:
 !README.md
@@ -23,6 +20,9 @@
 !.github/**
 !scripts/
 !scripts/**
+!workspaces/
+!workspaces/**
 
 *.DS_Store
 .airnub-current-project
+apps/

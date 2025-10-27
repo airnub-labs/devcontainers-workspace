@@ -1,0 +1,10 @@
+{
+  "folders": [
+    { "path": "../../workspaces/_shared/supabase" },
+    { "path": "../../apps" },
+    { "path": "../../docs" }
+  ],
+  "settings": {
+    "files.exclude": { "**/.git": true, "**/node_modules": true }
+  }
+}
