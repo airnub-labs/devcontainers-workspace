@@ -6,27 +6,51 @@ set -euo pipefail
 : "${NOVNC_RESIZE:=scale}"       # scale | downscale | remote | off
 : "${NOVNC_RECONNECT:=1}"
 : "${NOVNC_VIEW_ONLY:=0}"
+: "${NOVNC_PATH:=websockify}"
 : "${APP_URL:=about:blank}"
 : "${NOVNC_AUDIO_ENABLE:=0}"     # 1 to enable audio bridge
 : "${NOVNC_AUDIO_PORT:=6081}"    # used if audio is enabled
-: "${NOVNC_PATH:=websockify}"    # websocket path used by noVNC
+: "${CDP_PORT:=9222}"
+: "${CHROME_USER_DATA_DIR:=/tmp/chrome-profile-stable}"
+: "${CHROME_ARGS:=}"
 
-export DISPLAY=${DISPLAY:-:99}
+export DISPLAY="${DISPLAY:-:99}"
 
-# Chrome DevTools Protocol (CDP)
-CDP_PORT="${CDP_PORT:-9222}"
-# Optional persistent profile (safe in single-user Codespaces)
-CHROME_USER_DATA_DIR="${CHROME_USER_DATA_DIR:-}"
-# Optional extra Chrome flags (space-separated)
-CHROME_ARGS="${CHROME_ARGS:-}"
+# --------------- Stable Xauthority for :99 ---------------
+XNUM="${DISPLAY#:}"
+XAUTHORITY="${XAUTHORITY:-/tmp/Xvfb${XNUM}.Xauthority}"
+export DISPLAY=":${XNUM}"
+export XAUTHORITY
 
-# --------------- Virtual desktop & WM ---------------
-Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &
+mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+
+if [ -f "/tmp/.X${XNUM}-lock" ]; then
+  LOCKPID="$(cat "/tmp/.X${XNUM}-lock" 2>/dev/null || true)"
+  if ! ps -p "${LOCKPID:-}" >/dev/null 2>&1; then
+    rm -f "/tmp/.X${XNUM}-lock" "/tmp/.X11-unix/X${XNUM}" || true
+  fi
+fi
+
+if ! xauth -f "$XAUTHORITY" list :"$XNUM" >/dev/null 2>&1; then
+  COOKIE="$(command -v mcookie >/dev/null 2>&1 && mcookie || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  xauth -f "$XAUTHORITY" add :"$XNUM" MIT-MAGIC-COOKIE-1 "$COOKIE"
+  chmod 600 "$XAUTHORITY"
+fi
+
+# --------------- Virtual display & WM ---------------
+Xvfb ":${XNUM}" -screen 0 1920x1080x24 -nolisten tcp -auth "$XAUTHORITY" &
+XVFB_PID=$!
 sleep 0.5
+
 fluxbox &
 
 # ------------------- VNC server ---------------------
-x11vnc -forever -shared -rfbport 5900 -display :99 -nopw -quiet &
+while true; do
+  x11vnc -display ":${XNUM}" -auth "$XAUTHORITY" \
+         -forever -shared -rfbport 5900 -nopw -quiet && break
+  echo "[gui] x11vnc exited; retrying in 2s..."
+  sleep 2
+done &
 
 # --------- Prepare noVNC root with redirect --------
 NOVNC_ROOT=/opt/novnc
@@ -37,18 +61,12 @@ if [ ! -d "$NOVNC_ROOT" ]; then
   fi
 fi
 
-# Apply managed Chrome policy if available // TODO: Enable chrome policy
-# if command -v apply-chrome-policy.sh >/dev/null 2>&1; then
-#   apply-chrome-policy.sh || echo "[gui] Chrome policy application failed (continuing)"
-# fi
-
-# Build redirect query string
-NOVNC_QUERY="autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}"
+# Build redirect query string (include audio when enabled)
+NOVNC_QUERY="autoconnect=${NOVNC_AUTOCONNECT}&reconnect=${NOVNC_RECONNECT}&resize=${NOVNC_RESIZE}&view_only=${NOVNC_VIEW_ONLY}&path=${NOVNC_PATH}"
 if [ "${NOVNC_AUDIO_ENABLE}" = "1" ]; then
-  NOVNC_QUERY+="&audio_port=${NOVNC_AUDIO_PORT}"
+  NOVNC_QUERY="${NOVNC_QUERY}&audio_port=${NOVNC_AUDIO_PORT}"
 fi
 
-# Redirect index.html to vnc.html with desired params
 cat >"$NOVNC_ROOT/index.html" <<EOF
 <!doctype html><meta charset="utf-8">
 <title>noVNC</title>
@@ -56,10 +74,6 @@ cat >"$NOVNC_ROOT/index.html" <<EOF
 <script>location.replace('./vnc.html?${NOVNC_QUERY}');</script>
 EOF
 
-# (Optional) setup Fluxbox defaults/menu/startup (no-ops if it fails)
-fluxbox-setup.sh || true
-
-# (Optional) audio bridge (adds <script> to vnc.html)
 if [ "${NOVNC_AUDIO_ENABLE}" = "1" ]; then
   NOVNC_AUDIO_PORT_EFFECTIVE="${NOVNC_AUDIO_PORT}" \
   novnc-audio-bridge.sh "$NOVNC_ROOT" || echo "[gui] audio bridge skipped"
@@ -69,29 +83,24 @@ fi
 websockify --web="$NOVNC_ROOT" 0.0.0.0:6080 localhost:5900 &
 
 # ------------------ Launch Chrome -------------------
-CMD=("${CHROME_BIN:-google-chrome}"
+CHROME_CMD=(
+  "${CHROME_BIN:-google-chrome}"
   --no-first-run --no-default-browser-check
   --disable-dev-shm-usage --disable-gpu
-  --start-fullscreen --no-sandbox
+  --start-fullscreen
+  --user-data-dir="${CHROME_USER_DATA_DIR}"
   --remote-debugging-address=0.0.0.0
   --remote-debugging-port="${CDP_PORT}"
 )
 
-# Optional persistent user data dir (safe for single user in Codespaces)
-if [ -n "${CHROME_USER_DATA_DIR}" ]; then
-  CMD+=(--user-data-dir="${CHROME_USER_DATA_DIR}")
-fi
-
-# Optional extra args
 if [ -n "${CHROME_ARGS}" ]; then
-  # shellcheck disable=SC2206  # intentional word splitting of CHROME_ARGS
-  EXTRA=( ${CHROME_ARGS} )
-  CMD+=("${EXTRA[@]}")
+  # shellcheck disable=SC2206  # intentional word splitting to honour extra args
+  EXTRA_ARGS=( ${CHROME_ARGS} )
+  CHROME_CMD+=("${EXTRA_ARGS[@]}")
 fi
 
-CMD+=("${APP_URL:-about:blank}")
+CHROME_CMD+=("${APP_URL}")
 
-"${CMD[@]}" &
+"${CHROME_CMD[@]}" &
 
-# Wait on the first background job to exit
-wait -n
+wait "$XVFB_PID"
