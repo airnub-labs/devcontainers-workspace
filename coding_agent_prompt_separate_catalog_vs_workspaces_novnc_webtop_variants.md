@@ -9,6 +9,7 @@
 ## 0) Branch & safety
 
 1. Create a new branch:
+
    ```bash
    git checkout -b chore/separate-catalog-and-workspaces
    ```
@@ -19,9 +20,11 @@
 ## 1) Create high-level layout
 
 **Catalog stays at root**:
-- `features/`, `templates/`, `images/`, `docs/`, `scripts/` remain unchanged (publisher assets).
+
+* `features/`, `templates/`, `images/`, `docs/`, `scripts/` remain unchanged (publisher assets).
 
 **Add Workspaces area**:
+
 ```bash
 mkdir -p workspaces/webtop/.devcontainer \
          workspaces/novnc/.devcontainer \
@@ -30,6 +33,7 @@ mkdir -p workspaces/webtop/.devcontainer \
 ```
 
 **Ignore cloned app repos**:
+
 ```bash
 if ! grep -q "^apps/" .gitignore 2>/dev/null; then echo "apps/" >> .gitignore; fi
 ```
@@ -55,7 +59,9 @@ if [ -d airnub ]; then git mv airnub workspaces/_shared/airnub; fi
 ## 3) Workspace variant: **webtop**
 
 ### 3.1 Devcontainer (compose + features)
+
 Create `workspaces/webtop/.devcontainer/devcontainer.json`:
+
 ```json
 {
   "name": "airnub — webtop",
@@ -101,6 +107,7 @@ Create `workspaces/webtop/.devcontainer/devcontainer.json`:
 ```
 
 Create `workspaces/webtop/.devcontainer/compose.yaml`:
+
 ```yaml
 services:
   dev:
@@ -131,7 +138,9 @@ services:
 ```
 
 ### 3.2 Post hooks & blueprint
+
 Create `workspaces/webtop/postCreate.sh`:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -170,6 +179,7 @@ supabase --version || true
 ```
 
 Create `workspaces/webtop/postStart.sh`:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -178,6 +188,7 @@ set -euo pipefail
 ```
 
 Create `workspaces/webtop/workspace.blueprint.json` (editable manifest):
+
 ```json
 {
   "repos": [
@@ -187,6 +198,7 @@ Create `workspaces/webtop/workspace.blueprint.json` (editable manifest):
 ```
 
 Create `workspaces/webtop/airnub-webtop.code-workspace`:
+
 ```json
 {
   "folders": [
@@ -205,7 +217,9 @@ Create `workspaces/webtop/airnub-webtop.code-workspace`:
 ## 4) Workspace variant: **novnc**
 
 ### 4.1 Devcontainer
+
 Create `workspaces/novnc/.devcontainer/devcontainer.json`:
+
 ```json
 {
   "name": "airnub — novnc",
@@ -237,6 +251,7 @@ Create `workspaces/novnc/.devcontainer/devcontainer.json`:
 ```
 
 Create `workspaces/novnc/.devcontainer/compose.yaml`:
+
 ```yaml
 services:
   dev:
@@ -261,7 +276,9 @@ services:
 ```
 
 ### 4.2 Post hooks & workspace file
+
 Create `workspaces/novnc/postCreate.sh`:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -288,6 +305,7 @@ fi
 ```
 
 Create `workspaces/novnc/postStart.sh`:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -296,11 +314,13 @@ set -euo pipefail
 ```
 
 Create `workspaces/novnc/workspace.blueprint.json`:
+
 ```json
 { "repos": [] }
 ```
 
 Create `workspaces/novnc/airnub-novnc.code-workspace`:
+
 ```json
 {
   "folders": [
@@ -314,7 +334,9 @@ Create `workspaces/novnc/airnub-novnc.code-workspace`:
 ---
 
 ## 5) Move old workspace file into the **webtop** variant
+
 If `airnub-labs.code-workspace` exists at repo root, move it and let the new one replace it or keep both:
+
 ```bash
 if [ -f airnub-labs.code-workspace ]; then git mv airnub-labs.code-workspace workspaces/webtop/airnub-webtop.code-workspace; fi
 ```
@@ -322,7 +344,9 @@ if [ -f airnub-labs.code-workspace ]; then git mv airnub-labs.code-workspace wor
 ---
 
 ## 6) Docs touch-up (optional but recommended)
+
 Append to `docs/workspace-architecture.md` a short section:
+
 ```md
 ## Workspaces layout
 - Catalog (publisher): features/, templates/, images/, docs/
@@ -333,6 +357,7 @@ Append to `docs/workspace-architecture.md` a short section:
 ---
 
 ## 7) Commit & PR
+
 ```bash
 git add -A
 git commit -m "chore(workspaces): split catalog vs workspace; add webtop and novnc variants"
@@ -342,22 +367,24 @@ git commit -m "chore(workspaces): split catalog vs workspace; add webtop and nov
 ---
 
 ## 8) How to use
-- **Webtop variant**: open `workspaces/webtop/airnub-webtop.code-workspace` → container builds (dev + redis + webtop), ports 3001/9222/6379 forwarded.
-- **noVNC variant**: open `workspaces/novnc/airnub-novnc.code-workspace` → container builds (dev + redis + novnc), ports 6080/9222/6379 forwarded.
-- To add/remove project repos, **edit the variant’s `workspace.blueprint.json`**; they’ll clone into `/apps` on next build without editing the workspace file.
+
+* **Webtop variant**: open `workspaces/webtop/airnub-webtop.code-workspace` → container builds (dev + redis + webtop), ports 3001/9222/6379 forwarded.
+* **noVNC variant**: open `workspaces/novnc/airnub-novnc.code-workspace` → container builds (dev + redis + novnc), ports 6080/9222/6379 forwarded.
+* To add/remove project repos, **edit the variant’s `workspace.blueprint.json`**; they’ll clone into `/apps` on next build without editing the workspace file.
 
 ---
 
 ## 9) Acceptance checks
-- Both variants build in Dev Containers and show only: `/apps`, `/docs`, `/workspaces/_shared/supabase` in VS Code.
-- `supabase --version` works; `supabase start` runs manually or via `postStart.sh`.
-- Webtop shows desktop at `localhost:3001`; novnc shows desktop at `localhost:6080`.
-- CDP reachable at `localhost:9222/json/version`.
-- Editing `workspace.blueprint.json` causes repos to appear under `/apps` on rebuild.
+
+* Both variants build in Dev Containers and show only: `/apps`, `/docs`, `/workspaces/_shared/supabase` in VS Code.
+* `supabase --version` works; `supabase start` runs manually or via `postStart.sh`.
+* Webtop shows desktop at `localhost:3001`; novnc shows desktop at `localhost:6080`.
+* CDP reachable at `localhost:9222/json/version`.
+* Editing `workspace.blueprint.json` causes repos to appear under `/apps` on rebuild.
 
 ---
 
 ## 10) Future (optional)
-- Add a **“sync from template”** Action that periodically updates each variant’s `.devcontainer/` from `templates/classroom-studio-webtop` with a PR.
-- Add an **MCP Workspace Factory** endpoint that creates additional variants on demand from your catalog.
 
+* Add a **“sync from template”** Action that periodically updates each variant’s `.devcontainer/` from `templates/classroom-studio-webtop` with a PR.
+* Add an **MCP Workspace Factory** endpoint that creates additional variants on demand from your catalog.
