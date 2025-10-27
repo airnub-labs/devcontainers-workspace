@@ -5,6 +5,27 @@
   "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
   "publisher": "airnub-labs",
   "options": {
+    "usePrebuiltImage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Pull the published ghcr.io/airnub-labs/dev-web image instead of building locally."
+    },
+    "chromeChannel": {
+      "type": "string",
+      "enum": ["stable", "beta"],
+      "default": "stable",
+      "description": "Chrome channel for the Chrome CDP feature."
+    },
+    "cdpPort": {
+      "type": "integer",
+      "default": 9222,
+      "description": "Forwarded port for the headless Chrome CDP endpoint."
+    },
+    "includeMcpClis": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install optional MCP CLIs (Codex/Claude/Gemini)."
+    },
     "scaffold": {
       "type": "boolean",
       "default": false,

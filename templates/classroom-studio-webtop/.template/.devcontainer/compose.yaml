@@ -16,9 +16,9 @@ services:
     volumes:
       - ..:/workspace
       - type: bind
-        source: ${CHROME_POLICY_FILE:-.devcontainer/policies/managed.json}
+        source: {{#templateOption.chromePolicies}}{{.}}{{/templateOption.chromePolicies}}{{^templateOption.chromePolicies}}.devcontainer/policies/{{templateOption.policyMode}}.json{{/templateOption.chromePolicies}}
         target: /etc/opt/chrome/policies/managed/managed.json
         read_only: true
     ports:
-      - "${WEBTOP_PORT:-3001}:3000"
+      - "${WEBTOP_PORT:-{{templateOption.webtopPort}}}:3000"
     shm_size: "2gb"

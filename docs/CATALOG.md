@@ -4,18 +4,18 @@
 
 | Feature | Description | Key Options |
 | --- | --- | --- |
-| `supabase-cli` | Installs the Supabase CLI with optional helper scripts. | `version`, `manageLocalStack`, `projectRef` |
-| `chrome-cdp` | Headless Chrome with DevTools Protocol endpoint managed by supervisord. | `channel`, `port` |
-| `mcp-clis` | Installs Codex, Claude, and Gemini CLIs via pnpm. | `installCodex`, `installClaude`, `installGemini`, `versions` |
+| `supabase-cli` | Installs the Supabase CLI with optional helper scripts and metadata capture. | `version`, `manageLocalStack`, `services`, `projectRef` |
+| `chrome-cdp` | Headless Chrome with a DevTools Protocol endpoint managed by supervisord. | `channel`, `port` |
+| `mcp-clis` | Installs Codex, Claude, and Gemini CLIs using pnpm/npm fallbacks. | `installCodex`, `installClaude`, `installGemini`, `versions` |
 | `docker-in-docker-plus` | Adds Buildx/BuildKit ergonomics on top of Docker-in-Docker. | _none_ |
-| `cuda-lite` | Installs CUDA runtime when a GPU is present. | _none_ |
+| `cuda-lite` | Installs CUDA runtime libraries only when a GPU is detected. | _none_ |
 
 ## Templates
 
-| Template | Base Image | Included Features | Notes |
+| Template | Base Image(s) | Included Features | Notes |
 | --- | --- | --- | --- |
-| `web` | `ghcr.io/airnub-labs/dev-web` (optional build) | `chrome-cdp`, `supabase-cli` | Template options control prebuilt image usage and CDP settings. |
-| `nextjs-supabase` | `ghcr.io/airnub-labs/dev-web` | `chrome-cdp`, `supabase-cli`, `mcp-clis` | Optional Next.js scaffold with Supabase auth helpers. |
-| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `mcp-clis` | Managed Chrome policies and forwarded desktop via noVNC. |
+| `web` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli` | Options toggle the prebuilt image and CDP channel/port. |
+| `nextjs-supabase` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli`, `mcp-clis` (optional) | Supports turnkey Next.js scaffolding with Supabase integrations. |
+| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `mcp-clis` | Ships with managed/none Chrome policy modes and forwarded desktop port. |
 
 Refer to [`VERSIONING.md`](../VERSIONING.md) for published tags and digests.

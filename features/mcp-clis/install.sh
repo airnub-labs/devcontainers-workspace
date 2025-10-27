@@ -49,23 +49,20 @@ install_cli() {
     local binary="$3"
     local version="$4"
 
-    if [ "${name}" = "codex" ] && ! ${INSTALL_CODEX}; then
-        return 0
-    fi
-    if [ "${name}" = "claude" ] && ! ${INSTALL_CLAUDE}; then
-        return 0
-    fi
-    if [ "${name}" = "gemini" ] && ! ${INSTALL_GEMINI}; then
-        return 0
-    fi
+    case "${name}" in
+        codex)
+            [ "${INSTALL_CODEX}" = "true" ] || return 0
+            ;;
+        claude)
+            [ "${INSTALL_CLAUDE}" = "true" ] || return 0
+            ;;
+        gemini)
+            [ "${INSTALL_GEMINI}" = "true" ] || return 0
+            ;;
+    esac
 
     if command -v "${binary}" >/dev/null 2>&1; then
         echo "[mcp-clis] ${binary} already installed; skipping."
-        return 0
-    fi
-
-    if ! command -v pnpm >/dev/null 2>&1; then
-        echo "[mcp-clis] pnpm is required to install ${binary}; skipping." >&2
         return 0
     fi
 
@@ -74,8 +71,18 @@ install_cli() {
         target="${package}@${version}"
     fi
 
-    echo "[mcp-clis] Installing ${target}"
-    if pnpm install -g "${target}"; then
+    local installer=( )
+    if command -v pnpm >/dev/null 2>&1; then
+        installer=(pnpm add --global "${target}")
+    elif command -v npm >/dev/null 2>&1; then
+        installer=(npm install -g "${target}")
+    else
+        echo "[mcp-clis] Neither pnpm nor npm is available to install ${binary}; skipping." >&2
+        return 0
+    fi
+
+    echo "[mcp-clis] Installing ${target} via ${installer[0]}"
+    if "${installer[@]}"; then
         echo "[mcp-clis] ${binary} installation complete."
     else
         echo "[mcp-clis] Failed to install ${binary}; continuing without it." >&2

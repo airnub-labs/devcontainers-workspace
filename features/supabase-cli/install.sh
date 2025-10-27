@@ -4,6 +4,7 @@ set -euo pipefail
 VERSION="${VERSION:-latest}"
 MANAGE_LOCAL_STACK="${MANAGELOCALSTACK:-false}"
 PROJECT_REF="${PROJECTREF:-}"
+SERVICES_RAW="${SERVICES:-}"
 FEATURE_DIR="/usr/local/share/devcontainer/features/supabase-cli"
 BIN_DIR="/usr/local/bin"
 PROFILE_DIR="/etc/profile.d"
@@ -74,6 +75,37 @@ install_supabase_cli() {
     trap - EXIT
 }
 
+resolve_services() {
+    python3 - <<'PYTHON'
+import json
+import os
+
+services = []
+raw = os.environ.get("SERVICES_RAW", "").strip()
+if raw:
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            services.extend(str(item) for item in parsed)
+        elif isinstance(parsed, str):
+            services.append(parsed)
+    except json.JSONDecodeError:
+        services.extend(part.strip() for part in raw.split(',') if part.strip())
+
+for key, value in sorted(os.environ.items()):
+    if key.startswith("SERVICES__") and value:
+        services.append(value)
+
+seen = []
+for item in services:
+    if item not in seen:
+        seen.append(item)
+
+if seen:
+    print(",".join(seen))
+PYTHON
+}
+
 install_helper_scripts() {
     cat <<'SCRIPT' >"${BIN_DIR}/sbx-start"
 #!/usr/bin/env bash
@@ -99,19 +131,26 @@ SCRIPT
 
 install_supabase_cli
 
-if [ "${MANAGE_LOCAL_STACK}" = "true" ]; then
-    install_helper_scripts
-fi
-
 if [ -n "${PROJECT_REF}" ]; then
     mkdir -p "${PROFILE_DIR}"
     cat <<EOF_ENV >"${PROFILE_DIR}/supabase-cli.sh"
 export SUPABASE_PROJECT_REF="${PROJECT_REF}"
 EOF_ENV
+else
+    rm -f "${PROFILE_DIR}/supabase-cli.sh"
 fi
+
+if [ "${MANAGE_LOCAL_STACK}" = "true" ]; then
+    install_helper_scripts
+else
+    rm -f "${BIN_DIR}/sbx-start" "${BIN_DIR}/sbx-stop" "${BIN_DIR}/sbx-status"
+fi
+
+SERVICES_LIST="$(SERVICES_RAW="${SERVICES_RAW}" resolve_services)"
 
 cat <<EOF_NOTE >"${FEATURE_DIR}/feature-installed.txt"
 version=${VERSION}
 manageLocalStack=${MANAGE_LOCAL_STACK}
 projectRef=${PROJECT_REF}
+services=${SERVICES_LIST}
 EOF_NOTE
