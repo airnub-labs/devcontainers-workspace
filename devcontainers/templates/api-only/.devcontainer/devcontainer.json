@@ -24,6 +24,11 @@
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
     },
+    "ghcr.io/airnub-labs/devcontainers/features/agent-tooling-clis:latest": {
+      "installCodex": true,
+      "installClaude": true,
+      "installGemini": false
+    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": true,
       "version": "latest"
@@ -31,6 +36,7 @@
     "ghcr.io/airnub-labs/devcontainers/features/docker-in-docker-helpers:latest": {},
     "ghcr.io/airnub-labs/devcontainers/features/supabase-stack:latest": {}
   },
+  "postCreateCommand": "bash -lc '.devcontainer/postCreate.sh && supabase status || true'",
   "forwardPorts": [
     3000,
     3100,
@@ -42,7 +48,6 @@
     54327,
     6379
   ],
-  "postCreateCommand": "supabase status || true",
   "customizations": {
     "vscode": {
       "extensions": [

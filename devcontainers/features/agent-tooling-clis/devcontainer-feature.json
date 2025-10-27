@@ -1,0 +1,27 @@
+{
+  "id": "agent-tooling-clis",
+  "version": "0.1.0",
+  "name": "Agent tooling CLIs",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/feature-catalog.md#agent-tooling-clis",
+  "description": "Installs optional coding agent command line tools (Codex, Claude Code, Gemini) and provides npx shims when installation is skipped.",
+  "options": {
+    "installCodex": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install the OpenAI Codex CLI (codex)."
+    },
+    "installClaude": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install the Anthropic Claude Code CLI (claude)."
+    },
+    "installGemini": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install the Google Gemini CLI (gemini)."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/node"
+  ]
+}

@@ -27,6 +27,11 @@
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
     },
+    "ghcr.io/airnub-labs/devcontainers/features/agent-tooling-clis:latest": {
+      "installCodex": true,
+      "installClaude": true,
+      "installGemini": false
+    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": true,
       "version": "latest"

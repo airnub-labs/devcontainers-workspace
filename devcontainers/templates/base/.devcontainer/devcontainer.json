@@ -21,8 +21,14 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
+    },
+    "ghcr.io/airnub-labs/devcontainers/features/agent-tooling-clis:latest": {
+      "installCodex": true,
+      "installClaude": true,
+      "installGemini": false
     }
   },
+  "postCreateCommand": ".devcontainer/postCreate.sh",
   "customizations": {
     "vscode": {
       "extensions": [

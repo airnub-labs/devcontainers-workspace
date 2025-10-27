@@ -5,7 +5,7 @@ This document summarizes the activity recorded in the most recent `postCreateCom
 ## Summary
 - pnpm store configured at `/home/vscode/.pnpm-store`; package installation skipped because no `package.json` was present.
 - Supabase CLI installed at version `2.53.6`.
-- Deno, Codex, Gemini, Claude, and airnub CLIs installed and added to the PATH.
+- Supabase and Deno CLIs installed; agent CLIs are now delivered by the `agent-tooling-clis` feature with post-create hooks wiring MCP servers per project.
 - System package indices refreshed; window-management utilities (`wmctrl`, `libxdo3`, `xdotool`) installed alongside `x11-utils` for `xrandr`/`xdpyinfo` diagnostics.
 - Google Chrome is now ensured during post-create (falling back to `google-chrome-stable` when no Chromium-based browser is present).
 - Workspace repositories cloned into `/airnub-labs`, including `airnub-labs/million-dollar-maps` (ignored by the meta-workspace Git).

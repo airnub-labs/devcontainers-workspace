@@ -66,6 +66,11 @@ Reference the published features by their fully-qualified IDs inside `devcontain
   "features": {
     "ghcr.io/airnub-labs/devcontainers/features/docker-in-docker-helpers:0.1.0": {},
     "ghcr.io/airnub-labs/devcontainers/features/gui-tooling:0.1.0": {},
+    "ghcr.io/airnub-labs/devcontainers/features/agent-tooling-clis:0.1.0": {
+      "installCodex": true,
+      "installClaude": true,
+      "installGemini": false
+    },
     "ghcr.io/airnub-labs/devcontainers/features/supabase-stack:0.1.0": {}
   }
 }

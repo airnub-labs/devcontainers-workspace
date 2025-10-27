@@ -61,7 +61,7 @@
 ### 3.1 Features (tooling only)
 - `supabase-cli` — installs CLI; optional helper scripts; **does not** start services.
 - `chrome-cdp` — headless Chrome + DevTools port.
-- `mcp-clis` — optional AI CLIs (codex/claude/gemini).
+- `agent-tooling-clis` — optional AI CLIs (codex/claude/gemini).
 - `docker-in-docker-plus` — safe defaults for Docker workflows.
 - `cuda-lite` — installs CUDA libs if GPU; no‑op otherwise.
 - `workspace-manifest` — installs `ws-clone` & `ws-update` helpers (no auto‑clone).
@@ -212,7 +212,7 @@ repos:
 features/
   supabase-cli/
   chrome-cdp/
-  mcp-clis/
+  agent-tooling-clis/
   docker-in-docker-plus/
   cuda-lite/
   workspace-manifest/
@@ -259,7 +259,7 @@ docs/
   "runServices": ["dev", "webtop"],
   "features": {
     "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/mcp-clis:1": { "installCodex": true }
+    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": { "installCodex": true }
   },
   "forwardPorts": [3001],
   "portsAttributes": { "3001": { "label": "Desktop (webtop)", "requireLocalPort": false } },

@@ -20,6 +20,15 @@ This workspace uses bespoke devcontainer [features](https://containers.dev/imple
   * The Supabase task palette entry now delegates to [`bin/supabase-up.sh`](../devcontainers/features/supabase-stack/scripts/supabase-up.sh), which honours the same include/exclude variables.
 * **Documentation:** [`devcontainers/features/supabase-stack/README.md`](../devcontainers/features/supabase-stack/README.md)
 
+## Agent tooling CLIs
+
+* **Manifest:** [`devcontainers/features/agent-tooling-clis/devcontainer-feature.json`](../devcontainers/features/agent-tooling-clis/devcontainer-feature.json)
+* **Lifecycle hooks:** Installs the selected agent CLIs during the container build and falls back to an `npx` shim when a package cannot be installed (for example, when `npm` is unavailable).
+* **Configuration:**
+  * `installCodex`, `installClaude`, and `installGemini` toggle the OpenAI Codex, Anthropic Claude Code, and Google Gemini CLIs respectively.
+  * The feature intentionally avoids editor-specific MCP wiring; template post-create hooks (or committed client settings) take care of registering MCP servers with the installed CLIs.
+* **Documentation:** [`devcontainers/features/agent-tooling-clis/README.md`](../devcontainers/features/agent-tooling-clis/README.md)
+
 ## Docker-in-Docker helpers
 
 * **Manifest:** [`devcontainers/features/docker-in-docker-helpers/devcontainer-feature.json`](../devcontainers/features/docker-in-docker-helpers/devcontainer-feature.json)
