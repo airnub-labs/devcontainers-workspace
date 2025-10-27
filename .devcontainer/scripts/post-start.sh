@@ -131,7 +131,13 @@ ensure_supabase_stack() {
     done
   fi
 
-  if (cd "$supabase_dir" && supabase status >/dev/null 2>&1); then
+  local compose_project_name="${WORKSPACE_STACK_NAME}-supabase"
+
+  if (
+    cd "$supabase_dir" &&
+    COMPOSE_PROJECT_NAME="$compose_project_name" \
+      supabase status >/dev/null 2>&1
+  ); then
     log "Supabase stack already running inside the inner Docker daemon."
     return 0
   fi
@@ -141,10 +147,17 @@ ensure_supabase_stack() {
     start_display+=" ${supabase_start_args[*]}"
   fi
 
+  local supabase_volumes_dir="$supabase_dir/docker/volumes"
+  local supabase_db_dir="$supabase_volumes_dir/db"
+  local supabase_minio_dir="$supabase_volumes_dir/minio"
+
+  mkdir -p "$supabase_db_dir" "$supabase_minio_dir"
+
   log "Supabase stack not running; starting via '$start_display'..."
   if (
     cd "$supabase_dir" &&
-    supabase start "${supabase_start_args[@]}" 2>&1 | tee -a "$LOG_FILE"
+    COMPOSE_PROJECT_NAME="$compose_project_name" \
+      supabase start "${supabase_start_args[@]}" 2>&1 | tee -a "$LOG_FILE"
   ); then
     log "Supabase stack started successfully."
     return 0

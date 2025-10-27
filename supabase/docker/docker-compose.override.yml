@@ -1,0 +1,7 @@
+services:
+  db:
+    volumes:
+      - ./volumes/db:/var/lib/postgresql/data:delegated
+  storage:
+    volumes:
+      - ./volumes/minio:/data:delegated
