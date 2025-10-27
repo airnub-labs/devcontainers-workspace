@@ -1,5 +1,7 @@
 services:
   dev:
+    build:
+      context: ../../images/dev-web
     image: ghcr.io/airnub-labs/dev-web:latest
     user: "vscode"
     volumes:
