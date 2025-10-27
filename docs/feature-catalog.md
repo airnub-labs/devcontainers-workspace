@@ -9,6 +9,7 @@ This workspace uses bespoke devcontainer [features](https://containers.dev/imple
 * **Configuration:**
   * `options.providers` – defaults to `webtop` and feeds the GUI profile generator. See the [`providers` option](../devcontainers/features/gui-tooling/devcontainer-feature.json).
   * Container environment variables mirror the previous devcontainer settings (Chrome credentials, GUI ports, locale defaults). See [`containerEnv`](../devcontainers/features/gui-tooling/devcontainer-feature.json) for the exhaustive list.
+* **Documentation:** [`devcontainers/features/gui-tooling/README.md`](../devcontainers/features/gui-tooling/README.md)
 
 ## Supabase stack bootstrap
 
@@ -17,6 +18,7 @@ This workspace uses bespoke devcontainer [features](https://containers.dev/imple
 * **Configuration:**
   * Environment overrides for `SUPABASE_INCLUDE`, `SUPABASE_PROJECT_DIR`, `SUPABASE_CONFIG_PATH`, `SUPABASE_START_ARGS`, and `SUPABASE_START_EXCLUDES` are propagated from host to container via [`containerEnv`](../devcontainers/features/supabase-stack/devcontainer-feature.json).
   * The Supabase task palette entry now delegates to [`bin/supabase-up.sh`](../devcontainers/features/supabase-stack/scripts/supabase-up.sh), which honours the same include/exclude variables.
+* **Documentation:** [`devcontainers/features/supabase-stack/README.md`](../devcontainers/features/supabase-stack/README.md)
 
 ## Docker-in-Docker helpers
 
@@ -25,3 +27,4 @@ This workspace uses bespoke devcontainer [features](https://containers.dev/imple
 * **Configuration:**
   * Inherits Docker wait timings (`DOCKER_WAIT_ATTEMPTS`, `DOCKER_WAIT_SLEEP_SECS`) from the container environment if set, matching the previous script behaviour.
   * Continues to respect `CLONE_ON_START`, `WORKSPACE_STACK_NAME`, `WORKSPACE_CONTAINER_ROOT`, and other workspace-level variables consumed by the helper script.
+* **Documentation:** [`devcontainers/features/docker-in-docker-helpers/README.md`](../devcontainers/features/docker-in-docker-helpers/README.md)
