@@ -1,0 +1,21 @@
+services:
+  webtop-desktop:
+    image: lscr.io/linuxserver/webtop:ubuntu-kde
+    profiles: ["gui-webtop"]
+    shm_size: "1gb"
+    environment:
+      - TZ=${DEFAULT_TZ:-Europe/Dublin}
+      - CUSTOM_USER=${WEBTOP_USER:-dev}
+      - PASSWORD=${WEBTOP_PASSWORD:-change-me}
+      - WEBTOP_AUDIO=${WEBTOP_AUDIO:-1}
+      - GUI_CHROME_DEBUG=${GUI_CHROME_DEBUG:-1}
+      - GUI_WEBTOP_DEVTOOLS_PORT=${GUI_WEBTOP_DEVTOOLS_PORT:-9223}
+      - WEBTOP_START_URL=http://devcontainer:54323
+    volumes:
+      - webtop_home:/config
+      - ./assets/gui/webtop-devtools.sh:/config/custom-cont-init.d/50-devtools.sh:ro
+    ports:
+      - "${GUI_WEBTOP_HTTPS_PORT:-3001}:3001"
+      - "${GUI_WEBTOP_DEVTOOLS_PORT:-9223}:9222"
+volumes:
+  webtop_home:

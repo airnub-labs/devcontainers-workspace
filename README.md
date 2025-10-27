@@ -13,6 +13,7 @@ Why a shared stack? Running one Supabase and Redis instance avoids the common lo
 * **Multi-root workspace:** `airnub-labs.code-workspace` opens all of your project folders side-by-side.
 * **Shared runtime:** the Dev Container maps the parent directory to `/workspaces`, provides Docker-in-Docker, Node 24 with pnpm, Python 3.12, and ships with Redis plus a Supabase local stack configured in [`supabase/config.toml`](./supabase/config.toml).
 * **Helper scripts:** `.devcontainer/scripts/` manages cloning and bootstrap tasks, while `supabase/scripts/` keeps local Supabase credentials in sync across repos.
+* **Modular container assets:** Compose overlays live in `containers/compose/` and publishable Dev Container Features live in `features/`, aligning with the containers.dev distribution spec.
 
 ---
 

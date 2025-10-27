@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devcontainer.schema.json",
+  "name": "airnub-labs + noVNC",
+  "extends": "../base/devcontainer.json",
+  "dockerComposeFile": [
+    "../../containers/compose/base.yaml",
+    "../../containers/compose/gui-novnc.yaml"
+  ],
+  "updateContentCommand": "GUI_PROVIDERS=novnc .devcontainer/scripts/select-gui-profiles.sh"
+}

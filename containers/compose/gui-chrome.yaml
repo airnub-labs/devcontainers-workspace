@@ -1,0 +1,20 @@
+services:
+  chrome-desktop:
+    image: lscr.io/linuxserver/chrome:latest
+    profiles: ["gui-chrome"]
+    shm_size: "1gb"
+    environment:
+      - TZ=${DEFAULT_TZ:-Europe/Dublin}
+      - CUSTOM_USER=${CHROME_USER:-dev}
+      - PASSWORD=${CHROME_PASSWORD:-change-me}
+      - GUI_CHROME_DEBUG=${GUI_CHROME_DEBUG:-1}
+      - GUI_CHROME_DEVTOOLS_PORT=${GUI_CHROME_DEVTOOLS_PORT:-9224}
+      - CHROME_CLI=http://devcontainer:54323
+    volumes:
+      - chrome_home:/config
+      - ../assets/gui/chrome-devtools.sh:/config/custom-cont-init.d/50-devtools.sh:ro
+    ports:
+      - "${GUI_CHROME_HTTPS_PORT:-3002}:3001"
+      - "${GUI_CHROME_DEVTOOLS_PORT:-9224}:9222"
+volumes:
+  chrome_home:

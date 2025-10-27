@@ -1,0 +1,27 @@
+{
+  "id": "gui-novnc",
+  "version": "0.1.0",
+  "name": "noVNC Desktop Sidecar",
+  "description": "Installs the airnub noVNC + Chrome desktop stack and ships a compose overlay for use as a Dev Container Feature package.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/gui-providers.md",
+  "options": {
+    "audio": {
+      "type": "boolean",
+      "default": true,
+      "description": "Expose the Opus audio bridge on port 6081."
+    },
+    "applyChromePolicy": {
+      "type": "boolean",
+      "default": false,
+      "description": "Pre-seed Chrome enterprise policy to relax download and debugging restrictions."
+    },
+    "reduceFluxboxMenu": {
+      "type": "boolean",
+      "default": false,
+      "description": "Trim the Fluxbox menu to the essentials for classroom environments."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

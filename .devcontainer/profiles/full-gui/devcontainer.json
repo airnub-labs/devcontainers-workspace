@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devcontainer.schema.json",
+  "name": "airnub-labs full GUI",
+  "extends": "../base/devcontainer.json",
+  "dockerComposeFile": [
+    "../../containers/compose/base.yaml",
+    "../../containers/compose/gui-novnc.yaml",
+    "../../containers/compose/gui-webtop.yaml",
+    "../../containers/compose/gui-chrome.yaml"
+  ],
+  "updateContentCommand": "GUI_PROVIDERS=all .devcontainer/scripts/select-gui-profiles.sh"
+}

@@ -47,10 +47,10 @@ ENV APPLY_CHROME_POLICY=${APPLY_CHROME_POLICY} \
     LANGUAGE=${DEFAULT_LANGUAGE}
 
 # Scripts used by the desktop entrypoint
-COPY .devcontainer/gui/scripts/start-desktop.sh /usr/local/bin/start-desktop.sh
-COPY .devcontainer/gui/scripts/novnc-audio-bridge.sh /usr/local/bin/novnc-audio-bridge.sh
-COPY .devcontainer/gui/scripts/fluxbox-setup.sh /usr/local/bin/fluxbox-setup.sh
-COPY .devcontainer/gui/scripts/apply-chrome-policy.sh /usr/local/bin/apply-chrome-policy.sh
+COPY containers/images/gui-novnc/scripts/start-desktop.sh /usr/local/bin/start-desktop.sh
+COPY containers/images/gui-novnc/scripts/novnc-audio-bridge.sh /usr/local/bin/novnc-audio-bridge.sh
+COPY containers/images/gui-novnc/scripts/fluxbox-setup.sh /usr/local/bin/fluxbox-setup.sh
+COPY containers/images/gui-novnc/scripts/apply-chrome-policy.sh /usr/local/bin/apply-chrome-policy.sh
 RUN chmod +x /usr/local/bin/*.sh
 
 RUN if [ "$APPLY_CHROME_POLICY" = "1" ]; then \

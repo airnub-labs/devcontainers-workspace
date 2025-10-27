@@ -1,0 +1,21 @@
+# Base workspace stack for the airnub labs meta-workspace.
+# Compose file paths are resolved relative to this directory.
+name: ${WORKSPACE_STACK_NAME:-airnub-labs}
+
+services:
+  devcontainer:
+    profiles: ["default", "devcontainer"]
+    # Remove `privileged` when running in environments that disallow DinD (e.g. hardened Codespaces policies).
+    privileged: true
+    build:
+      context: ../..
+      dockerfile: ../images/workspace/Dockerfile
+    init: true
+    tty: true
+    stdin_open: true
+    volumes:
+      - ../..:${WORKSPACE_CONTAINER_ROOT:-/airnub-labs}:cached
+      - dind-data:/var/lib/docker
+
+volumes:
+  dind-data:

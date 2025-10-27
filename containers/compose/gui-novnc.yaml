@@ -1,0 +1,36 @@
+services:
+  novnc-desktop:
+    build:
+      context: ../..
+      dockerfile: ../images/gui-novnc/Dockerfile
+      args:
+        DEFAULT_TZ: "${DEFAULT_TZ:-Europe/Dublin}"
+        DEFAULT_LOCALE: "${DEFAULT_LOCALE:-en_IE.UTF-8}"
+        DEFAULT_LANGUAGE: "${DEFAULT_LANGUAGE:-en_IE:en}"
+    init: true
+    tty: true
+    stdin_open: true
+    environment:
+      APP_URL: "http://devcontainer:54323"
+      CHROME_USER_DATA_DIR: "/tmp/chrome-profile-stable"
+      CHROME_ARGS: ""
+      NOVNC_AUTOCONNECT: "1"
+      NOVNC_RECONNECT: "1"
+      NOVNC_RESIZE: "scale"
+      NOVNC_VIEW_ONLY: "0"
+      NOVNC_PATH: "websockify"
+      NOVNC_AUDIO_ENABLE: "1"
+      NOVNC_AUDIO_PORT: "6081"
+      CDP_PORT: "${GUI_NOVNC_DEVTOOLS_PORT:-9222}"
+    depends_on:
+      - devcontainer
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:6080/vnc.html >/dev/null && curl -sf http://127.0.0.1:${GUI_NOVNC_DEVTOOLS_PORT:-9222}/json/version >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+    profiles: ["gui-novnc"]
+    ports:
+      - "${GUI_NOVNC_HTTP_PORT:-6080}:6080"
+      - "${GUI_NOVNC_DEVTOOLS_PORT:-9222}:9222"
+      - "6081:6081"

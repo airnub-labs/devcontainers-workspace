@@ -67,3 +67,16 @@ The `SUPABASE_INCLUDE` variable lists the Supabase services you want to run
 (e.g. `db,auth,rest`). The `.devcontainer/scripts/supabase-up.sh` task translates
 that into the exclusion list expected by `supabase start -x ...`, so you can
 control the Supabase stack purely via environment variables.
+
+## Repository layout
+
+The GUI overlays now live under [`containers/compose/`](../containers/compose) so that each sidecar is
+represented by its own Compose fragment. Profiles inside [`.devcontainer/profiles/`](../.devcontainer/profiles)
+combine these fragments to produce launch-ready definitions for Codespaces, classroom laptops, or local
+`devcontainer up` flows.
+
+The same overlays are also packaged as Dev Container Features in [`features/`](../features), following the
+[containers.dev distribution spec](https://containers.dev/implementors/features-distribution/). Installing one
+of these features copies the matching `compose.yaml` into `/usr/local/share/airnub/features/<id>/compose.yaml`,
+which can then be mounted into downstream repositories without copying this repo wholesale.
+
