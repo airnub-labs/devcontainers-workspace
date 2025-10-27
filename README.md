@@ -112,6 +112,7 @@ supabase db push --workdir ./<project-name> --local
 * **[Workspace architecture](./docs/workspace-architecture.md):** how the Dev Container is wired, what services run, and how the multi-root workspace is organized.
 * **[Shared Supabase operations](./docs/shared-supabase.md):** start/stop commands, helper script usage, and env-var management.
 * **[Workspace clone strategy](./docs/clone-strategy.md):** how repo permissions translate into automatic cloning in Dev Containers and Codespaces.
+* **[Dev Container packaging roadmap](./docs/devcontainer-spec-alignment.md):** how features, templates, and stacks align with the Dev Containers spec and GHCR distribution.
 
 ---
 
