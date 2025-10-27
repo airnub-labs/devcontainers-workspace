@@ -1,11 +1,11 @@
 {
   "name": "airnub-labs",
   "dockerComposeFile": [
-    "./docker-compose.yml",
-    "./gui/docker-compose.yml"
+    "./docker-compose.yml"
   ],
   "service": "devcontainer",
   "workspaceFolder": "/airnub-labs",
+  "updateContentCommand": ".devcontainer/scripts/select-gui-profiles.sh",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/node:1": {
@@ -22,7 +22,24 @@
     "CHROME_CDP_URL": "http://127.0.0.1:9222",
     "CHROME_HEADLESS": "false",
     "CHROME_ISOLATED": "false",
-    "CHROME_CHANNEL": "stable"    
+    "CHROME_CHANNEL": "stable",
+    "GUI_PROVIDERS": "${localEnv:GUI_PROVIDERS}",
+    "WEBTOP_AUDIO": "${localEnv:WEBTOP_AUDIO}",
+    "GUI_CHROME_DEBUG": "${localEnv:GUI_CHROME_DEBUG}",
+    "GUI_NOVNC_HTTP_PORT": "${localEnv:GUI_NOVNC_HTTP_PORT}",
+    "GUI_WEBTOP_HTTPS_PORT": "${localEnv:GUI_WEBTOP_HTTPS_PORT}",
+    "GUI_CHROME_HTTPS_PORT": "${localEnv:GUI_CHROME_HTTPS_PORT}",
+    "GUI_NOVNC_DEVTOOLS_PORT": "${localEnv:GUI_NOVNC_DEVTOOLS_PORT}",
+    "GUI_WEBTOP_DEVTOOLS_PORT": "${localEnv:GUI_WEBTOP_DEVTOOLS_PORT}",
+    "GUI_CHROME_DEVTOOLS_PORT": "${localEnv:GUI_CHROME_DEVTOOLS_PORT}",
+    "WEBTOP_USER": "${localEnv:WEBTOP_USER}",
+    "WEBTOP_PASSWORD": "${localEnv:WEBTOP_PASSWORD}",
+    "CHROME_USER": "${localEnv:CHROME_USER}",
+    "CHROME_PASSWORD": "${localEnv:CHROME_PASSWORD}",
+    "DEFAULT_TZ": "${localEnv:DEFAULT_TZ}",
+    "DEFAULT_LOCALE": "${localEnv:DEFAULT_LOCALE}",
+    "DEFAULT_LANGUAGE": "${localEnv:DEFAULT_LANGUAGE}",
+    "SUPABASE_INCLUDE": "${localEnv:SUPABASE_INCLUDE}"
   },
   "mounts": [
     "source=global-pnpm-store,target=/home/vscode/.pnpm-store,type=volume"
@@ -32,8 +49,12 @@
   "forwardPorts": [
     6080,
     6081,
+    3001,
+    3002,
     6379,
     9222,
+    9223,
+    9224,
     54321,
     54322,
     54323,
@@ -42,20 +63,43 @@
   ],
   "portsAttributes": {
     "6080": {
-      "label": "noVNC desktop",
-      "onAutoForward": "notify"
+      "label": "noVNC (Desktop)",
+      "visibility": "private",
+      "requireLocalPort": false
     },
     "6081": {
       "label": "noVNC audio (OGG/Opus)",
-      "onAutoForward": "notify"
+      "visibility": "private",
+      "requireLocalPort": false
+    },
+    "3001": {
+      "label": "Webtop (HTTPS)",
+      "visibility": "private",
+      "requireLocalPort": false
+    },
+    "3002": {
+      "label": "Chrome (HTTPS)",
+      "visibility": "private",
+      "requireLocalPort": false
     },
     "6379": {
       "label": "Redis",
       "onAutoForward": "silent"
     },
     "9222": {
-      "label": "Chrome DevTools (CDP)",
-      "onAutoForward": "notify"
+      "label": "DevTools (noVNC)",
+      "visibility": "private",
+      "requireLocalPort": false
+    },
+    "9223": {
+      "label": "DevTools (Webtop)",
+      "visibility": "private",
+      "requireLocalPort": false
+    },
+    "9224": {
+      "label": "DevTools (Chrome)",
+      "visibility": "private",
+      "requireLocalPort": false
     },
     "54321": {
       "label": "Supabase API",
@@ -87,6 +131,12 @@
             "pull_requests": "write"
           }
         }
+      }
+    },
+    "tasks": {
+      "supabase-up": {
+        "label": "Supabase: Start (include-list)",
+        "command": ".devcontainer/scripts/supabase-up.sh"
       }
     },
     "vscode": {
