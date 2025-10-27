@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  workspace:
+    environment:
+      GUI_PROVIDERS: ${GUI_PROVIDERS:-webtop,novnc}
+    volumes:
+      - gui-profiles:/home/vscode/.config/gui
+volumes:
+  gui-profiles:
+    name: gui-profiles

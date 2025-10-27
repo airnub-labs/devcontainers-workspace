@@ -1,0 +1,31 @@
+{
+  "$schema": "https://aka.ms/devcontainer-template-schema",
+  "id": "base",
+  "version": "0.1.0",
+  "name": "AirNub base workspace",
+  "publisher": "airnub-labs",
+  "description": "Baseline dev container with Node.js, Python, pnpm, and shared VS Code defaults used across AirNub projects.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/docs/workspace-architecture.md",
+  "licenseURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal/blob/main/LICENCE",
+  "platforms": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
+  "dockerComposeFile": [
+    ".devcontainer/docker-compose.yml"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "vscode",
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "pnpmVersion": "8.15.4",
+      "nodeGypDependencies": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  }
+}

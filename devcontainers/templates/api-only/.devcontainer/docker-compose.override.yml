@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  workspace:
+    environment:
+      SUPABASE_START_ARGS: ${SUPABASE_START_ARGS:-}
+    volumes:
+      - supabase-state:/workspaces/supabase
+volumes:
+  supabase-state:
+    name: supabase-state
