@@ -16,6 +16,6 @@
 | --- | --- | --- | --- |
 | `web` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli` | Options toggle the prebuilt image and CDP channel/port. |
 | `nextjs-supabase` | `ghcr.io/airnub-labs/dev-web` (optional local build) | `chrome-cdp`, `supabase-cli`, `mcp-clis` (optional) | Supports turnkey Next.js scaffolding with Supabase integrations. |
-| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `mcp-clis` | Ships with managed/none Chrome policy modes and forwarded desktop port. |
+| `classroom-studio-webtop` | `ghcr.io/airnub-labs/dev-web` + `lscr.io/linuxserver/webtop` sidecar | `supabase-cli`, `mcp-clis` | Managed/none Chrome policy presets sync into `.devcontainer/policies/managed.json`; override via the `chromePolicies` option. |
 
 Refer to [`VERSIONING.md`](../VERSIONING.md) for published tags and digests.

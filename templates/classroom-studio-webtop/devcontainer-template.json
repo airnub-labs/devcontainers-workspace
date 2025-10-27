@@ -9,7 +9,7 @@
       "type": "string",
       "enum": ["none", "managed"],
       "default": "none",
-      "description": "Mount managed Chrome policies into the webtop sidecar."
+      "description": "Select built-in Chrome policy presets applied to the sidecar."
     },
     "webtopPort": {
       "type": "integer",
@@ -18,8 +18,8 @@
     },
     "chromePolicies": {
       "type": "string",
-      "default": "",
-      "description": "Override the JSON policy file mounted into the webtop container. Leave blank to follow the selected policy mode."
+      "default": ".devcontainer/policies/managed.json",
+      "description": "Path to the Chrome policy file mounted into the webtop container. Leave as-is to use the managed/none presets."
     }
   }
 }
