@@ -13,8 +13,8 @@ RUN set -eux; \
       ca-certificates curl gnupg \
       tzdata locales \
       xvfb x11vnc fluxbox novnc websockify \
-      xterm ffmpeg pulseaudio-utils \
-      wmctrl xdotool x11-utils jq \
+      xterm ffmpeg pulseaudio pulseaudio-utils \
+      wmctrl xdotool x11-utils jq xauth \
       fonts-liberation fonts-noto-color-emoji; \
     # Timezone & locale
     ln -fs "/usr/share/zoneinfo/${DEFAULT_TZ}" /etc/localtime; \
@@ -34,7 +34,12 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends google-chrome-stable; \
     rm -rf /var/lib/apt/lists/*
 
-ENV CHROME_BIN=/usr/bin/google-chrome \
+ARG APPLY_CHROME_POLICY=0
+ARG REDUCE_FLUXBOX_MENU=0
+
+ENV APPLY_CHROME_POLICY=${APPLY_CHROME_POLICY} \
+    REDUCE_FLUXBOX_MENU=${REDUCE_FLUXBOX_MENU} \
+    CHROME_BIN=/usr/bin/google-chrome \
     DISPLAY=:99 \
     TZ=${DEFAULT_TZ} \
     LANG=${DEFAULT_LOCALE} \
@@ -48,6 +53,20 @@ COPY .devcontainer/gui/scripts/fluxbox-setup.sh /usr/local/bin/fluxbox-setup.sh
 COPY .devcontainer/gui/scripts/apply-chrome-policy.sh /usr/local/bin/apply-chrome-policy.sh
 RUN chmod +x /usr/local/bin/*.sh
 
+RUN if [ "$APPLY_CHROME_POLICY" = "1" ]; then \
+      /usr/local/bin/apply-chrome-policy.sh; \
+    else \
+      echo "[gui] Chrome policy disabled at build time"; \
+    fi && \
+    if [ "$REDUCE_FLUXBOX_MENU" = "1" ]; then \
+      /usr/local/bin/fluxbox-setup.sh; \
+    else \
+      echo "[gui] Fluxbox menu reduction disabled at build time"; \
+    fi && \
+    mkdir -p /opt/novnc && chown -R vscode:vscode /opt/novnc
+
 EXPOSE 6080 6081 9222
+
+USER vscode
 
 CMD ["/usr/local/bin/start-desktop.sh"]
