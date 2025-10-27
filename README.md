@@ -1,120 +1,146 @@
 # vscode-meta-workspace-internal
 
-> One dev container, many projects — with a shared Redis and **one** local Supabase stack. Works locally and in **GitHub Codespaces**.
+> Spec-aligned Dev Container **features**, **templates**, and **images** for Airnub Labs projects — with Supabase-first tooling and optional sidecar browsers.
 
-This repo gives you a ready-to-go workspace for Airnub Labs projects. Open a single VS Code window and the Dev Container boots a workspace that mounts sibling repos and exposes a single, shared Supabase + Redis runtime.
-
-Why a shared stack? Running one Supabase and Redis instance avoids the common local developer problems of "too many ports", duplicate local databases, and the CPU/memory cost of multiple full stacks. It makes switching between projects fast, reduces container churn, and keeps local resource usage predictable.
+This repository packages the tooling that powers our classrooms and product experiments. Every feature is OCI-ready, every template is spec-compliant, and CI keeps the published GHCR artifacts up to date. You can consume these building blocks directly in GitHub Codespaces, the `devcontainer` CLI, or any implementation of the [Dev Container specification](https://containers.dev/implementors/spec/).
 
 ---
 
-## What you get
+## Highlights
 
-* **Multi-root workspace:** `airnub-labs.code-workspace` opens all of your project folders side-by-side.
-* **Shared runtime:** the Dev Container maps the parent directory to `/workspaces`, provides Docker-in-Docker, Node 24 with pnpm, Python 3.12, and ships with Redis plus a Supabase local stack configured in [`supabase/config.toml`](./supabase/config.toml).
-* **Helper scripts:** `.devcontainer/scripts/` manages cloning and bootstrap tasks, while `supabase/scripts/` keeps local Supabase credentials in sync across repos.
+- **Reusable tooling features** &mdash; Supabase CLI, headless Chrome CDP, Claude/Codex/Gemini CLIs, Docker-in-Docker ergonomics, and lightweight CUDA support live under [`features/`](./features).
+- **Composable templates** &mdash; Ready-to-go `.devcontainer` payloads (web, Next.js + Supabase, classroom webtop) live under [`templates/`](./templates) with options to pick frameworks, scaffold projects, and toggle sidecars.
+- **Prebuilt multi-arch images** &mdash; `images/dev-base` and `images/dev-web` build/push to `ghcr.io/airnub-labs` for fast Codespaces startups. Templates default to these images but can fall back to local Dockerfiles.
+- **CI-backed distribution** &mdash; Workflows in [`.github/workflows/`](./.github/workflows) publish features (OCI), build & push images, and smoke-test each template via the Dev Containers CLI.
+- **Docs for educators and maintainers** &mdash; See [`docs/`](./docs) for catalog tables, classroom rollout guides, security expectations, and migration steps from legacy shell scripts.
+
+---
+
+## Repository layout
+
+```
+features/    # Dev Container Features (Supabase CLI, Chrome CDP, agent CLIs, DinD+, CUDA-lite)
+templates/   # Dev Container Templates (web, nextjs-supabase, classroom-studio-webtop)
+images/      # Prebuilt base/web images published to GHCR
+docs/        # Catalog, spec alignment, security, education setup, migration guides
+.github/     # CI pipelines for publishing features, testing templates, and building images
+.devcontainer/  # Dogfood workspace that consumes the local features during development
+```
+
+Each feature folder contains `devcontainer-feature.json`, an idempotent `install.sh`, and README notes. Each template ships `devcontainer-template.json`, a `.template/` payload with `.devcontainer/devcontainer.json`, and any companion scripts/Compose files.
 
 ---
 
 ## Quick start
 
-### Fast iPad edits via VS Code for Web
-
-On an iPad (or any browser-only device) you can jump straight into this workspace without installing anything locally:
-
-1. Open [vscode.dev/github/airnub-labs/vscode-meta-workspace-internal](https://vscode.dev/github/airnub-labs/vscode-meta-workspace-internal) for a lightweight, browser-based VS Code instance that loads this repo instantly. Press `.` while viewing the repo on GitHub to land in [github.dev](https://github.dev/airnub-labs/vscode-meta-workspace-internal) if you prefer the GitHub-flavoured editor.
-2. When you need more power, use the **Remote** menu inside vscode.dev or github.dev to connect to an existing Codespace or create a new one for this repository.
-3. Alternatively, browse to the repository on GitHub and choose **Code → Create codespace on main** to launch a full Codespace session directly.
-
-### AI coding extensions
-
-GitHub Codespaces automatically adds three AI assistants to this workspace. When you run the Dev Container locally you can install them from the Marketplace using the commands below, and VS Code will remember your session across restarts of the same container.
-
-* **GitHub Copilot Chat** (`GitHub.copilot-chat`)
-  * Open the Command Palette and run `>GitHub: Sign in` (or use the Copilot Chat view’s sign-in button).
-  * Authorize with your GitHub account in the browser that opens. In Codespaces the authentication popup appears in the built-in browser automatically.
-  * After approving the request, the chat panel and inline completions activate immediately.
-* **ChatGPT** (`openai.chatgpt`)
-  * Run `>ChatGPT: Sign In` and follow the prompts in the external browser.
-  * When you are in a local VS Code window, complete the OAuth flow in the browser as usual.
-  * When you are in a Codespace, copy the final redirect URL from the external browser and paste it into a Codespaces preview tab (Ports panel → **Open in Browser**). That forces the callback through the Codespaces tunnel so the extension finishes signing you in.
-* **Claude Code** (`anthropic.claude-code`)
-  * Launch `>Claude: Sign In` from the Command Palette or click the sign-in link inside the Claude sidebar.
-  * Approve the Anthropic authorization request in the browser. The Codespaces webview handles the callback automatically, so no extra steps are required after granting access.
-
-Once you finish the respective sign-ins you can start using chat panels or inline suggestions without re-authenticating unless you destroy the workspace.
-
-### Using this workspace in your own GitHub org
-
-When you want to bring this workspace into your own GitHub org, choose one of these paths:
-
-* **Create a new repo from this template** – keeps your copy private and lets you customize without affecting the original. In GitHub, choose **Use this template → Create a new repository** and pick your organization/visibility.
-* **Fork this repo** – keeps an upstream link for easy updates, but the fork will be public to match this repository’s visibility. Only go this route if public visibility is acceptable.
-
-The first build of the Dev Container or Codespace takes a few minutes while the image assembles. After that initial build, starting/stopping the container (locally or in Codespaces) is quick, and the environment behaves the same in both places.
-
-### Option A — Local VS Code + Dev Containers
-
-1. Open `airnub-labs.code-workspace` in VS Code and choose **Reopen in Container**.
-2. In the Dev Container terminal, list the mounted repos with `ls /workspaces`.
-3. Start the shared services once per session: `supabase start -o env` (Studio: [http://localhost:54323](http://localhost:54323), API: [http://localhost:54321](http://localhost:54321)). This single stack serves all projects in `/workspaces` so you don't need a separate Supabase instance per repo.
-4. Work in a project folder (for example `cd /workspaces/million-dollar-maps`) and run that project’s migrations against the shared stack.
-
-### Option B — GitHub Codespaces
-
-1. Create a Codespace from this repo.
-2. (Optional) Update `.devcontainer/devcontainer.json → customizations.codespaces.repositories` so the Codespace token can clone other private repos.
-3. Securely add any required secrets via the Codespaces command palette: press <kbd>Shift</kbd>+<kbd>Command</kbd>+<kbd>P</kbd> (macOS) or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (Windows/Linux), type `>Codespaces: Manage User Secrets`, and follow the prompts to set key/value pairs that your workspace can access.
-4. After the container boots, clone sibling repos into `/workspaces/<repo>` (post-create hooks handle the common cases) and use the same Supabase workflow as local.
-
-Need a refresher on the helper scripts or the clone automation? See the docs linked below.
-
----
-
-## Shared Supabase workflow (at a glance)
-
-* Services run with the project ref defined in [`supabase/config.toml`](./supabase/config.toml) — by default `airnub-labs`.
-* Prefer the repository's CLI wrapper for day-to-day tasks (available globally as `airnub` once the Dev Container setup completes):
-
-  ```bash
-  airnub use                                # reuse the last project (or default supabase/)
-  airnub use ./million-dollar-maps                  # sync env vars + push migrations + show status
-  airnub project current                            # see which project was activated last
-  airnub project setup --project-dir ./million-dollar-maps  # seed .env.local then sync Supabase credentials
-  airnub db env diff                                     # compare Supabase CLI env output with supabase/.env.local
-  airnub db env sync --ensure-start                      # refresh supabase/.env.local (start services if needed)
-  airnub db env clean                                    # remove the shared supabase/.env.local file
-  airnub project env diff --project-dir ./million-dollar-maps   # compare project env with shared Supabase vars
-  airnub project env sync --project-dir ./million-dollar-maps   # merge shared Supabase vars into the project env file
-  airnub project env clean --project-dir ./million-dollar-maps  # remove the project's generated env file
-  airnub db apply --project-dir ./million-dollar-maps
-  airnub db reset --project-dir ./million-dollar-maps
-  airnub db status --project-dir ./million-dollar-maps
-  airnub project clean                                      # forget the remembered project selection
-  ```
-
-  When the devcontainer clone helper runs for the first time it seeds `./.airnub-current-project` with the first cloned repo
-  (and falls back to `./supabase` if nothing was cloned yet) so new contributors land on a sensible default for the shared stack.
-  Run `airnub use` without arguments any time to reuse that remembered selection (or the default `supabase/`).
-
-* Run migrations with the Supabase CLI from the workspace root, pointing at the project with `--workdir`:
+### 1. Try a template locally
 
 ```bash
-supabase db push --workdir ./<project-name> --local
+npm install -g @devcontainers/cli
+mkdir my-app && cd my-app
+devcontainer templates apply airnub-labs/web
+# or: devcontainer templates apply airnub-labs/nextjs-supabase --option scaffold=true
 ```
 
-* Legacy tooling that still invokes `supabase/scripts/use-shared-supabase.sh` now delegates to the `airnub` CLI, so existing scripts keep working while `airnub db ...` remains the source of truth (you can still run `./airnub` directly if you prefer explicit paths).
+The CLI materialises the `.devcontainer` folder with the selected options. Run `devcontainer up` or open the folder in VS Code and choose **Reopen in Container**.
+
+### 2. Launch in GitHub Codespaces
+
+Use the one-click badges in each template README or run:
+
+```bash
+gh codespace create --repo airnub-labs/vscode-meta-workspace-internal --branch main --devcontainer-path templates/web/.template/.devcontainer/devcontainer.json
+```
+
+Swap `templates/web` for `templates/nextjs-supabase` or `templates/classroom-studio-webtop` as needed.
+
+### 3. Mix and match features
+
+Reference the published features in any `devcontainer.json`:
+
+```json
+"features": {
+  "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
+    "manageLocalStack": true,
+    "projectRef": "my-project"
+  },
+  "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": {
+    "channel": "beta",
+    "port": 9333
+  }
+}
+```
+
+See the per-feature READMEs for option details.
 
 ---
 
-## Learn more
+## Template flavours
 
-* **[Workspace architecture](./docs/workspace-architecture.md):** how the Dev Container is wired, what services run, and how the multi-root workspace is organized.
-* **[Shared Supabase operations](./docs/shared-supabase.md):** start/stop commands, helper script usage, and env-var management.
-* **[Workspace clone strategy](./docs/clone-strategy.md):** how repo permissions translate into automatic cloning in Dev Containers and Codespaces.
-* **[Dev Container spec alignment](./docs/SPEC-ALIGNMENT.md):** how features, templates, and stacks align with the Dev Containers spec and GHCR distribution.
-* **[Feature & template catalog](./docs/CATALOG.md):** overview of the available tooling features and workspace templates.
+| Template | Use case | Included features | Notable options |
+| --- | --- | --- | --- |
+| [`templates/web`](./templates/web) | General web dev with Supabase CLI + headless Chrome | `chrome-cdp`, `supabase-cli` | `usePrebuiltImage`, `chromeChannel`, `cdpPort` |
+| [`templates/nextjs-supabase`](./templates/nextjs-supabase) | Next.js apps with optional Supabase scaffolding | `chrome-cdp`, `supabase-cli`, `agent-tooling-clis` (toggle) | `scaffold`, `nextVersion`, `ts`, `appRouter`, `auth` |
+| [`templates/classroom-studio-webtop`](./templates/classroom-studio-webtop) | Classroom/iPad flows with a webtop/noVNC sidecar | `supabase-cli`, `agent-tooling-clis` | `policyMode`, `webtopPort`, `chromePolicies` |
+
+Each template exposes options via `devcontainer-template.json`. The `.template/.devcontainer/postCreate.sh` files handle idempotent setup such as pnpm installs or `create-next-app` scaffolding.
 
 ---
 
-**TL;DR:** Open the workspace, run `supabase start -o env`, and develop any Airnub Labs project against the shared stack without juggling multiple containers.
+## Prebuilt images
+
+- **`ghcr.io/airnub-labs/dev-base`** &mdash; Ubuntu 24.04, Node 24, pnpm with a tuned global store.
+- **`ghcr.io/airnub-labs/dev-web`** &mdash; Extends `dev-base` with Chrome/Playwright dependencies and fonts.
+
+Templates default to the latest `dev-web` tag. Set `usePrebuiltImage=false` to build locally with the provided Dockerfiles. Multi-arch manifests (amd64 + arm64) are produced by [`build-images.yml`](./.github/workflows/build-images.yml).
+
+---
+
+## Continuous integration
+
+| Workflow | Purpose |
+| --- | --- |
+| [`publish-features.yml`](./.github/workflows/publish-features.yml) | Publishes every feature under `features/*` to GHCR as OCI artifacts. |
+| [`test-features.yml`](./.github/workflows/test-features.yml) | Runs `devcontainer features test` against each feature for schema + smoke coverage. |
+| [`build-images.yml`](./.github/workflows/build-images.yml) | Builds and pushes multi-arch `images/dev-base` and `images/dev-web`. |
+| [`test-templates.yml`](./.github/workflows/test-templates.yml) | Applies each template, runs `devcontainer build`, then boots containers to verify ports/tools. |
+
+Status badges and release notes will live alongside `VERSIONING.md` once the first tagged release ships.
+
+---
+
+## Migrating from legacy scripts
+
+Legacy `.devcontainer/scripts` installers, GUI browser provisioning, and Supabase helpers now map to features and templates. Follow [`docs/MIGRATION.md`](./docs/MIGRATION.md) for step-by-step cleanup guidance, including how to:
+
+1. Replace bespoke installers with feature references.
+2. Adopt templates for downstream repos.
+3. Move GUI workloads into the `classroom-studio-webtop` sidecar.
+4. Re-point automation to the GHCR images/features.
+
+---
+
+## Additional documentation
+
+- [`docs/CATALOG.md`](./docs/CATALOG.md) &mdash; Matrix of features and templates with option summaries.
+- [`docs/SPEC-ALIGNMENT.md`](./docs/SPEC-ALIGNMENT.md) &mdash; How this repository maps to the Dev Container spec.
+- [`docs/EDU-SETUP.md`](./docs/EDU-SETUP.md) &mdash; Rolling out classroom environments with Codespaces.
+- [`docs/SECURITY.md`](./docs/SECURITY.md) &mdash; Secrets management, supply-chain notes, and extension policy.
+- [`docs/MAINTAINERS.md`](./docs/MAINTAINERS.md) &mdash; Release process, version tagging, and CI troubleshooting.
+
+---
+
+## Dogfooding workspace
+
+The `.devcontainer/` folder still provides the multi-repo meta workspace we use internally. It references the local features via `file:` URIs for fast iteration; production tags swap to `ghcr.io/airnub-labs/...` references during releases. Use it to verify changes before publishing new versions.
+
+---
+
+## Contributing
+
+1. Add or modify features/templates/images locally.
+2. Update documentation (`docs/` and `VERSIONING.md`) as needed.
+3. Run `devcontainer features test` or `devcontainer templates apply` locally for smoke coverage.
+4. Submit a PR; CI will publish artifacts once the changes merge to `main`.
+
+Questions or suggestions? File an issue or ping the maintainers listed in [`docs/MAINTAINERS.md`](./docs/MAINTAINERS.md).
