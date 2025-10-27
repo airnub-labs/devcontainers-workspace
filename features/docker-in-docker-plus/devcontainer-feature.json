@@ -1,0 +1,11 @@
+{
+  "id": "docker-in-docker-plus",
+  "version": "1.0.0",
+  "name": "Docker in Docker Plus",
+  "description": "Enables Docker-in-Docker with buildx and shared /dev/shm defaults.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
+  "options": {},
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/docker-in-docker"
+  ]
+}

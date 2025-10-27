@@ -1,0 +1,51 @@
+name: Test Dev Container Templates
+
+on:
+  pull_request:
+    paths:
+      - 'templates/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'templates/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - name: web
+            path: templates/web
+            service: devcontainer
+          - name: nextjs-supabase
+            path: templates/nextjs-supabase
+            service: devcontainer
+          - name: classroom-studio-webtop
+            path: templates/classroom-studio-webtop
+            service: dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dev Containers CLI
+        run: npm install -g @devcontainers/cli
+      - name: Build template
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          rsync -a "${{ matrix.path }}/.template/" "${workdir}/"
+          devcontainer build --workspace-folder "${workdir}"
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          rsync -a "${{ matrix.path }}/.template/" "${workdir}/"
+          SERVICE_FLAG=""
+          if [ "${{ matrix.service }}" != "devcontainer" ]; then
+            SERVICE_FLAG="--service ${{ matrix.service }}"
+          fi
+          devcontainer up --workspace-folder "${workdir}" ${SERVICE_FLAG}
+          devcontainer exec --workspace-folder "${workdir}" ${SERVICE_FLAG} -- bash -lc "supabase --version"
+          devcontainer down --workspace-folder "${workdir}" ${SERVICE_FLAG}

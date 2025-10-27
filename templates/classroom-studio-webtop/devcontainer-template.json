@@ -1,0 +1,25 @@
+{
+  "id": "classroom-studio-webtop",
+  "name": "Classroom Studio (Webtop)",
+  "description": "Primary dev container with Supabase tooling and a Chrome-enabled webtop sidecar for touch devices.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
+  "publisher": "airnub-labs",
+  "options": {
+    "policyMode": {
+      "type": "string",
+      "enum": ["none", "managed"],
+      "default": "none",
+      "description": "Mount managed Chrome policies into the webtop sidecar."
+    },
+    "webtopPort": {
+      "type": "integer",
+      "default": 3001,
+      "description": "Forwarded port for the desktop (webtop) service."
+    },
+    "chromePolicies": {
+      "type": "string",
+      "default": ".devcontainer/policies/managed.json",
+      "description": "Path to a JSON policy file mounted into the webtop container when policyMode=managed."
+    }
+  }
+}

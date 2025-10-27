@@ -1,0 +1,23 @@
+name: Publish Dev Container Features
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'features/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: devcontainers/action@v1
+        with:
+          publish-features: true
+          base-path: ./features
+          ghcr-user: ${{ github.actor }}
+          ghcr-token: ${{ secrets.GITHUB_TOKEN }}

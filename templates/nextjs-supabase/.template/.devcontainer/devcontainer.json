@@ -1,0 +1,21 @@
+{
+  "name": "nextjs-supabase",
+  "image": "ghcr.io/airnub-labs/dev-web:latest",
+  "features": {
+    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": {
+      "channel": "stable",
+      "port": 9222
+    },
+    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
+      "manageLocalStack": true
+    },
+    "ghcr.io/airnub-labs/devcontainer-features/mcp-clis:1": {}
+  },
+  "forwardPorts": [9222],
+  "portsAttributes": {
+    "9222": {
+      "label": "Chrome DevTools"
+    }
+  },
+  "postCreateCommand": "./.devcontainer/postCreate.sh"
+}

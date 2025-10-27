@@ -1,0 +1,27 @@
+{
+  "name": "classroom-studio-webtop",
+  "dockerComposeFile": [
+    "./compose.{{templateOption.policyMode}}.yaml"
+  ],
+  "service": "dev",
+  "runServices": ["dev", "webtop"],
+  "features": {
+    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
+      "manageLocalStack": true
+    },
+    "ghcr.io/airnub-labs/devcontainer-features/mcp-clis:1": {}
+  },
+  "forwardPorts": [
+    {{templateOption.webtopPort}}
+  ],
+  "portsAttributes": {
+    "{{templateOption.webtopPort}}": {
+      "label": "Desktop (webtop)"
+    }
+  },
+  "remoteEnv": {
+    "WEBTOP_PORT": "{{templateOption.webtopPort}}",
+    "CHROME_POLICY_FILE": "{{templateOption.chromePolicies}}"
+  },
+  "postCreateCommand": "./.devcontainer/postCreate.sh"
+}

@@ -1,0 +1,34 @@
+{
+  "id": "nextjs-supabase",
+  "name": "Next.js + Supabase",
+  "description": "Next.js workspace with Supabase tooling and optional scaffold.",
+  "documentationURL": "https://github.com/airnub-labs/vscode-meta-workspace-internal",
+  "publisher": "airnub-labs",
+  "options": {
+    "scaffold": {
+      "type": "boolean",
+      "default": false,
+      "description": "Create a Next.js app on first launch when no package.json is present."
+    },
+    "nextVersion": {
+      "type": "string",
+      "default": "15",
+      "description": "Version of Next.js to use when scaffolding."
+    },
+    "ts": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use TypeScript when scaffolding."
+    },
+    "appRouter": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use the App Router when scaffolding."
+    },
+    "auth": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install Supabase auth helpers when scaffolding."
+    }
+  }
+}
