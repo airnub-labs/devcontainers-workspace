@@ -20,8 +20,8 @@ services:
 
     # shm_size: "2g"                        # helps Chrome stability
     environment:
-      # Let the desktop reach your app running in the devcontainer
-      APP_URL: "http://localhost:3000"    # with network_mode: service:devcontainer
+      # Let the desktop reach Supabase Studio running in the devcontainer
+      APP_URL: "http://localhost:54323"   # with network_mode: service:devcontainer
 
       # Chrome profile & extra flags (optional, safe for single-user Codespaces)
       CHROME_USER_DATA_DIR: "/tmp/chrome-profile-stable"
