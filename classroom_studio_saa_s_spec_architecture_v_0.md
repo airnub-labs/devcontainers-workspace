@@ -258,8 +258,8 @@ docs/
   "service": "dev",
   "runServices": ["dev", "webtop"],
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": { "installCodex": true }
+    "../../../../features/supabase-cli": {},
+    "../../../../features/agent-tooling-clis": { "installCodex": true }
   },
   "forwardPorts": [3001],
   "portsAttributes": { "3001": { "label": "Desktop (webtop)", "requireLocalPort": false } },

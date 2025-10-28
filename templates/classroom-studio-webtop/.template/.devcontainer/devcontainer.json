@@ -6,10 +6,10 @@
   "service": "dev",
   "runServices": ["dev", "webtop"],
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
+    "../../../../features/supabase-cli": {
       "manageLocalStack": true
     },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {}
+    "../../../../features/agent-tooling-clis": {}
   },
   "customizations": {
     "codespaces": {

@@ -280,14 +280,14 @@ Recipes are versioned and reviewed like code; the MCP policy server ensures only
   "name": "web + supabase + cdp",
   "image": "ghcr.io/airnub-labs/dev-web@sha256:...",
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": {
+    "../features/supabase-cli": {
       "manageLocalStack": true
     },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": {
+    "../features/chrome-cdp": {
       "channel": "stable",
       "port": 9222
     },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {
+    "../features/agent-tooling-clis": {
       "installCodex": true
     }
   },

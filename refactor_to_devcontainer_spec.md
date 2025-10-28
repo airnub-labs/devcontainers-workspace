@@ -145,8 +145,8 @@ VERSIONING.md
 * Else use a local `build` with Args.
 * **features**
 
-  * `ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1`: `{ "channel": "${templateOption:chromeChannel}", "port": "${templateOption:cdpPort}" }`
-  * `ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1`: {}
+  * `../../../../features/chrome-cdp`: `{ "channel": "${templateOption:chromeChannel}", "port": "${templateOption:cdpPort}" }`
+  * `../../../../features/supabase-cli`: {}
 * `forwardPorts`: `[${templateOption:cdpPort}]`
 * `portsAttributes`: label `Chrome DevTools`.
 * `postCreateCommand`: `.devcontainer/postCreate.sh`
@@ -269,7 +269,7 @@ services:
 ## Acceptance criteria
 
 * `devcontainer build` succeeds for every template locally and in CI.
-* Features publish to GHCR: `ghcr.io/airnub-labs/devcontainer-features/<id>:<semver>`.
+* Features are consumed from the repository: `../../../../features/<id>` (still bump `version` in `devcontainer-feature.json`).
 * `templates/nextjs-supabase` scaffolds when `scaffold=true` and runs with Supabase local (via CLI or compose), as documented.
 * `classroom-studio-webtop` shows a working desktop via forwarded port; Chrome policies mount works and is easy to tweak.
 * CI passes across publish + test workflows.
