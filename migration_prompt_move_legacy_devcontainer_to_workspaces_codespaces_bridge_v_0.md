@@ -155,10 +155,10 @@ services:
   "workspaceFolder": "/workspaces",
 
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../../../features/supabase-cli": { "manageLocalStack": true },
+    "../../../features/chrome-cdp": { "port": 9222 },
+    "../../../features/agent-tooling-clis": {},
+    "../../../features/docker-in-docker-plus": {}
   },
 
   "forwardPorts": [9222, 3001, 6379, 54323],
@@ -186,10 +186,10 @@ services:
   "workspaceFolder": "/workspaces",
 
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../../../features/supabase-cli": { "manageLocalStack": true },
+    "../../../features/chrome-cdp": { "port": 9222 },
+    "../../../features/agent-tooling-clis": {},
+    "../../../features/docker-in-docker-plus": {}
   },
 
   "forwardPorts": [9222, 6080, 6379, 54323],
@@ -220,10 +220,10 @@ cat > .devcontainer/devcontainer.json << 'JSON'
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../features/supabase-cli": { "manageLocalStack": true },
+    "../features/chrome-cdp": { "port": 9222 },
+    "../features/agent-tooling-clis": {},
+    "../features/docker-in-docker-plus": {}
   },
   "forwardPorts": [9222, 3001, 6379, 54323],
   "portsAttributes": {"9222": {"label": "Chrome DevTools (CDP)"}, "3001": {"label": "Desktop (webtop)"}, "6379": {"label": "Redis"}, "54323": {"label": "Supabase Studio"}},
@@ -242,10 +242,10 @@ cat > .devcontainer/webtop/devcontainer.json << 'JSON'
   "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../../features/supabase-cli": { "manageLocalStack": true },
+    "../../features/chrome-cdp": { "port": 9222 },
+    "../../features/agent-tooling-clis": {},
+    "../../features/docker-in-docker-plus": {}
   },
   "forwardPorts": [9222, 3001, 6379, 54323],
   "portsAttributes": {"9222": {"label": "Chrome DevTools (CDP)"}, "3001": {"label": "Desktop (webtop)"}, "6379": {"label": "Redis"}, "54323": {"label": "Supabase Studio"}},
@@ -263,10 +263,10 @@ cat > .devcontainer/novnc/devcontainer.json << 'JSON'
   "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../../features/supabase-cli": { "manageLocalStack": true },
+    "../../features/chrome-cdp": { "port": 9222 },
+    "../../features/agent-tooling-clis": {},
+    "../../features/docker-in-docker-plus": {}
   },
   "forwardPorts": [9222, 6080, 6379, 54323],
   "portsAttributes": {"9222": {"label": "Chrome DevTools (CDP)"}, "6080": {"label": "Desktop (noVNC)"}, "6379": {"label": "Redis"}, "54323": {"label": "Supabase Studio"}},

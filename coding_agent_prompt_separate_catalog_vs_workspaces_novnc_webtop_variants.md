@@ -73,10 +73,10 @@ Create `workspaces/webtop/.devcontainer/devcontainer.json`:
   "workspaceFolder": "/workspaces",
 
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../../../features/supabase-cli": { "manageLocalStack": true },
+    "../../../features/chrome-cdp": { "port": 9222 },
+    "../../../features/agent-tooling-clis": {},
+    "../../../features/docker-in-docker-plus": {}
   },
 
   "forwardPorts": [9222, 3001, 6379, 54323],
@@ -231,10 +231,10 @@ Create `workspaces/novnc/.devcontainer/devcontainer.json`:
   "workspaceFolder": "/workspaces",
 
   "features": {
-    "ghcr.io/airnub-labs/devcontainer-features/supabase-cli:1": { "manageLocalStack": true },
-    "ghcr.io/airnub-labs/devcontainer-features/chrome-cdp:1": { "port": 9222 },
-    "ghcr.io/airnub-labs/devcontainer-features/agent-tooling-clis:1": {},
-    "ghcr.io/airnub-labs/devcontainer-features/docker-in-docker-plus:1": {}
+    "../../../features/supabase-cli": { "manageLocalStack": true },
+    "../../../features/chrome-cdp": { "port": 9222 },
+    "../../../features/agent-tooling-clis": {},
+    "../../../features/docker-in-docker-plus": {}
   },
 
   "forwardPorts": [9222, 6080, 6379, 54323],
