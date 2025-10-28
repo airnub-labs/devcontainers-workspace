@@ -117,3 +117,16 @@ supabase db push --workdir ./<project-name> --local
 ---
 
 **TL;DR:** Open the workspace, run `supabase start -o env`, and develop any Airnub Labs project against the shared stack without juggling multiple containers.
+
+## Dev Container from Catalog (no submodule)
+This workspace materializes a template from [`devcontainers-catalog`](https://github.com/airnub-labs/devcontainers-catalog)
+into `.devcontainer/` on demand using a tarball download—no Git submodule required.
+
+```bash
+# Fetch the catalog tarball and sync the default template payload
+CATALOG_REF=main TEMPLATE=classroom-studio-webtop scripts/sync-from-catalog.sh
+```
+
+- Open `airnub-labs.code-workspace` from the repo root in VS Code and reopen in a Dev Container.
+- Local-first fallback features (Node, Python, Deno) keep the container buildable even if GHCR images/features are unavailable.
+- When Airnub Labs publishes GHCR features/images, swap them into `.devcontainer/devcontainer.json` and `.devcontainer/compose.yaml` as needed.
