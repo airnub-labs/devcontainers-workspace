@@ -25,9 +25,42 @@ normalize_version() {
 }
 
 fetch_latest_tag() {
-    curl -fsSL "https://api.github.com/repos/supabase/cli/releases/latest" \
-        | grep -m1 '"tag_name"' \
-        | cut -d '"' -f4
+    python3 - <<'PYTHON'
+import json
+import sys
+import urllib.error
+import urllib.request
+
+API_URL = "https://api.github.com/repos/supabase/cli/releases/latest"
+HEADERS = {
+    "Accept": "application/vnd.github+json",
+    "User-Agent": "devcontainers-feature-supabase-cli",
+}
+
+request = urllib.request.Request(API_URL, headers=HEADERS)
+
+try:
+    with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status != 200:
+            raise urllib.error.HTTPError(
+                API_URL,
+                response.status,
+                f"unexpected status: {response.status}",
+                response.headers,
+                None,
+            )
+        payload = json.load(response)
+except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:  # pragma: no cover - defensive
+    print(exc, file=sys.stderr)
+    sys.exit(1)
+
+tag = payload.get("tag_name")
+if not tag:
+    print("missing tag_name in Supabase release payload", file=sys.stderr)
+    sys.exit(1)
+
+print(tag)
+PYTHON
 }
 
 install_supabase_cli() {
@@ -35,7 +68,10 @@ install_supabase_cli() {
     requested=$(normalize_version "${VERSION}")
 
     if [ "${requested}" = "latest" ]; then
-        requested=$(fetch_latest_tag)
+        if ! requested=$(fetch_latest_tag); then
+            echo "[supabase-cli] Failed to determine latest Supabase CLI release tag." >&2
+            exit 1
+        fi
     fi
 
     local arch
@@ -63,7 +99,7 @@ install_supabase_cli() {
     local deb_url="https://github.com/supabase/cli/releases/download/${requested}/supabase_${requested#v}_linux_${arch}.deb"
     local tmp_deb
     tmp_deb=$(mktemp -d)
-    trap 'rm -rf "${tmp_deb}"' EXIT
+    trap 'rm -rf "${tmp_deb:-}"' EXIT
 
     echo "[supabase-cli] Downloading ${deb_url}"
     curl -fsSL "${deb_url}" -o "${tmp_deb}/supabase.deb"
