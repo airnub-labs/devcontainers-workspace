@@ -1,9 +1,6 @@
 {
   "folders": [
     { "path": "." },
-    { "path": "docs" },
-    { "path": "supabase" },
-    { "path": "apps" }
   ],
   "settings": {
     "files.exclude": {
