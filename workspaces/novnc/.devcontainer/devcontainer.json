@@ -8,10 +8,10 @@
   "workspaceFolder": "/workspaces",
 
   "features": {
-    "../../../features/supabase-cli": { "manageLocalStack": true },
-    "../../../features/chrome-cdp": { "port": 9222 },
-    "../../../features/agent-tooling-clis": {},
-    "../../../features/docker-in-docker-plus": {}
+    "file:../../../features/supabase-cli": { "manageLocalStack": true },
+    "file:../../../features/chrome-cdp": { "port": 9222 },
+    "file:../../../features/agent-tooling-clis": {},
+    "file:../../../features/docker-in-docker-plus": {}
   },
 
   "containerEnv": {

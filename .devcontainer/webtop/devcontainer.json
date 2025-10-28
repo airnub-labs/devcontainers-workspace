@@ -6,10 +6,10 @@
   "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
   "features": {
-    "../../features/supabase-cli": { "manageLocalStack": true },
-    "../../features/chrome-cdp": { "port": 9222 },
-    "../../features/agent-tooling-clis": {},
-    "../../features/docker-in-docker-plus": {}
+    "file:../../features/supabase-cli": { "manageLocalStack": true },
+    "file:../../features/chrome-cdp": { "port": 9222 },
+    "file:../../features/agent-tooling-clis": {},
+    "file:../../features/docker-in-docker-plus": {}
   },
   "forwardPorts": [9222, 3001, 6379, 54323],
   "portsAttributes": {
