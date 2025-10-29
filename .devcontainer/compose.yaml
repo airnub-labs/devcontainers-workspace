@@ -1,7 +1,6 @@
 services:
   dev:
-    # TODO: swap to ghcr.io/airnub-labs/devcontainer-images/dev-web@sha256:<digest> once the digest is published.
-    image: ghcr.io/airnub-labs/devcontainer-images/dev-web:0.1.0
+    image: ghcr.io/airnub-labs/devcontainer-images/dev-web:latest
     user: "vscode"
     volumes:
       - ..:/workspaces:cached
