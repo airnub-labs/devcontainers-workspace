@@ -1,6 +1,7 @@
 services:
   dev:
     image: ghcr.io/airnub-labs/devcontainer-images/dev-web:latest
+    pull_policy: always
     user: "vscode"
     volumes:
       - ..:/workspaces:cached
