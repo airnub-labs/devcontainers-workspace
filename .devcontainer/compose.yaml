@@ -3,6 +3,7 @@ services:
     image: ghcr.io/airnub-labs/devcontainer-images/dev-web:latest
     pull_policy: always
     user: "vscode"
+    command: ["sleep", "infinity"]
     volumes:
       - ..:/workspaces:cached
     shm_size: "2gb"
