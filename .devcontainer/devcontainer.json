@@ -4,7 +4,7 @@
   "service": "dev",
   "runServices": ["dev", "redis", "novnc"],
 
-  "initializeCommand": "/bin/sh -lc 'if [ -n \"${GHCR_PAT}\" ]; then echo \"$GHCR_PAT\" | docker login ghcr.io -u ${GHCR_USER:-$USER} --password-stdin || true; fi'",
+  "initializeCommand": "/bin/sh -lc '. ./.devcontainer/scripts/preflight-ghcr.sh'",
 
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
