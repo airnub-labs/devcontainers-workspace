@@ -29,6 +29,24 @@ TEMPLATE=stack-nextjs-supabase-novnc scripts/sync-from-catalog.sh
 
 Open the repo in VS Code or Codespaces; it will use the materialized `.devcontainer/`.
 
+### Authenticate to GHCR (fixes `No manifest found` errors)
+
+The dev container uses the private image `ghcr.io/airnub-labs/devcontainer-images/dev-web`. If Docker can't reach it you will see an error similar to:
+
+```
+Server did not provide instructions to authentiate! (Required: A 'WWW-Authenticate' Header)
+Error fetching image details: No manifest found for ghcr.io/airnub-labs/devcontainer-images/dev-web:latest.
+```
+
+Create a [classic personal access token](https://github.com/settings/tokens/new) with the **`read:packages`** scope (and optionally `repo` if you want git access). Then, before reopening the dev container:
+
+```bash
+export GHCR_USER=<your-github-username>
+export GHCR_PAT=<the-token-string>
+```
+
+The `initializeCommand` in `.devcontainer/devcontainer.json` automatically logs into GHCR using these environment variables, so the private image can be pulled successfully. Re-run the **Dev Containers: Rebuild and Reopen in Container** command afterwards.
+
 ## Supabase/Redis model
 
 In the catalog Template (stack) via Compose sidecars and/or via Supabase CLI Feature in `postStart`.
