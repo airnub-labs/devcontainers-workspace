@@ -4,8 +4,6 @@
   "service": "dev",
   "runServices": ["dev", "redis", "novnc"],
 
-  "initializeCommand": "/bin/sh -lc '. ./.devcontainer/scripts/preflight-ghcr.sh'",
-
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces",
 
