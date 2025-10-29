@@ -128,7 +128,8 @@
           "workbench.view.extension.geminiChat": "secondarySideBar",
           "workbench.view.extension.claudeCode": "secondarySideBar"
         },
-        "chat.mcp.gallery.enabled": true
+        "chat.mcp.gallery.enabled": true,
+        "remote.downloadExtensionsLocally": "always"
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
