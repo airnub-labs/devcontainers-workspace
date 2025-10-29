@@ -52,3 +52,48 @@ fi
 if command -v supabase >/dev/null 2>&1; then
   supabase --version || true
 fi
+
+VSCODE_SERVER_BIN_DIR="${HOME}/.vscode-server/bin"
+if [ -d "${VSCODE_SERVER_BIN_DIR}" ]; then
+  VSCODE_CLI="$(find "${VSCODE_SERVER_BIN_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR==1 { print $2 }')/bin/code-server"
+else
+  VSCODE_CLI=""
+fi
+
+cleanup_vscode_extension_temp_dirs() {
+  local extensions_dir="${HOME}/.vscode-server/extensions"
+  if [ -d "${extensions_dir}" ]; then
+    find "${extensions_dir}" -mindepth 1 -maxdepth 1 -type d -name '.*' -exec rm -rf {} +
+  fi
+}
+
+install_vscode_extension() {
+  local extension="$1"
+  local extensions_dir="${HOME}/.vscode-server/extensions"
+
+  if [ -z "${VSCODE_CLI}" ] || [ ! -x "${VSCODE_CLI}" ]; then
+    echo "[postCreate] Skipping ${extension} install; VS Code CLI not available yet." >&2
+    return 0
+  fi
+
+  if "${VSCODE_CLI}" --list-extensions | grep -qx "${extension}"; then
+    return 0
+  fi
+
+  if [ -d "${extensions_dir}" ]; then
+    find "${extensions_dir}" -mindepth 1 -maxdepth 1 -type d -name "${extension}-*" -exec rm -rf {} +
+  fi
+
+  if ! "${VSCODE_CLI}" --install-extension "${extension}" --force; then
+    echo "[postCreate] Failed to install VS Code extension ${extension}." >&2
+    return 0
+  fi
+
+  sleep 2
+}
+
+if [ -n "${VSCODE_CLI}" ] && [ -x "${VSCODE_CLI}" ]; then
+  cleanup_vscode_extension_temp_dirs || true
+  install_vscode_extension "github.copilot"
+  install_vscode_extension "github.copilot-chat"
+fi
