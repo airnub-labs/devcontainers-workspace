@@ -1,6 +1,8 @@
 # Airnub Meta Workspace
 
-This repo is a thin consumer of the **Airnub DevContainers Catalog**. It **materializes** a Template (a “stack” flavor) into `.devcontainer/`, provides a `.code-workspace`, and (optionally) clones project repos into `apps/` on first open.
+This repo is a thin consumer of the **Airnub DevContainers Catalog**. It **materializes** a Template (a "stack" flavor) into `.devcontainer/`, provides a `.code-workspace`, and (optionally) clones project repos into `apps/` on first open.
+
+**📚 [Complete Documentation](docs/index.md)** | **🔍 [Troubleshooting](docs/reference/troubleshooting.md)** | **🏗️ [Architecture](docs/docker-containers.md)**
 
 ## Private GHCR Quick Start (one-time setup)
 
