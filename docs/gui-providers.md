@@ -21,18 +21,18 @@ start exactly the sidecars you need.
 
 ## Default ports and authentication
 
-| Provider | HTTPS / HTTP | DevTools (CDP) | Notes |
-| --- | --- | --- | --- |
-| noVNC | `${GUI_NOVNC_HTTP_PORT:-6080}` | `${GUI_NOVNC_DEVTOOLS_PORT:-9222}` | Audio bridge available on 6081 (Opus/OGG) |
-| Webtop | `${GUI_WEBTOP_HTTPS_PORT:-3001}` | `${GUI_WEBTOP_DEVTOOLS_PORT:-9223}` | Requires HTTPS for audio/video; credentials from `WEBTOP_USER` / `WEBTOP_PASSWORD` |
-| Chrome | `${GUI_CHROME_HTTPS_PORT:-3002}` | `${GUI_CHROME_DEVTOOLS_PORT:-9224}` | Credentials reuse `CHROME_USER` / `CHROME_PASSWORD` |
+**📋 See [Ports & Services Reference](./reference/ports-and-services.md#gui-desktop-providers) for complete port assignments and configuration details.**
+
+**Quick reference:**
+- **noVNC:** HTTP port 6080, DevTools 9222, Audio bridge 6081
+- **Webtop:** HTTPS port 3001, DevTools 9223 (requires `WEBTOP_USER`/`WEBTOP_PASSWORD`)
+- **Chrome:** HTTPS port 3002, DevTools 9224 (requires `CHROME_USER`/`CHROME_PASSWORD`)
 
 > **Codespaces URLs**
 >
-> - noVNC: `https://<workspace>-6080.<region>.codespaces-preview.app`
-> - Webtop: `https://<workspace>-3001.<region>.codespaces-preview.app`
-> - Chrome: `https://<workspace>-3002.<region>.codespaces-preview.app`
-> - DevTools: visit `http(s)://…:<port>/json` for each provider
+> All GUI providers use the pattern: `https://<workspace>-<port>.<region>.codespaces-preview.app`
+>
+> Example: `https://fuzzy-space-disco-abc123-6080.app.github.dev` for noVNC
 
 All GUI ports are marked as **Private** in `devcontainer.json`. Keep the
 forwarded URLs private (especially when using the basic-auth credentials from

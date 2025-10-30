@@ -16,7 +16,10 @@ A thin consumer of catalog **Templates** (“stacks”). It:
 
 ## Health checks (typical stacks)
 
-- Desktop: Webtop (3001) or noVNC (6080)
-- CDP: 9222
-- Redis: 6379
-- Supabase Studio (when started): 54323
+**📋 See [Ports & Services Reference](./reference/ports-and-services.md) for complete port listings and health check procedures.**
+
+Quick health check ports:
+- **GUI Desktop:** Webtop (3001) or noVNC (6080)
+- **Chrome DevTools:** 9222 (noVNC), 9223 (Webtop), 9224 (Chrome)
+- **Redis:** 6379
+- **Supabase Studio:** 54323 (when started)

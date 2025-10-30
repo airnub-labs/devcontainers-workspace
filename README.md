@@ -55,22 +55,17 @@ Add Repository secrets on this workspace repo:
 
 The workspace will preflight-login automatically on start.
 
-## Dev Containers mental model
+## Understanding the System
 
-- **Features** → install tooling (Supabase CLI, Node, CUDA, etc.). No services, idempotent.
-- **Templates** → ship a ready-to-use `.devcontainer/` payload (can be multi-container via Compose).
-- **Images** → prebuilt base(s) to speed builds.
+**New to Dev Containers or this workspace?** Read the [Core Concepts](docs/getting-started/concepts.md) guide to understand:
+- Features, Templates, Images (Dev Container building blocks)
+- Stacks, Meta Workspace, Catalog (our terminology)
+- How the shared services model works
 
-There’s **no formal “Stack”** in the spec. In our ecosystem, a **stack is just a flavor of Template** in the catalog:
-
-- `templates/stack-nextjs-supabase-webtop/`
-- `templates/stack-nextjs-supabase-novnc/`
-
-Each stack Template includes:
-
-- `dockerComposeFile` (e.g., `dev` + `redis` + GUI sidecar `webtop`/`novnc`)
-- Port labels (9222 CDP, 3001/6080 desktop, 6379 Redis)
-- Chosen Features (Node, Supabase CLI, agent CLIs, etc.)
+**Quick summary:**
+- **Templates** define complete dev environments (multi-container via Compose)
+- **Stacks** are opinionated Template flavors (e.g., `stack-nextjs-supabase-webtop`)
+- **This repo** materializes Templates from the catalog and shares services across projects
 
 ## Materialize a stack
 
@@ -88,13 +83,19 @@ In the catalog Template (stack) via Compose sidecars and/or via Supabase CLI Fea
 
 Prefer CLI-managed local; provide separate stack flavor for a fully containerized Supabase if needed.
 
-## Taxonomy (cheat sheet)
+## Next Steps
 
-- **Feature** = “Install this tool.”
-- **Template** = “Bring these containers + ports + policies together.”
-- **Image** = “Prebaked base for the dev container (optional).”
-- **Stack** = “An opinionated Template (plus optional matching Image) with a tested combo: Node + pnpm + Redis + Supabase + GUI + CDP.”
-- **Meta Workspace** = “A repo that materializes a Stack Template, adds a `.code-workspace`, and (optionally) auto-clones project repos.”
+After opening the workspace:
+1. **Start Supabase:** Run `supabase start -o env` to launch the shared stack
+2. **Use a project:** Run `airnub use ./your-project` to switch projects and apply migrations
+3. **Access GUI:** Open port 6080 (noVNC) or 3001 (Webtop) in your browser
+4. **Read the docs:** See [complete documentation](docs/index.md) for detailed guides
+
+**Key Documentation:**
+- **[Core Concepts](docs/getting-started/concepts.md)** - Understand the terminology
+- **[Shared Supabase Operations](docs/shared-supabase.md)** - Working with the database
+- **[Architecture Overview](docs/architecture/overview.md)** - How everything fits together
+- **[Troubleshooting](docs/reference/troubleshooting.md)** - Common issues and solutions
 
 ## Reproducibility
 
