@@ -1,103 +1,105 @@
 # Airnub Meta Workspace
 
-This repo is a thin consumer of the **Airnub DevContainers Catalog**. It **materializes** a Template (a "stack" flavor) into `.devcontainer/`, provides a `.code-workspace`, and (optionally) clones project repos into `apps/` on first open.
+A **thin consumer** of the [Airnub DevContainers Catalog](https://github.com/airnub-labs/devcontainers-catalog). This workspace materializes Dev Container Templates into `.devcontainer/`, provides a multi-root `.code-workspace`, and optionally auto-clones project repos on first open.
 
-**📚 [Complete Documentation](docs/index.md)** | **🔍 [Troubleshooting](docs/reference/troubleshooting.md)** | **🏗️ [Architecture](docs/architecture/overview.md)**
+**📚 [Complete Documentation](docs/index.md)** | **🚀 [Quick Start](docs/getting-started/quick-start.md)** | **🔍 [Troubleshooting](docs/reference/troubleshooting.md)**
 
-## Private GHCR Quick Start (one-time setup)
+---
 
-If the devcontainer image is private, you must authenticate to ghcr.io before opening this workspace in a container.
+## What is This?
 
-### A) Create a Fine-grained PAT (read-only for pulls)
+This meta workspace enables **multi-project development with shared services**:
+- **Shared Supabase** instance across all projects (~70% resource savings)
+- **Shared Redis** cache
+- **Browser-based GUI** desktops (noVNC/Webtop)
+- **Auto-cloning** of project repositories
+- **Centralized** environment management
 
-Go to GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.
+See [Core Concepts](docs/getting-started/concepts.md) for terminology and architecture.
 
-Resource owner: airnub-labs (your org).
+---
 
-Repository access:
+## Quick Start
 
-Choose Only select repositories and select the repo(s) that publish images, e.g.:
+### 1. Open in Container
 
-- devcontainers-catalog (if images are published from here), and/or
-- devcontainer-images (if you split images into a dedicated repo).
+**Codespaces:**
+- Click **Code** → **Codespaces** → **Create codespace**
+- Wait for container to build (~3-5 minutes first time)
 
-Permissions:
+**VS Code Local:**
+- Install Dev Containers extension
+- Clone this repo and open in VS Code
+- Click **Reopen in Container**
 
-Repository permissions
+### 2. Authenticate to GHCR (if using private images)
 
-Contents: Read-only (required for repo association).
+See [Quick Start Guide - GHCR Authentication](docs/getting-started/quick-start.md#step-2-authenticate-to-ghcr-if-using-private-images) for detailed instructions.
 
-Account permissions
-
-Packages: Read ✅ (this is the key for GHCR pulls)
-
-Create token, then on the token page click Enable SSO for airnub-labs.
-
-For publishing in CI, create a separate fine-grained PAT (short expiry) with Packages: Write, or use GITHUB_TOKEN in Actions.
-
-### B) One-time host login (stores creds in your OS keychain)
-
+**Quick version:**
 ```bash
-docker logout ghcr.io || true
-read -s GHCR_PAT && echo "$GHCR_PAT" | docker login ghcr.io -u "<your-github-username>" --password-stdin
-# (paste the fine-grained PAT when prompted; nothing is echoed)
+docker login ghcr.io -u YOUR_USERNAME
+# Paste your PAT when prompted
 ```
 
-After this, Dev Containers/Compose can pull without environment variables.
-If your org enforces SSO, make sure you pressed Enable SSO on the token.
-
-### C) Codespaces (if applicable)
-
-Add Repository secrets on this workspace repo:
-
-- `GHCR_USER` = your GitHub username
-- `GHCR_PAT` = fine-grained PAT with Packages: Read, SSO enabled
-
-The workspace will preflight-login automatically on start.
-
-## Understanding the System
-
-**New to Dev Containers or this workspace?** Read the [Core Concepts](docs/getting-started/concepts.md) guide to understand:
-- Features, Templates, Images (Dev Container building blocks)
-- Stacks, Meta Workspace, Catalog (our terminology)
-- How the shared services model works
-
-**Quick summary:**
-- **Templates** define complete dev environments (multi-container via Compose)
-- **Stacks** are opinionated Template flavors (e.g., `stack-nextjs-supabase-webtop`)
-- **This repo** materializes Templates from the catalog and shares services across projects
-
-## Materialize a stack
+### 3. Start Supabase
 
 ```bash
-CATALOG_REF=main TEMPLATE=stack-nextjs-supabase-webtop scripts/sync-from-catalog.sh
-# or
-TEMPLATE=stack-nextjs-supabase-novnc scripts/sync-from-catalog.sh
+supabase start -o env
 ```
 
-Open the repo in VS Code or Codespaces; it will use the materialized `.devcontainer/`.
+### 4. Work with a Project
 
-## Supabase/Redis model
+```bash
+# Switch to your project (auto-syncs credentials, applies migrations)
+airnub use ./your-project
 
-In the catalog Template (stack) via Compose sidecars and/or via Supabase CLI Feature in `postStart`.
+# Or start from scratch
+cd /airnub-labs
+git clone https://github.com/your-org/your-project.git
+airnub use ./your-project
+```
 
-Prefer CLI-managed local; provide separate stack flavor for a fully containerized Supabase if needed.
+---
 
-## Next Steps
+## Essential Commands
 
-After opening the workspace:
-1. **Start Supabase:** Run `supabase start -o env` to launch the shared stack
-2. **Use a project:** Run `airnub use ./your-project` to switch projects and apply migrations
-3. **Access GUI:** Open port 6080 (noVNC) or 3001 (Webtop) in your browser
-4. **Read the docs:** See [complete documentation](docs/index.md) for detailed guides
+```bash
+# Sync template from catalog
+TEMPLATE=stack-nextjs-supabase-webtop scripts/sync-from-catalog.sh
 
-**Key Documentation:**
-- **[Core Concepts](docs/getting-started/concepts.md)** - Understand the terminology
-- **[Supabase Operations](docs/guides/supabase-operations.md)** - Working with the database
-- **[Architecture Overview](docs/architecture/overview.md)** - How everything fits together
-- **[Troubleshooting](docs/reference/troubleshooting.md)** - Common issues and solutions
+# Supabase operations
+supabase start -o env              # Start shared stack
+airnub use ./project-name          # Switch project + apply migrations
+airnub db status                   # Check Supabase status
 
-## Reproducibility
+# Access services
+# Supabase Studio: http://localhost:54323
+# noVNC Desktop: http://localhost:6080
+```
 
-Pin `CATALOG_REF` to a tag/commit. Stacks may publish a `stack.lock.json` in the catalog to pin feature versions and image digests.
+---
 
+## Documentation
+
+- **[Quick Start Guide](docs/getting-started/quick-start.md)** - Step-by-step tutorial
+- **[Core Concepts](docs/getting-started/concepts.md)** - Understanding the system
+- **[CLI Reference](docs/reference/cli-reference.md)** - Complete `airnub` command docs
+- **[Supabase Operations](docs/guides/supabase-operations.md)** - Database workflows
+- **[Troubleshooting](docs/reference/troubleshooting.md)** - Common issues
+- **[Documentation Index](docs/index.md)** - All documentation
+
+---
+
+## Key Features
+
+- **📦 Template Materialization** - Sync from centralized catalog
+- **🗄️ Shared Supabase** - One instance for all projects
+- **🔄 Multi-Repo** - Auto-clone configured repositories
+- **🖥️ GUI Desktops** - Browser-based noVNC/Webtop
+- **🔧 CLI Tools** - `airnub` command for easy management
+- **♻️ Reproducible** - Pin catalog versions for consistency
+
+---
+
+**Getting Help:** See [Documentation Index](docs/index.md) | Report issues on GitHub

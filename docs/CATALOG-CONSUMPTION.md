@@ -445,7 +445,7 @@ jq -e '.dockerComposeFile' .devcontainer/devcontainer.json && echo "✓ Has comp
 - **[Architecture Overview](./architecture/overview.md)** - How catalog materialization fits into the system
 - **[Core Concepts](./getting-started/concepts.md)** - Understanding Templates, Stacks, and the Catalog
 - **[Troubleshooting](./reference/troubleshooting.md)** - General workspace troubleshooting
-- **[DevContainer Spec Alignment](./devcontainer-spec-alignment.md)** - Catalog structure and packaging
+- **[Development Roadmap](./development/roadmap.md)** - Catalog structure and packaging
 
 ---
 

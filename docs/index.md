@@ -37,8 +37,7 @@ Deep-dives for contributors and advanced users:
 
 - **[Architecture Overview](./architecture/overview.md)** - Complete system architecture and design
 - **[Container Architecture](./architecture/container-layers.md)** - Understanding the outer Dev Container and inner Docker daemon
-- **[DevContainer Spec Alignment](./devcontainer-spec-alignment.md)** - Roadmap for spec-compliant packaging
-- **[Post-Create Review](./postcreate-review.md)** - Summary of initialization activities
+- **[Development Roadmap](./development/roadmap.md)** - Roadmap for spec-compliant packaging
 
 ---
 
@@ -62,7 +61,7 @@ Deep-dives for contributors and advanced users:
 
 - Understand the [Architecture Overview](./architecture/overview.md) for system design
 - Read [Container Architecture](./architecture/container-layers.md) for container details
-- Review [DevContainer Spec Alignment](./devcontainer-spec-alignment.md) for the roadmap
+- Review [Development Roadmap](./development/roadmap.md) for the roadmap
 - Check [AGENTS.md](../AGENTS.md) for design invariants
 
 ---
