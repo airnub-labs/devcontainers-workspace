@@ -2,7 +2,7 @@
 
 This repo is a thin consumer of the **Airnub DevContainers Catalog**. It **materializes** a Template (a "stack" flavor) into `.devcontainer/`, provides a `.code-workspace`, and (optionally) clones project repos into `apps/` on first open.
 
-**📚 [Complete Documentation](docs/index.md)** | **🔍 [Troubleshooting](docs/reference/troubleshooting.md)** | **🏗️ [Architecture](docs/docker-containers.md)**
+**📚 [Complete Documentation](docs/index.md)** | **🔍 [Troubleshooting](docs/reference/troubleshooting.md)** | **🏗️ [Architecture](docs/architecture/overview.md)**
 
 ## Private GHCR Quick Start (one-time setup)
 
@@ -93,7 +93,7 @@ After opening the workspace:
 
 **Key Documentation:**
 - **[Core Concepts](docs/getting-started/concepts.md)** - Understand the terminology
-- **[Shared Supabase Operations](docs/shared-supabase.md)** - Working with the database
+- **[Supabase Operations](docs/guides/supabase-operations.md)** - Working with the database
 - **[Architecture Overview](docs/architecture/overview.md)** - How everything fits together
 - **[Troubleshooting](docs/reference/troubleshooting.md)** - Common issues and solutions
 

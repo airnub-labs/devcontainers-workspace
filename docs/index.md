@@ -8,30 +8,35 @@ Welcome to the Airnub Meta Workspace documentation. This workspace provides a so
 
 New to the workspace? Start here:
 
-- **[Main README](../README.md)** - Overview, quick start, and GHCR authentication
+- **[Quick Start Guide](./getting-started/quick-start.md)** - 5-minute setup for first-time users
+- **[Core Concepts](./getting-started/concepts.md)** - Understanding the system (Features, Templates, Stacks, Catalog)
+- **[Main README](../README.md)** - Repository overview and quick reference
 - **[AGENTS.md](../AGENTS.md)** - Design invariants and guardrails
 
 ### 📚 User Guides
 
 Step-by-step guides for common tasks:
 
-- **[Shared Supabase Operations](./shared-supabase.md)** - Working with the shared Supabase stack, running migrations, using the `airnub` CLI
-- **[Multi-Repo Workflow](./clone-strategy.md)** - How the workspace clones and manages multiple project repositories
-- **[GUI Desktop Providers](./gui-providers.md)** - Configuring browser-based desktops (noVNC, Webtop, Chrome)
+- **[Supabase Operations](./guides/supabase-operations.md)** - Working with the shared Supabase stack, running migrations, using the `airnub` CLI
+- **[Multi-Repo Workflow](./guides/multi-repo-workflow.md)** - How the workspace clones and manages multiple project repositories
+- **[GUI Desktop Providers](./guides/gui-desktops.md)** - Configuring browser-based desktops (noVNC, Webtop, Chrome)
 - **[Catalog Consumption](./CATALOG-CONSUMPTION.md)** - Syncing templates from the DevContainers catalog
 
 ### 🔍 Reference
 
 Technical specifications and troubleshooting:
 
+- **[CLI Reference](./reference/cli-reference.md)** - Complete `airnub` command documentation
+- **[Ports & Services](./reference/ports-and-services.md)** - Port assignments and service configuration
 - **[Troubleshooting Guide](./reference/troubleshooting.md)** - Common issues and solutions
-- **[Workspace Architecture](./workspace-architecture.md)** - High-level role and responsibilities
+- **[Workspace Architecture](./workspace-architecture.md)** - High-level role and responsibilities (brief)
 
 ### 🏗️ Architecture & Development
 
 Deep-dives for contributors and advanced users:
 
-- **[Docker Container Architecture](./docker-containers.md)** - Understanding the outer Dev Container and inner Docker daemon
+- **[Architecture Overview](./architecture/overview.md)** - Complete system architecture and design
+- **[Container Architecture](./architecture/container-layers.md)** - Understanding the outer Dev Container and inner Docker daemon
 - **[DevContainer Spec Alignment](./devcontainer-spec-alignment.md)** - Roadmap for spec-compliant packaging
 - **[Post-Create Review](./postcreate-review.md)** - Summary of initialization activities
 
@@ -41,20 +46,22 @@ Deep-dives for contributors and advanced users:
 
 ### For First-Time Users
 
-1. Read the [Main README](../README.md) to understand what this workspace is
-2. Follow the GHCR authentication setup if using private images
-3. Learn about [Shared Supabase Operations](./shared-supabase.md) to work with the database
-4. Check [GUI Desktop Providers](./gui-providers.md) if you need browser-based desktops
+1. Start with the [Quick Start Guide](./getting-started/quick-start.md) for step-by-step setup
+2. Read [Core Concepts](./getting-started/concepts.md) to understand the system
+3. Learn about [Supabase Operations](./guides/supabase-operations.md) to work with the database
+4. Check [GUI Desktop Providers](./guides/gui-desktops.md) if you need browser-based desktops
 
 ### For Daily Development
 
-- Use the [Shared Supabase Operations](./shared-supabase.md) guide for the `airnub` CLI commands
+- Use the [CLI Reference](./reference/cli-reference.md) for `airnub` command documentation
+- Use the [Supabase Operations](./guides/supabase-operations.md) guide for database workflows
 - Refer to [Troubleshooting](./reference/troubleshooting.md) when things go wrong
-- Review [Multi-Repo Workflow](./clone-strategy.md) when adding new projects
+- Review [Multi-Repo Workflow](./guides/multi-repo-workflow.md) when adding new projects
 
 ### For Contributors & Advanced Users
 
-- Understand the [Docker Container Architecture](./docker-containers.md)
+- Understand the [Architecture Overview](./architecture/overview.md) for system design
+- Read [Container Architecture](./architecture/container-layers.md) for container details
 - Review [DevContainer Spec Alignment](./devcontainer-spec-alignment.md) for the roadmap
 - Check [AGENTS.md](../AGENTS.md) for design invariants
 
@@ -122,7 +129,7 @@ supabase db push --workdir ./my-project --local
 ## Need Help?
 
 - **Common issues?** Check the [Troubleshooting Guide](./reference/troubleshooting.md)
-- **Understanding the architecture?** Read [Docker Container Architecture](./docker-containers.md)
+- **Understanding the architecture?** Read [Container Architecture](./architecture/container-layers.md)
 - **Contributing?** Review [AGENTS.md](../AGENTS.md) for design invariants
 
 ---

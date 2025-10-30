@@ -459,9 +459,9 @@ ss -ltnp | egrep '6080|590|5432[1-4]|6379|3001'
 ## Related Documentation
 
 - **[Troubleshooting Guide](./troubleshooting.md)** - Solutions for port conflicts and service issues
-- **[Shared Supabase Operations](../shared-supabase.md)** - How to use the shared Supabase stack
-- **[GUI Providers](../gui-providers.md)** - Detailed GUI provider configuration
-- **[Docker Container Architecture](../docker-containers.md)** - Understanding the container layers
+- **[Supabase Operations](../guides/supabase-operations.md)** - How to use the shared Supabase stack
+- **[GUI Desktop Providers](../guides/gui-desktops.md)** - Detailed GUI provider configuration
+- **[Container Architecture](../architecture/container-layers.md)** - Understanding the container layers
 
 ---
 

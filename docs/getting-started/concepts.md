@@ -245,9 +245,9 @@ These are the guardrails for working with the meta workspace (from [AGENTS.md](.
 
 Now that you understand the core concepts:
 
-1. **For quick setup:** Follow the [README](../../README.md) quick start guide
-2. **For Supabase operations:** Read [Shared Supabase Operations](../shared-supabase.md)
-3. **For multi-repo workflows:** Review [Clone Strategy](../clone-strategy.md)
+1. **For quick setup:** Follow the [Quick Start Guide](./quick-start.md)
+2. **For Supabase operations:** Read [Supabase Operations](../guides/supabase-operations.md)
+3. **For multi-repo workflows:** Review [Multi-Repo Workflow](../guides/multi-repo-workflow.md)
 4. **For architecture details:** See [Architecture Overview](../architecture/overview.md)
 
 ---

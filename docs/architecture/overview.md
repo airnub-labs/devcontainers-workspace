@@ -240,7 +240,7 @@ The workspace uses a layered container architecture:
 └──────────────────────────────────────────────────────────┘
 ```
 
-**See [Docker Container Architecture](../docker-containers.md) for detailed explanation.**
+**See [Container Architecture](./container-layers.md) for detailed explanation.**
 
 ---
 
@@ -517,8 +517,8 @@ Typical usage with all services running:
 ## Related Documentation
 
 - **[Core Concepts](../getting-started/concepts.md)** - Taxonomy and terminology
-- **[Docker Container Architecture](../docker-containers.md)** - Detailed container structure
-- **[Shared Supabase Operations](../shared-supabase.md)** - Using the shared database
+- **[Container Architecture](./container-layers.md)** - Detailed container structure
+- **[Supabase Operations](../guides/supabase-operations.md)** - Using the shared database
 - **[Ports & Services Reference](../reference/ports-and-services.md)** - Complete port listings
 - **[Troubleshooting](../reference/troubleshooting.md)** - Common issues and solutions
 
