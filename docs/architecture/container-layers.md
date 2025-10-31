@@ -78,4 +78,4 @@ You can customise the prefix by setting `WORKSPACE_STACK_NAME` before the Dev Co
 3. **Tune resources** – Update `.devcontainer/docker-compose.yml` to set `shm_size`, CPU limits, or memory reservations when working with resource-intensive tooling.
 4. **Disable DinD** – If your environment forbids privileged containers (e.g., certain Codespaces policies), remove `privileged: true` and the DinD feature from [`devcontainer.json`](../.devcontainer/devcontainer.json). In that case configure Supabase to use a remote Docker host or a sidecar service instead.
 
-For more information on how the shared Supabase stack operates once it is running, see [`docs/shared-supabase.md`](./shared-supabase.md).
+For more information on how the shared Supabase stack operates once it is running, see [`docs/guides/supabase-operations.md`](../guides/supabase-operations.md).

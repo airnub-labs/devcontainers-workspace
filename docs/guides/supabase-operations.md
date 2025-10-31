@@ -13,18 +13,19 @@ Why a shared stack?
 
 ## Ports and services
 
-The Supabase CLI spins up multiple services when you run `supabase start -o env`. The meta workspace exposes these on fixed ports so every project can connect to the same endpoints:
+**📋 See [Ports & Services Reference](./reference/ports-and-services.md#supabase-stack-ports) for complete Supabase port documentation, connection strings, and usage examples.**
 
-| Service | Port | Notes |
-| ------- | ---- | ----- |
-| API | `54321` | REST/Realtime API used by apps. |
-| Postgres | `54322` | Database access used by the CLI during migrations. |
-| Studio | `54323` | Web UI for inspecting data: [http://localhost:54323](http://localhost:54323). |
-| Inbucket | `54324` | Email testing inbox. |
-| Storage | `54326` | Object storage API. |
-| Analytics (Logflare) | `54327` | Supabase analytics/logging endpoint. |
+The Supabase CLI spins up multiple services when you run `supabase start -o env`. Quick reference:
 
-A Redis sidecar is available at `6379` (defined in `.devcontainer/docker-compose.yml`). Because these ports are fixed and shared, you avoid the complexity of tracking different ports for each project.
+- **API (54321)** - REST/Realtime API used by apps
+- **Postgres (54322)** - Database access for migrations
+- **Studio (54323)** - Web UI at [http://localhost:54323](http://localhost:54323)
+- **Inbucket (54324)** - Email testing inbox
+- **Storage (54326)** - Object storage API
+- **Analytics (54327)** - Logflare analytics endpoint
+- **Redis (6379)** - Shared cache/data store
+
+Because these ports are fixed and shared, you avoid the complexity of tracking different ports for each project.
 
 ---
 

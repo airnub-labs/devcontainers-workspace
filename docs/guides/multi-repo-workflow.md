@@ -1,8 +1,9 @@
 # Workspace Clone Strategy — Implementation Guide
 
-> **Repo context:** This version targets the internal repo `vscode-meta-workspace-internal` and is written to require **minimal edits** when copied to the public template repo (`vscode-meta-workspace`). Inline ⚠️ notes call out the only places you might tweak.
+> **⚠️ Customization Note:**
+> This guide uses `airnub-labs` as an example organization name and `$WORKSPACE_ROOT` (default: `/airnub-labs`) as the workspace directory. Inline ⚠️ notes throughout this document highlight specific places where you should customize values for your own organization and projects.
 
-This document explains **how the meta workspace clones project repos** in a single Dev Container / Codespace — what it clones, *why*, and *where* the configuration lives. It’s written so a new contributor can follow it without prior context.
+This document explains **how the meta workspace clones project repos** in a single Dev Container / Codespace — what it clones, *why*, and *where* the configuration lives. It's written so a new contributor can follow it without prior context.
 
 ---
 
@@ -169,14 +170,14 @@ Optionally, `post-start.sh` can **re-run** the clone helper if you set `CLONE_ON
 1. Open the workspace in the container; in a terminal run:
 
    ```bash
-   ls /airnub-labs
+   ls $WORKSPACE_ROOT
    ```
 
    You should see the repos listed in your workspace (and/or explicit permissions) as directories.
 2. Inside one repo, confirm the remote:
 
    ```bash
-   cd /airnub-labs/million-dollar-maps
+   cd $WORKSPACE_ROOT/million-dollar-maps
    git remote -v
    ```
 
