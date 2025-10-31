@@ -3,7 +3,7 @@
 This example demonstrates how to switch between multiple projects that share the same Supabase database in the Airnub Meta Workspace.
 
 > **⚠️ Customization Note:**
-> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace example project names (`project-a`, `project-b`) with your actual project directory names.
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `/airnub-labs`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace example project names (`project-a`, `project-b`) with your actual project directory names.
 
 ---
 

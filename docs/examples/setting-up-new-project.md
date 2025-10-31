@@ -3,7 +3,7 @@
 This example walks through setting up a new project in the Airnub Meta Workspace from scratch.
 
 > **⚠️ Customization Note:**
-> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-awesome-app` with your actual project name and repository URL.
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `/airnub-labs`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-awesome-app` with your actual project name and repository URL.
 
 ---
 

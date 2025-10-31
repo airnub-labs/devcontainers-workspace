@@ -3,7 +3,7 @@
 This example demonstrates various workflows for creating, applying, and managing Supabase database migrations in the Airnub Meta Workspace.
 
 > **⚠️ Customization Note:**
-> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-app` with your actual project directory name.
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `/airnub-labs`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-app` with your actual project directory name.
 
 ---
 

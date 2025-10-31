@@ -3,7 +3,7 @@
 This example demonstrates how to use the browser-based GUI desktop (noVNC or Webtop) for debugging visual applications, running browser automation tests, and troubleshooting UI issues.
 
 > **⚠️ Customization Note:**
-> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-app` with your actual project directory name.
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `/airnub-labs`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-app` with your actual project directory name.
 
 ---
 
