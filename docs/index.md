@@ -22,11 +22,21 @@ Step-by-step guides for common tasks:
 - **[GUI Desktop Providers](./guides/gui-desktops.md)** - Configuring browser-based desktops (noVNC, Webtop, Chrome)
 - **[Catalog Consumption](./CATALOG-CONSUMPTION.md)** - Syncing templates from the DevContainers catalog
 
+### 💡 Examples
+
+Real-world workflow examples:
+
+- **[Setting Up a New Project](./examples/setting-up-new-project.md)** - Complete workflow from clone to running dev server
+- **[Switching Between Projects](./examples/switching-projects.md)** - Managing multiple projects with shared database
+- **[Running Migrations](./examples/running-migrations.md)** - Creating, applying, and troubleshooting database migrations
+- **[Debugging with GUI](./examples/debugging-with-gui.md)** - Using browser-based desktops for visual debugging and testing
+
 ### 🔍 Reference
 
 Technical specifications and troubleshooting:
 
 - **[CLI Reference](./reference/cli-reference.md)** - Complete `airnub` command documentation
+- **[Environment Variables](./reference/environment-variables.md)** - Comprehensive variable reference and configuration
 - **[Ports & Services](./reference/ports-and-services.md)** - Port assignments and service configuration
 - **[Troubleshooting Guide](./reference/troubleshooting.md)** - Common issues and solutions
 - **[Workspace Architecture](./workspace-architecture.md)** - High-level role and responsibilities (brief)
@@ -53,6 +63,7 @@ Deep-dives for contributors and advanced users:
 ### For Daily Development
 
 - Use the [CLI Reference](./reference/cli-reference.md) for `airnub` command documentation
+- Browse [Examples](./examples/) for common workflow patterns
 - Use the [Supabase Operations](./guides/supabase-operations.md) guide for database workflows
 - Refer to [Troubleshooting](./reference/troubleshooting.md) when things go wrong
 - Review [Multi-Repo Workflow](./guides/multi-repo-workflow.md) when adding new projects
@@ -133,4 +144,4 @@ supabase db push --workdir ./my-project --local
 
 ---
 
-**Last updated:** 2025-10-30
+**Last updated:** 2025-10-31
