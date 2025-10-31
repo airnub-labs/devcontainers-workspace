@@ -2,6 +2,9 @@
 
 This guide explains the foundational concepts used throughout the Airnub Meta Workspace system. Understanding these terms will help you navigate the documentation and use the workspace effectively.
 
+> **⚠️ Customization Note:**
+> Examples in this guide use `airnub-labs` as the organization name. Replace with your own organization name where applicable.
+
 ---
 
 ## The Dev Containers Mental Model

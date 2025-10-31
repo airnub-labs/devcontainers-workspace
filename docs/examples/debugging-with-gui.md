@@ -2,6 +2,9 @@
 
 This example demonstrates how to use the browser-based GUI desktop (noVNC or Webtop) for debugging visual applications, running browser automation tests, and troubleshooting UI issues.
 
+> **⚠️ Customization Note:**
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-app` with your actual project directory name.
+
 ---
 
 ## Scenario
@@ -199,7 +202,7 @@ export default defineConfig({
 
 **Open terminal in GUI desktop:**
 ```bash
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 
 # Install Playwright browsers (if not already)
 pnpm exec playwright install
@@ -238,7 +241,7 @@ DISPLAY=:1 pnpm exec playwright test --debug
 
 **Install Selenium:**
 ```bash
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 pnpm add -D selenium-webdriver
 ```
 
@@ -280,7 +283,7 @@ const { Builder, By, until } = require('selenium-webdriver');
 
 **In GUI desktop terminal:**
 ```bash
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 
 # Run selenium test
 DISPLAY=:1 node test-selenium.js
@@ -298,7 +301,7 @@ DISPLAY=:1 node test-selenium.js
 ### Step 1: Install Visual Testing Tool
 
 ```bash
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 
 # Option A: Playwright visual testing
 pnpm add -D @playwright/test
@@ -331,7 +334,7 @@ test('homepage visual regression', async ({ page }) => {
 
 ```bash
 # In GUI desktop terminal
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 DISPLAY=:1 pnpm exec playwright test tests/visual.spec.ts
 ```
 
@@ -538,7 +541,7 @@ ls ~/Videos/*.ogv
 ffmpeg -i ~/Videos/out.ogv ~/Videos/bug-recording.mp4
 
 # Copy to host filesystem
-cp ~/Videos/bug-recording.mp4 /airnub-labs/my-app/
+cp ~/Videos/bug-recording.mp4 $WORKSPACE_ROOT/my-app/
 ```
 
 ---
@@ -598,7 +601,7 @@ vncserver :1 -geometry 1920x1080 -depth 24
 **Solution:**
 ```bash
 # In VS Code terminal (not desktop terminal)
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 pnpm dev
 
 # Verify port

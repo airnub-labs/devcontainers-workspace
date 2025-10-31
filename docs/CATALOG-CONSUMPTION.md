@@ -2,13 +2,16 @@
 
 This guide explains how the Meta Workspace consumes Templates from the DevContainers catalog, including the materialization process, troubleshooting, and best practices.
 
+> **⚠️ Customization Note:**
+> This guide uses `airnub-labs/devcontainers-catalog` as an example catalog repository. You can customize this by setting the `CATALOG_REPO` environment variable to point to your own catalog or fork.
+
 ---
 
 ## Overview
 
 The Meta Workspace uses a **materialization pattern** to consume Dev Container Templates from a centralized catalog:
 
-1. Template definitions live in `airnub-labs/devcontainers-catalog` (upstream)
+1. Template definitions live in your catalog repository (e.g., `airnub-labs/devcontainers-catalog`)
 2. This workspace fetches and extracts the chosen Template
 3. Template content replaces `.devcontainer/` in this repo
 4. VS Code/Codespaces uses the materialized `.devcontainer/` to build the environment

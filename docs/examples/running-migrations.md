@@ -2,6 +2,9 @@
 
 This example demonstrates various workflows for creating, applying, and managing Supabase database migrations in the Airnub Meta Workspace.
 
+> **⚠️ Customization Note:**
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-app` with your actual project directory name.
+
 ---
 
 ## Scenario
@@ -15,7 +18,7 @@ You're working on `my-app` and need to add a new feature that requires database 
 
 ## Prerequisites
 
-- Project is set up in `/airnub-labs/my-app`
+- Project is set up in `$WORKSPACE_ROOT/my-app`
 - Supabase is running (`supabase status` shows active)
 - You've switched to the project (`airnub use ./my-app`)
 
@@ -42,7 +45,7 @@ supabase/migrations/20231030120000_add_posts_table.sql
 ### Step 1: Create Migration File
 
 ```bash
-cd /airnub-labs/my-app
+cd $WORKSPACE_ROOT/my-app
 
 # Create new migration
 supabase migration new add_posts_table

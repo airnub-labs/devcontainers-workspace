@@ -2,6 +2,9 @@
 
 This document provides a comprehensive reference of all environment variables used in the Airnub Meta Workspace, including configuration for Dev Container setup, multi-repo cloning, Supabase operations, GUI providers, and CLI behavior.
 
+> **⚠️ Customization Note:**
+> The default values shown in this document use `airnub-labs` as the workspace name and organization. You can customize these defaults by setting the corresponding environment variables (e.g., `WORKSPACE_ROOT`, `WORKSPACE_STACK_NAME`, `CATALOG_REPO`) in your `.devcontainer/.env` file or devcontainer.json configuration.
+
 ---
 
 ## Quick Reference Table

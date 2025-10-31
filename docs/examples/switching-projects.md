@@ -2,6 +2,9 @@
 
 This example demonstrates how to switch between multiple projects that share the same Supabase database in the Airnub Meta Workspace.
 
+> **⚠️ Customization Note:**
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace example project names (`project-a`, `project-b`) with your actual project directory names.
+
 ---
 
 ## Scenario
@@ -16,7 +19,7 @@ Both share the same Supabase database, but have different migrations and environ
 
 ## Prerequisites
 
-- Both projects are cloned to `/airnub-labs/`
+- Both projects are cloned to `$WORKSPACE_ROOT/` (default: `$WORKSPACE_ROOT/`)
 - Supabase is running (`supabase status` shows active)
 - Both projects have `supabase/migrations/` directories
 
@@ -50,7 +53,7 @@ airnub project current
 
 **Expected output:**
 ```
-Current project: /airnub-labs/project-a
+Current project: $WORKSPACE_ROOT/project-a
 ```
 
 ---
@@ -59,7 +62,7 @@ Current project: /airnub-labs/project-a
 
 ```bash
 # Switch to project-b
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 airnub use ./project-b
 ```
 
@@ -71,7 +74,7 @@ airnub use ./project-b
 
 **Expected output:**
 ```
-Switching to project: /airnub-labs/project-b
+Switching to project: $WORKSPACE_ROOT/project-b
 ✓ Synced Supabase credentials
 ✓ Applied migrations
 
@@ -165,7 +168,7 @@ airnub use ./project-b --skip-status
 
 ```bash
 # Switch and immediately start dev server
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 airnub use ./project-b && cd project-b && pnpm dev
 ```
 
@@ -228,7 +231,7 @@ Error applying migration: column "email" already exists
 **Option A: Use nvm (if installed)**
 ```bash
 # Switch to project-b
-cd /airnub-labs/project-b
+cd $WORKSPACE_ROOT/project-b
 
 # Check required version
 cat .nvmrc  # or package.json "engines"
@@ -269,7 +272,7 @@ pnpm dev
 # Press Ctrl+C to stop dev server
 
 # Then switch
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 airnub use ./project-b
 cd project-b
 pnpm dev
@@ -333,7 +336,7 @@ cd project-a && pnpm dev
 
 # Afternoon: Switch to project-b
 # (Stop project-a dev server first!)
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 airnub use ./project-b
 cd project-b && pnpm dev
 ```
@@ -384,7 +387,7 @@ Error: Project directory not found: ./project-b
 
 **Solution:**
 ```bash
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 git clone https://github.com/your-org/project-b.git
 airnub use ./project-b
 ```

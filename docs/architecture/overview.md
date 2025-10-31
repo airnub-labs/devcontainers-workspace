@@ -2,6 +2,9 @@
 
 This document provides a comprehensive overview of the Airnub Meta Workspace architecture, explaining how all the pieces fit together to create a powerful multi-project development environment.
 
+> **⚠️ Customization Note:**
+> This document uses `airnub-labs` as an example organization and `$WORKSPACE_ROOT` (default: `/airnub-labs`) as the workspace directory. Customize these values for your own setup.
+
 ---
 
 ## What is the Meta Workspace?

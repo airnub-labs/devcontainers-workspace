@@ -2,6 +2,9 @@
 
 The `airnub` CLI is the central command-line interface for managing projects, databases, and environment variables in the Airnub Meta Workspace.
 
+> **⚠️ Customization Note:**
+> This reference uses `$WORKSPACE_ROOT` to represent the workspace root directory, which defaults to `/airnub-labs`. You can customize this by setting the `WORKSPACE_ROOT` environment variable. Replace example project names and organization references with your actual values.
+
 ---
 
 ## Overview
@@ -12,7 +15,7 @@ The `airnub` command provides a unified interface for:
 - Syncing environment variables
 - Inspecting workspace state
 
-**Location:** `/airnub-labs/airnub` (automatically on PATH in Dev Container)
+**Location:** `$WORKSPACE_ROOT/airnub` (default: `/airnub-labs/airnub`, automatically on PATH in Dev Container)
 
 **Philosophy:** The CLI follows a consistent naming pattern:
 - `db *` commands manage the shared Supabase stack
@@ -79,7 +82,7 @@ airnub project use [PROJECT_DIR] [OPTIONS]
 **Examples:**
 ```bash
 # Switch to project (absolute path)
-airnub project use /airnub-labs/million-dollar-maps
+airnub project use $WORKSPACE_ROOT/million-dollar-maps
 
 # Switch to project (relative path)
 airnub project use ./million-dollar-maps
@@ -115,7 +118,7 @@ airnub project current
 
 **Output:**
 ```
-Current project: /airnub-labs/million-dollar-maps
+Current project: $WORKSPACE_ROOT/million-dollar-maps
 ```
 
 **Use case:** Check which project was last activated, useful when returning to workspace later.
@@ -514,8 +517,8 @@ The legacy script still works (it delegates to `airnub`), but new scripts should
 
 ```bash
 # 1. Clone project (if not auto-cloned)
-cd /airnub-labs
-git clone https://github.com/airnub-labs/my-project.git
+cd $WORKSPACE_ROOT
+git clone https://github.com/your-org/my-project.git
 
 # 2. Initialize environment
 airnub project setup --project-dir ./my-project
@@ -534,12 +537,12 @@ pnpm dev
 
 ```bash
 # Working on project A
-cd /airnub-labs/project-a
+cd $WORKSPACE_ROOT/project-a
 pnpm dev
 
 # Switch to project B
 # Stop project A's server first! (Ctrl+C)
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 airnub use ./project-b
 
 cd project-b
@@ -586,10 +589,10 @@ pnpm db:seed  # Or your project's seed script
 **Solution:**
 ```bash
 # Use absolute path
-/airnub-labs/airnub use ./my-project
+$WORKSPACE_ROOT/airnub use ./my-project
 
 # Or add to PATH
-export PATH="/airnub-labs:$PATH"
+export PATH="$WORKSPACE_ROOT:$PATH"
 ```
 
 ---

@@ -2,6 +2,9 @@
 
 This example walks through setting up a new project in the Airnub Meta Workspace from scratch.
 
+> **⚠️ Customization Note:**
+> This example uses `$WORKSPACE_ROOT` as the workspace root directory. By default, this is `$WORKSPACE_ROOT`, but you can customize it by setting the `WORKSPACE_ROOT` environment variable. Replace `my-awesome-app` with your actual project name and repository URL.
+
 ---
 
 ## Scenario
@@ -23,7 +26,7 @@ You want to start working on a new project called `my-awesome-app` that uses Sup
 
 ```bash
 # Navigate to workspace root
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 
 # Clone your project
 git clone https://github.com/your-org/my-awesome-app.git
@@ -45,7 +48,7 @@ remote: Counting objects: 100% (123/123), done.
 Use `airnub project setup` to create `.env.local` from `.env.example`:
 
 ```bash
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 airnub project setup --project-dir ./my-awesome-app
 ```
 
@@ -56,7 +59,7 @@ airnub project setup --project-dir ./my-awesome-app
 
 **Expected output:**
 ```
-Setting up project: /airnub-labs/my-awesome-app
+Setting up project: $WORKSPACE_ROOT/my-awesome-app
 ✓ Created .env.local from .env.example
 ✓ Synced Supabase credentials
 Project setup complete!
@@ -137,7 +140,7 @@ create policy "Users can read own data"
 
 ```bash
 # Return to workspace root
-cd /airnub-labs
+cd $WORKSPACE_ROOT
 
 # Use airnub to switch to this project and apply migrations
 airnub use ./my-awesome-app
@@ -151,7 +154,7 @@ airnub use ./my-awesome-app
 
 **Expected output:**
 ```
-Switching to project: /airnub-labs/my-awesome-app
+Switching to project: $WORKSPACE_ROOT/my-awesome-app
 ✓ Synced Supabase credentials
 ✓ Applied migrations
 
@@ -278,7 +281,7 @@ code airnub-labs.code-workspace
 
 ## Verification Checklist
 
-- [ ] Project cloned to `/airnub-labs/my-awesome-app`
+- [ ] Project cloned to `$WORKSPACE_ROOT/my-awesome-app`
 - [ ] `.env.local` created with Supabase credentials
 - [ ] Migrations applied successfully
 - [ ] Tables visible in Supabase Studio

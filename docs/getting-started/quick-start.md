@@ -2,6 +2,9 @@
 
 Welcome! This guide will help you set up and start using the Airnub Meta Workspace in under 10 minutes.
 
+> **⚠️ Customization Note:**
+> This guide uses `airnub-labs` as the example organization name and `$WORKSPACE_ROOT` (default: `/airnub-labs`) as the workspace directory. Replace these with your own organization and workspace names where applicable.
+
 ---
 
 ## Prerequisites
@@ -125,7 +128,7 @@ Once your container is running, you're inside a powerful development environment
 ### Directory Structure
 
 ```
-/airnub-labs/                    # Workspace root
+$WORKSPACE_ROOT/                 # Workspace root (default: /airnub-labs)
 ├── .devcontainer/               # Dev container configuration
 ├── supabase/                    # Shared Supabase configuration
 ├── scripts/                     # Workspace scripts
@@ -191,8 +194,8 @@ airnub use ./million-dollar-maps
 
 ```bash
 # Clone a project
-cd /airnub-labs
-git clone https://github.com/airnub-labs/your-project.git
+cd $WORKSPACE_ROOT
+git clone https://github.com/your-org/your-project.git
 
 # Switch to it
 airnub use ./your-project
